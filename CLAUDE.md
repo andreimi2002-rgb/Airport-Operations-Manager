@@ -19,9 +19,12 @@ gate-uri, rute, companii) se deblochează cu bani și reputație.
   fără backend). Deploy pe Netlify. Trebuie să meargă bine pe desktop și pe telefon.
 - **Design întunecat și minimalist**, în stilul Airport Live
   (https://live-airport.netlify.app). Tokenii de culoare stau în `css/theme.css`.
-- **Lucrăm pe branch-uri** (`stage-N-...`) și deschidem pull request-uri către `main`,
-  ca să existe deploy preview pe Netlify. Spune pe scurt ce faci pe parcurs și
+- **Lucrăm pe branch-uri** (`stage-N-...`). Spune pe scurt ce faci pe parcurs și
   întreabă înainte de deciziile importante.
+- **Push și PR-uri rar:** fiecare deploy preview consumă credit Netlify. Lucrăm și facem
+  commit local, verificăm cu un server local și capturi de ecran, și facem push / PR
+  doar când o etapă e gata, **după ce întrebi**. Modificările mici se adună în PR-ul
+  etapei.
 - Interfața jocului e în engleză (ca Airport Live). Comunicarea cu utilizatorul: în română.
 - Fiecare etapă trebuie să fie jucabilă și completă înainte de următoarea.
 
