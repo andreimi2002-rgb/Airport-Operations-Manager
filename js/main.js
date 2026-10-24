@@ -22,8 +22,22 @@ function badge(open) {
   return open ? '<span class="badge open">Open</span>' : '<span class="badge locked">Locked</span>';
 }
 
+function renderPhoto(photo) {
+  if (!photo) return;
+  const img = $('heroImg');
+  img.onload = () => $('hero').classList.add('has-photo');
+  img.alt = photo.alt;
+  img.sizes = '(max-width: 760px) 100vw, 1280px';
+  img.srcset = `${photo.srcSmall} 1280w, ${photo.src} 2400w`;
+  img.src = photo.src;
+  $('heroCredit').innerHTML =
+    `Photo: <a href="${esc(photo.sourceUrl)}" target="_blank" rel="noopener">${esc(photo.author)}</a>, ` +
+    `<a href="${esc(photo.licenseUrl)}" target="_blank" rel="noopener">${esc(photo.license)}</a>`;
+}
+
 function renderHero(airport) {
   $('hero').dataset.code = airport.iata;
+  renderPhoto(airport.photo);
   $('airportCode').textContent = airport.iata;
   $('airportName').textContent = airport.name;
   const country = new Intl.DisplayNames(['en'], { type: 'region' }).of(airport.country);

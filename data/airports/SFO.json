@@ -7,6 +7,16 @@
   "region": "US-CA",
   "timezone": "America/Los_Angeles",
   "location": { "lat": 37.619806, "lon": -122.374821, "elevationFt": 13 },
+  "photo": {
+    "src": "img/airports/SFO-2400.jpg",
+    "srcSmall": "img/airports/SFO-1280.jpg",
+    "alt": "Aerial view of San Francisco International Airport: the terminals around the central garage, the control tower and the runways on the bay",
+    "author": "Daniel L. Lu (user:dllu)",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_San_Francisco_International_Airport_dllu.jpg",
+    "year": 2018
+  },
   "runways": [
     {
       "id": "10L-28R",
