@@ -21,10 +21,10 @@ gate-uri, rute, companii) se deblochează cu bani și reputație.
   (https://live-airport.netlify.app). Tokenii de culoare stau în `css/theme.css`.
 - **Lucrăm pe branch-uri** (`stage-N-...`). Spune pe scurt ce faci pe parcurs și
   întreabă înainte de deciziile importante.
-- **Push și PR-uri rar:** fiecare deploy preview consumă credit Netlify. Lucrăm și facem
-  commit local, verificăm cu un server local și capturi de ecran, și facem push / PR
-  doar când o etapă e gata, **după ce întrebi**. Modificările mici se adună în PR-ul
-  etapei.
+- **Un PR pe etapă:** deploy preview-urile (PR-urile) sunt gratuite pe Netlify, doar
+  publicarea în producție (merge în `main`) consumă credit. Lucrăm local, verificăm cu
+  un server local și capturi de ecran, iar la finalul etapei facem push și deschidem
+  PR-ul. Modificările mici se adună în PR-ul etapei, nu în merge-uri separate.
 - Interfața jocului e în engleză (ca Airport Live). Comunicarea cu utilizatorul: în română.
 - Fiecare etapă trebuie să fie jucabilă și completă înainte de următoarea.
 
