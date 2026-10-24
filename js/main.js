@@ -1,6 +1,7 @@
 import { loadGameData } from './data.js';
 import { startClock } from './clock.js';
 import { createState, isUnlocked, countUnlocked } from './unlocks.js';
+import { createAirportMap } from './map.js';
 
 const $ = id => document.getElementById(id);
 
@@ -137,6 +138,82 @@ function renderAircraft(aircraft) {
     </li>`).join('');
 }
 
+const SIZE_LABEL = { regional: 'Regional jets', narrowbody: 'Up to narrowbody', widebody: 'Up to widebody' };
+
+function infoCard({ title, open, lines, unlock, requires }) {
+  const req = requires?.length ? `<div class="mi-req">Needs ${esc(requires.join(', '))} first</div>` : '';
+  const cost = open ? '' : `<div class="mi-cost"><b>${money(unlock.cost)}</b> · reputation ${unlock.reputation}</div>${req}`;
+  return `<div class="mi-head"><strong>${esc(title)}</strong>${badge(open)}</div>
+    ${lines.map(l => `<div class="mi-line">${esc(l)}</div>`).join('')}${cost}`;
+}
+
+function renderMapInfo(selection, data, state) {
+  const box = $('mapInfo');
+  if (!selection) {
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+  const { kind, item } = selection;
+  let html = '';
+  if (kind === 'runway') {
+    html = infoCard({
+      title: `Runway ${item.ends.join(' / ')}`,
+      open: isUnlocked('runway', item, state),
+      lines: [`${nf.format(item.lengthFt)} × ${item.widthFt} ft`, item.realUse],
+      unlock: item.unlock
+    });
+  } else if (kind === 'terminal') {
+    const openGates = countUnlocked('gate', item.gates, state);
+    html = infoCard({
+      title: item.name,
+      open: isUnlocked('terminal', item, state),
+      lines: [`Boarding areas ${item.areas.join(', ')}`, `${openGates} of ${item.gates.length} gates open`],
+      unlock: item.unlock
+    });
+  } else if (kind === 'gate') {
+    const terminal = data.airport.terminals.find(t => t.areas.includes(item.area));
+    const needs = (item.unlock.requires ?? [])
+      .filter(key => !state.unlocked.includes(key))
+      .map(key => data.airport.terminals.find(t => `terminal:${t.id}` === key)?.name ?? key);
+    html = infoCard({
+      title: `Gate ${item.id}`,
+      open: isUnlocked('gate', item, state),
+      lines: [`${terminal.name} · Boarding area ${item.area}`, SIZE_LABEL[item.size]],
+      unlock: item.unlock,
+      requires: needs
+    });
+  }
+  box.innerHTML = `<button class="mi-close" aria-label="Close">×</button>${html}`;
+  box.classList.add('show');
+}
+
+function renderMap(data, state) {
+  const mapApi = createAirportMap($('mapCanvas'), {
+    airport: data.airport,
+    map: data.map,
+    state,
+    onSelect: sel => renderMapInfo(sel, data, state)
+  });
+  $('mapZoomIn').onclick = () => mapApi.zoomIn();
+  $('mapZoomOut').onclick = () => mapApi.zoomOut();
+  $('mapReset').onclick = () => mapApi.reset();
+  $('mapInfo').addEventListener('click', e => { if (e.target.closest('.mi-close')) mapApi.select(null); });
+
+  // Full screen as a CSS overlay: works the same on desktop and on iPhone.
+  const wrap = $('mapWrap');
+  const fullBtn = $('mapFull');
+  const setFull = on => {
+    wrap.classList.toggle('full', on);
+    document.body.classList.toggle('map-full', on);
+    fullBtn.setAttribute('aria-pressed', String(on));
+    fullBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+    fullBtn.textContent = on ? '✕' : '⛶';
+  };
+  fullBtn.onclick = () => setFull(!wrap.classList.contains('full'));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && wrap.classList.contains('full')) setFull(false); });
+}
+
 function showError(err) {
   const view = $('statusView');
   view.classList.add('error');
@@ -157,6 +234,7 @@ async function init() {
     renderAircraft(data.aircraft);
     $('statusView').hidden = true;
     $('airportView').hidden = false;
+    renderMap(data, state); // after the view is visible, so the map can measure itself
   } catch (err) {
     showError(err);
   }

@@ -5,7 +5,9 @@
 | Airport names, coordinates, runways | [OurAirports](https://ourairports.com/data/) (public domain) | Filled by `refresh-geo.mjs`. |
 | Routes, airlines | [OpenFlights](https://openflights.org/data) | Old data, so routes and airlines were checked by hand against current SFO service. |
 | Aircraft (seats, range, speed) | Wikipedia | Rounded typical values, written by hand. |
-| Terminals, gates | SFO public terminal maps | Simplified. Gate numbering per boarding area is approximate and will be checked against OpenStreetMap when the map is drawn (stage 1). |
+| Map: boundary, aprons, taxiways, gates, tower | [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL) | Built by `build-map.mjs`. Credit "© OpenStreetMap contributors" must stay visible on the map. |
+| Terminal ring and piers | Drawn by hand | `schematic` section of `SFO-map.json`, traced from the OSM gate positions. |
+| Airport photo | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Aerial_view_of_San_Francisco_International_Airport_dllu.jpg) | Daniel L. Lu, CC BY-SA 4.0. Credited on the page. |
 
 ## refresh-geo.mjs
 
@@ -29,3 +31,16 @@ It fills:
 
 To add a destination, add an entry with `iata`, `type`, `airlines`, `aircraft` and `unlock`,
 then run the script.
+
+## build-map.mjs
+
+Builds `data/airports/SFO-map.json` from an OpenStreetMap export and syncs the gate list
+in `SFO.json` with the real gates (existing gates keep their size and unlock; new ones get
+defaults from `defaultGate` in the script). The hand-drawn `schematic` section is kept.
+
+```sh
+# Download once from Overpass; the export is not committed.
+curl -s --data-urlencode "data@tools/sfo.overpassql" https://overpass-api.de/api/interpreter -o sfo-osm.json
+
+node tools/build-map.mjs sfo-osm.json
+```

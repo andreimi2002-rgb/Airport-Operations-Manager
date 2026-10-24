@@ -7,14 +7,16 @@ async function loadJson(path) {
 }
 
 export async function loadGameData(airportCode = 'SFO') {
-  const [airport, destinations, aircraft, airlines] = await Promise.all([
+  const [airport, map, destinations, aircraft, airlines] = await Promise.all([
     loadJson(`data/airports/${airportCode}.json`),
+    loadJson(`data/airports/${airportCode}-map.json`),
     loadJson('data/destinations.json'),
     loadJson('data/aircraft.json'),
     loadJson('data/airlines.json')
   ]);
   return {
     airport,
+    map,
     destinations: destinations.destinations,
     aircraft: aircraft.aircraft,
     airlines: airlines.airlines
