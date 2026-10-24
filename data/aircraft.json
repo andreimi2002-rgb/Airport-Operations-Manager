@@ -1,0 +1,16 @@
+{
+  "source": "Wikipedia (manufacturer specs), typical US airline cabin layouts. Values are rounded for gameplay.",
+  "sizes": ["regional", "narrowbody", "widebody"],
+  "aircraft": [
+    { "id": "E175", "name": "Embraer E175",          "manufacturer": "Embraer", "size": "regional",   "seats": 76,  "rangeKm": 3700,  "cruiseKmh": 829, "turnaroundMin": 35 },
+    { "id": "A220", "name": "Airbus A220-300",       "manufacturer": "Airbus",  "size": "narrowbody", "seats": 140, "rangeKm": 6300,  "cruiseKmh": 829, "turnaroundMin": 40 },
+    { "id": "A320", "name": "Airbus A320neo",        "manufacturer": "Airbus",  "size": "narrowbody", "seats": 165, "rangeKm": 6300,  "cruiseKmh": 833, "turnaroundMin": 45 },
+    { "id": "A321", "name": "Airbus A321neo",        "manufacturer": "Airbus",  "size": "narrowbody", "seats": 194, "rangeKm": 7400,  "cruiseKmh": 833, "turnaroundMin": 50 },
+    { "id": "B738", "name": "Boeing 737-800",        "manufacturer": "Boeing",  "size": "narrowbody", "seats": 166, "rangeKm": 5400,  "cruiseKmh": 842, "turnaroundMin": 45 },
+    { "id": "B39M", "name": "Boeing 737 MAX 9",      "manufacturer": "Boeing",  "size": "narrowbody", "seats": 179, "rangeKm": 6500,  "cruiseKmh": 839, "turnaroundMin": 45 },
+    { "id": "B752", "name": "Boeing 757-200",        "manufacturer": "Boeing",  "size": "narrowbody", "seats": 176, "rangeKm": 7200,  "cruiseKmh": 850, "turnaroundMin": 55 },
+    { "id": "B789", "name": "Boeing 787-9",          "manufacturer": "Boeing",  "size": "widebody",   "seats": 257, "rangeKm": 14000, "cruiseKmh": 903, "turnaroundMin": 90 },
+    { "id": "B77W", "name": "Boeing 777-300ER",      "manufacturer": "Boeing",  "size": "widebody",   "seats": 350, "rangeKm": 13600, "cruiseKmh": 892, "turnaroundMin": 110 },
+    { "id": "A359", "name": "Airbus A350-900",       "manufacturer": "Airbus",  "size": "widebody",   "seats": 300, "rangeKm": 15000, "cruiseKmh": 903, "turnaroundMin": 100 }
+  ]
+}

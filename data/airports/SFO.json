@@ -1,0 +1,680 @@
+{
+  "iata": "SFO",
+  "icao": "KSFO",
+  "name": "San Francisco International Airport",
+  "city": "San Francisco",
+  "country": "US",
+  "region": "US-CA",
+  "timezone": "America/Los_Angeles",
+  "location": { "lat": 37.619806, "lon": -122.374821, "elevationFt": 13 },
+  "runways": [
+    {
+      "id": "10L-28R",
+      "ends": ["10L", "28R"],
+      "lengthFt": 11870,
+      "widthFt": 200,
+      "surface": "ASP",
+      "realUse": "Arrivals (28R) in normal west-wind ops",
+      "thresholds": [
+        { "ident": "10L", "lat": 37.628742, "lon": -122.39341, "elevationFt": 5, "headingDeg": 118, "displacedThresholdFt": 0 },
+        { "ident": "28R", "lat": 37.613538, "lon": -122.35716, "elevationFt": 13, "headingDeg": 298, "displacedThresholdFt": 300 }
+      ],
+      "unlock": { "initial": true }
+    },
+    {
+      "id": "10R-28L",
+      "ends": ["10R", "28L"],
+      "lengthFt": 11381,
+      "widthFt": 200,
+      "surface": "ASP",
+      "realUse": "Arrivals (28L) in normal west-wind ops",
+      "thresholds": [
+        { "ident": "10R", "lat": 37.626298, "lon": -122.393124, "elevationFt": 6, "headingDeg": 118, "displacedThresholdFt": 0 },
+        { "ident": "28L", "lat": 37.61172, "lon": -122.358367, "elevationFt": 13, "headingDeg": 298, "displacedThresholdFt": 300 }
+      ],
+      "unlock": { "initial": false, "cost": 6000000, "reputation": 30 }
+    },
+    {
+      "id": "01R-19L",
+      "ends": ["01R", "19L"],
+      "lengthFt": 8660,
+      "widthFt": 200,
+      "surface": "ASP",
+      "realUse": "Departures (01R) in normal west-wind ops",
+      "thresholds": [
+        { "ident": "01R", "lat": 37.606333, "lon": -122.381061, "elevationFt": 12, "headingDeg": 28, "displacedThresholdFt": 560 },
+        { "ident": "19L", "lat": 37.627346, "lon": -122.367124, "elevationFt": 10, "headingDeg": 208, "displacedThresholdFt": 0 }
+      ],
+      "unlock": { "initial": false, "cost": 10000000, "reputation": 50 }
+    },
+    {
+      "id": "01L-19R",
+      "ends": ["01L", "19R"],
+      "lengthFt": 7650,
+      "widthFt": 200,
+      "surface": "ASP",
+      "realUse": "Departures (01L) in normal west-wind ops",
+      "thresholds": [
+        { "ident": "01L", "lat": 37.607898, "lon": -122.38295, "elevationFt": 10, "headingDeg": 28, "displacedThresholdFt": 645 },
+        { "ident": "19R", "lat": 37.626476, "lon": -122.37063, "elevationFt": 9, "headingDeg": 208, "displacedThresholdFt": 0 }
+      ],
+      "unlock": { "initial": false, "cost": 12000000, "reputation": 65 }
+    }
+  ],
+  "terminals": [
+    {
+      "id": "T1",
+      "name": "Harvey Milk Terminal 1",
+      "areas": ["B", "C"],
+      "unlock": { "initial": false, "cost": 15000000, "reputation": 35 },
+      "gates": [
+        { "id": "B2", "area": "B", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 35, "requires": ["terminal:T1"] } },
+        { "id": "B3", "area": "B", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 35, "requires": ["terminal:T1"] } },
+        { "id": "B4", "area": "B", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 35, "requires": ["terminal:T1"] } },
+        {
+          "id": "B5",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B6",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B7",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B8",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B9",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B10",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B11",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B12",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B13",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B14",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B15",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B16",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B17",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B18",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B19",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B20",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B21",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B22",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B23",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B24",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B25",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "B26",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C2",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C3",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C4",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C5",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C6",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C7",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C8",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C9",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C10",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C11",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "name": "Terminal 2",
+      "areas": ["D"],
+      "unlock": { "initial": true },
+      "gates": [
+        { "id": "D1", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D2", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D3", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D4", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D5", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D6", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D7", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D8", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D9", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D10", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
+        { "id": "D11", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
+        { "id": "D12", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
+        { "id": "D13", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
+        { "id": "D14", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
+        { "id": "D15", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
+        { "id": "D16", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
+        { "id": "D17", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
+        { "id": "D18", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } }
+      ]
+    },
+    {
+      "id": "T3",
+      "name": "Terminal 3",
+      "areas": ["E", "F"],
+      "unlock": { "initial": false, "cost": 25000000, "reputation": 55 },
+      "gates": [
+        {
+          "id": "E1",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E2",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E3",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E4",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E5",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E6",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E7",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E8",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E9",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E10",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E11",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E12",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "E13",
+          "area": "E",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        { "id": "F1", "area": "F", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 55, "requires": ["terminal:T3"] } },
+        { "id": "F2", "area": "F", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 55, "requires": ["terminal:T3"] } },
+        { "id": "F3", "area": "F", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 55, "requires": ["terminal:T3"] } },
+        {
+          "id": "F4",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F5",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F6",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F7",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F8",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F9",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F10",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F11",
+          "area": "F",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F12",
+          "area": "F",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F13",
+          "area": "F",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F14",
+          "area": "F",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F15",
+          "area": "F",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F16",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F17",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F18",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F19",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F20",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F21",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        },
+        {
+          "id": "F22",
+          "area": "F",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
+        }
+      ]
+    },
+    {
+      "id": "INTL",
+      "name": "International Terminal",
+      "areas": ["A", "G"],
+      "unlock": { "initial": false, "cost": 40000000, "reputation": 70 },
+      "gates": [
+        {
+          "id": "A1",
+          "area": "A",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A2",
+          "area": "A",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A3",
+          "area": "A",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A4",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A5",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A6",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A7",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A8",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A9",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A10",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A11",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A12",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A13",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A14",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "A15",
+          "area": "A",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G1",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G2",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G3",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G4",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G5",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G6",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G7",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G8",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G9",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G10",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G11",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G12",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G13",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        },
+        {
+          "id": "G14",
+          "area": "G",
+          "size": "widebody",
+          "unlock": { "initial": false, "cost": 900000, "reputation": 70, "requires": ["terminal:INTL"] }
+        }
+      ]
+    }
+  ]
+}

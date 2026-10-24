@@ -1,0 +1,27 @@
+{
+  "source": "OpenFlights airlines.dat, checked by hand. Names and codes only: no logos or liveries.",
+  "airlines": [
+    { "iata": "UA", "icao": "UAL", "name": "United Airlines",          "country": "US", "unlock": { "initial": true } },
+    { "iata": "AS", "icao": "ASA", "name": "Alaska Airlines",          "country": "US", "unlock": { "initial": true } },
+    { "iata": "WN", "icao": "SWA", "name": "Southwest Airlines",       "country": "US", "unlock": { "initial": true } },
+    { "iata": "DL", "icao": "DAL", "name": "Delta Air Lines",          "country": "US", "unlock": { "initial": true } },
+    { "iata": "AA", "icao": "AAL", "name": "American Airlines",        "country": "US", "unlock": { "initial": true } },
+    { "iata": "B6", "icao": "JBU", "name": "JetBlue",                  "country": "US", "unlock": { "initial": false, "cost": 500000,  "reputation": 15 } },
+    { "iata": "F9", "icao": "FFT", "name": "Frontier Airlines",        "country": "US", "unlock": { "initial": false, "cost": 300000,  "reputation": 10 } },
+    { "iata": "HA", "icao": "HAL", "name": "Hawaiian Airlines",        "country": "US", "unlock": { "initial": false, "cost": 600000,  "reputation": 25 } },
+    { "iata": "AC", "icao": "ACA", "name": "Air Canada",               "country": "CA", "unlock": { "initial": false, "cost": 800000,  "reputation": 30 } },
+    { "iata": "AM", "icao": "AMX", "name": "Aeroméxico",               "country": "MX", "unlock": { "initial": false, "cost": 800000,  "reputation": 30 } },
+    { "iata": "BA", "icao": "BAW", "name": "British Airways",          "country": "GB", "unlock": { "initial": false, "cost": 2000000, "reputation": 70 } },
+    { "iata": "VS", "icao": "VIR", "name": "Virgin Atlantic",          "country": "GB", "unlock": { "initial": false, "cost": 1800000, "reputation": 70 } },
+    { "iata": "LH", "icao": "DLH", "name": "Lufthansa",                "country": "DE", "unlock": { "initial": false, "cost": 2000000, "reputation": 70 } },
+    { "iata": "AF", "icao": "AFR", "name": "Air France",               "country": "FR", "unlock": { "initial": false, "cost": 2000000, "reputation": 70 } },
+    { "iata": "NH", "icao": "ANA", "name": "All Nippon Airways",       "country": "JP", "unlock": { "initial": false, "cost": 2200000, "reputation": 75 } },
+    { "iata": "KE", "icao": "KAL", "name": "Korean Air",               "country": "KR", "unlock": { "initial": false, "cost": 2200000, "reputation": 75 } },
+    { "iata": "OZ", "icao": "AAR", "name": "Asiana Airlines",          "country": "KR", "unlock": { "initial": false, "cost": 1800000, "reputation": 75 } },
+    { "iata": "SQ", "icao": "SIA", "name": "Singapore Airlines",       "country": "SG", "unlock": { "initial": false, "cost": 2500000, "reputation": 85 } },
+    { "iata": "QF", "icao": "QFA", "name": "Qantas",                   "country": "AU", "unlock": { "initial": false, "cost": 2500000, "reputation": 85 } },
+    { "iata": "CX", "icao": "CPA", "name": "Cathay Pacific",           "country": "HK", "unlock": { "initial": false, "cost": 2300000, "reputation": 80 } },
+    { "iata": "BR", "icao": "EVA", "name": "EVA Air",                  "country": "TW", "unlock": { "initial": false, "cost": 2000000, "reputation": 80 } },
+    { "iata": "CI", "icao": "CAL", "name": "China Airlines",           "country": "TW", "unlock": { "initial": false, "cost": 1800000, "reputation": 80 } }
+  ]
+}
