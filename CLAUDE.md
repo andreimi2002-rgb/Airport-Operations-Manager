@@ -5,7 +5,7 @@ Joc web de management de aeroport, realist, cu aeroporturi, rute și avioane rea
 
 **Concept:** primul aeroport e San Francisco International (SFO). Datele conțin tot
 aeroportul real, dar la start e deschisă doar o parte mică: pista 10L/28R, gate-urile
-D10–D17 din Terminal 2 și rutele LAX, LAS, SEA, PDX. Restul (piste, terminale,
+D8–D16 din Terminal 2 (8 gate-uri; D13 nu există) și rutele LAX, LAS, SEA, PDX. Restul (piste, terminale,
 gate-uri, rute, companii) se deblochează cu bani și reputație.
 
 ## Reguli
@@ -19,9 +19,12 @@ gate-uri, rute, companii) se deblochează cu bani și reputație.
   fără backend). Deploy pe Netlify. Trebuie să meargă bine pe desktop și pe telefon.
 - **Design întunecat și minimalist**, în stilul Airport Live
   (https://live-airport.netlify.app). Tokenii de culoare stau în `css/theme.css`.
-- **Lucrăm pe branch-uri** (`stage-N-...`) și deschidem pull request-uri către `main`,
-  ca să existe deploy preview pe Netlify. Spune pe scurt ce faci pe parcurs și
+- **Lucrăm pe branch-uri** (`stage-N-...`). Spune pe scurt ce faci pe parcurs și
   întreabă înainte de deciziile importante.
+- **Un PR pe etapă:** deploy preview-urile (PR-urile) sunt gratuite pe Netlify, doar
+  publicarea în producție (merge în `main`) consumă credit. Lucrăm local, verificăm cu
+  un server local și capturi de ecran, iar la finalul etapei facem push și deschidem
+  PR-ul. Modificările mici se adună în PR-ul etapei, nu în merge-uri separate.
 - Interfața jocului e în engleză (ca Airport Live). Comunicarea cu utilizatorul: în română.
 - Fiecare etapă trebuie să fie jucabilă și completă înainte de următoarea.
 
@@ -30,7 +33,9 @@ gate-uri, rute, companii) se deblochează cu bani și reputație.
 0. **Fundație** ✅: structura proiectului, pagina de start cu SFO (nume, oră locală,
    dată), fișiere de date: SFO cu toate pistele și terminalele (marcate
    blocat/deblocat), 30 de destinații reale, 10 tipuri de avioane.
-1. **Harta 2D** simplificată a întregului SFO; zonele blocate apar gri.
+1. **Harta 2D** ✅: hartă schematică SVG a întregului SFO (piste, căi de rulare,
+   terminale, pier-uri, 111 gate-uri reale); deblocat = verde, blocat = gri; zoom,
+   mutare, ecran complet, detalii la atingere. Mai târziu: variantă mai detaliată.
 2. **Orarul zilei:** generator de zboruri pentru o zi, doar pe rutele deblocate, plus
    ecran departures/arrivals.
 3. **Prima mecanică:** atribuirea zborurilor la gate-uri, ceasul jocului, bani,
@@ -51,7 +56,10 @@ js/main.js            pornire și randare
 js/data.js            încărcarea fișierelor JSON
 js/clock.js           ora locală în fusul orar al aeroportului
 js/unlocks.js         singurul loc care decide ce e deblocat
-data/airports/SFO.json  piste, terminale, gate-uri
+js/map.js             harta SVG: desen, zoom/mutare, selecție
+data/airports/SFO.json  piste, terminale, gate-uri, poza aeroportului
+data/airports/SFO-map.json  geometria hărții (vezi mai jos)
+img/airports/         poze aeroporturi (licență liberă, cu autor în date)
 data/destinations.json  rutele din SFO
 data/aircraft.json      tipurile de avioane
 data/airlines.json      companii (nume + coduri)
@@ -96,3 +104,19 @@ Destinațiile listează în `aircraft` tipurile folosite realist pe ruta respect
 prin `node tools/refresh-geo.mjs <airports.csv> <runways.csv>`. Câmpurile de joc
 (unlock, companii, avioane, gate-uri) se editează de mână. Detalii în
 `tools/README.md`.
+
+**Harta (`SFO-map.json`).** Coordonate în metri față de punctul de referință al
+aeroportului: x spre est, y spre sud (ordinea SVG), deci 1 unitate SVG = 1 m.
+- Generat de `node tools/build-map.mjs <osm.json>` din OpenStreetMap: `boundary`,
+  `aprons`, `taxiways`, `gates` (poziții reale), `tower`; `runways` din pragurile
+  OurAirports. Scriptul sincronizează și lista de gate-uri din `SFO.json` cu gate-urile
+  reale (păstrează `size`/`unlock` existente).
+- Desenat de mână și păstrat de script: `schematic`: inelul de terminale (`ring`,
+  segmente `terminals[].arc` în grade, 0 = est, 90 = sud), `piers` (polilinii cu
+  `widthM` și `hub` opțional la capăt) și `garage`.
+- În joc, gate-urile sunt „lipite” de marginea pier-ului lor, pe partea reală
+  (`snapGate` în `js/map.js`).
+
+**Poze și atribuire.** Doar imagini cu licență liberă (Wikimedia Commons), cu autorul,
+licența și sursa în date și afișate pe pagină. OpenStreetMap cere
+„© OpenStreetMap contributors” vizibil pe hartă.

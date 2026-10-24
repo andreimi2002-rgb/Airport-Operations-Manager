@@ -7,6 +7,16 @@
   "region": "US-CA",
   "timezone": "America/Los_Angeles",
   "location": { "lat": 37.619806, "lon": -122.374821, "elevationFt": 13 },
+  "photo": {
+    "src": "img/airports/SFO-2400.jpg",
+    "srcSmall": "img/airports/SFO-1280.jpg",
+    "alt": "Aerial view of San Francisco International Airport: the terminals around the central garage, the control tower and the runways on the bay",
+    "author": "Daniel L. Lu (user:dllu)",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_San_Francisco_International_Airport_dllu.jpg",
+    "year": 2018
+  },
   "runways": [
     {
       "id": "10L-28R",
@@ -68,6 +78,7 @@
       "areas": ["B", "C"],
       "unlock": { "initial": false, "cost": 15000000, "reputation": 35 },
       "gates": [
+        { "id": "B1", "area": "B", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 35, "requires": ["terminal:T1"] } },
         { "id": "B2", "area": "B", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 35, "requires": ["terminal:T1"] } },
         { "id": "B3", "area": "B", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 35, "requires": ["terminal:T1"] } },
         { "id": "B4", "area": "B", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 35, "requires": ["terminal:T1"] } },
@@ -204,6 +215,18 @@
           "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
         },
         {
+          "id": "B27",
+          "area": "B",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
+          "id": "C1",
+          "area": "C",
+          "size": "narrowbody",
+          "unlock": { "initial": false, "cost": 400000, "reputation": 35, "requires": ["terminal:T1"] }
+        },
+        {
           "id": "C2",
           "area": "C",
           "size": "narrowbody",
@@ -272,23 +295,19 @@
       "unlock": { "initial": true },
       "gates": [
         { "id": "D1", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
-        { "id": "D2", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
         { "id": "D3", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
         { "id": "D4", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
         { "id": "D5", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
         { "id": "D6", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
         { "id": "D7", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
-        { "id": "D8", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
-        { "id": "D9", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } },
+        { "id": "D8", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
+        { "id": "D9", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
         { "id": "D10", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
         { "id": "D11", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
         { "id": "D12", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
-        { "id": "D13", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
         { "id": "D14", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
         { "id": "D15", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
-        { "id": "D16", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
-        { "id": "D17", "area": "D", "size": "narrowbody", "unlock": { "initial": true } },
-        { "id": "D18", "area": "D", "size": "narrowbody", "unlock": { "initial": false, "cost": 400000, "reputation": 5 } }
+        { "id": "D16", "area": "D", "size": "narrowbody", "unlock": { "initial": true } }
       ]
     },
     {
@@ -297,12 +316,6 @@
       "areas": ["E", "F"],
       "unlock": { "initial": false, "cost": 25000000, "reputation": 55 },
       "gates": [
-        {
-          "id": "E1",
-          "area": "E",
-          "size": "narrowbody",
-          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
-        },
         {
           "id": "E2",
           "area": "E",
@@ -372,15 +385,6 @@
         {
           "id": "E13",
           "area": "E",
-          "size": "narrowbody",
-          "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
-        },
-        { "id": "F1", "area": "F", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 55, "requires": ["terminal:T3"] } },
-        { "id": "F2", "area": "F", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 55, "requires": ["terminal:T3"] } },
-        { "id": "F3", "area": "F", "size": "regional", "unlock": { "initial": false, "cost": 250000, "reputation": 55, "requires": ["terminal:T3"] } },
-        {
-          "id": "F4",
-          "area": "F",
           "size": "narrowbody",
           "unlock": { "initial": false, "cost": 400000, "reputation": 55, "requires": ["terminal:T3"] }
         },
