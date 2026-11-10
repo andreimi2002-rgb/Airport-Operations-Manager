@@ -98,9 +98,14 @@ export async function teamSchedule(l, id, query = '') {
 }
 
 // All league games between two dates (YYYYMMDD). Used for MLS as a safety net for playoff fixtures.
+// The soccer scoreboard rejects date ranges ("Failed to get events endpoint") but accepts a whole
+// month (dates=YYYYMM), so it is asked month by month and the result trimmed to the range.
 export async function scoreboardRange(l, from, to) {
-  const j = await getJSON(`${SITE}${LEAGUES[l].path}/scoreboard?dates=${from}-${to}&limit=300`);
-  return j.events || [];
+  const months = [];
+  for (let y = +from.slice(0, 4), m = +from.slice(4, 6); y * 100 + m <= +to.slice(0, 6); m === 12 ? (y++, m = 1) : m++) months.push(`${y}${String(m).padStart(2, '0')}`);
+  const lists = await Promise.all(months.map(ym => getJSON(`${SITE}${LEAGUES[l].path}/scoreboard?dates=${ym}&limit=300`).then(j => j.events || [])));
+  const lo = `${from.slice(0, 4)}-${from.slice(4, 6)}-${from.slice(6, 8)}`, hi = `${to.slice(0, 4)}-${to.slice(4, 6)}-${to.slice(6, 8)}T23:59Z`;
+  return lists.flat().filter(e => !e.date || (e.date >= lo && e.date <= hi));
 }
 
 // Standings stat lookup: ESPN uses `name` for numbers and `type` for record splits.
@@ -145,40 +150,203 @@ export async function scoreboard(l, yyyymmdd) {
   return (j.events || []).map(ev => normalizeEvent(ev, l)).filter(Boolean);
 }
 
-// Game page: line score, leaders, goals, win probability.
+// Each reader below takes one part of ESPN's game summary. A missing or reshaped part gives an empty
+// result, never an exception: one broken section must not take the whole game page down.
+const safe = (f, fallback) => { try { return f() ?? fallback; } catch (e) { return fallback; } };
+const athleteName = a => a?.displayName || a?.fullName || '';
+
+// Player stats. ESPN groups them (NBA: one group; NHL: forwards, defenses, goalies; NFL: passing,
+// rushing, …). Each group carries its column keys, so the page picks columns by key, not by position.
+function boxPlayers(j, sideOf) {
+  const out = [];
+  for (const t of j.boxscore?.players || []) {
+    const groups = (t.statistics || []).map(s => ({
+      name: s.name || s.type || '',
+      keys: s.keys || [],
+      rows: (s.athletes || []).map(a => ({
+        n: athleteName(a.athlete), pos: a.athlete?.position?.abbreviation || '', j: a.athlete?.jersey || '',
+        st: !!a.starter, dnp: !!a.didNotPlay, why: a.didNotPlay ? (a.reason || '') : '',
+        v: (a.stats || []).map(String)
+      })).filter(r => r.n),
+      tot: (s.totals || []).map(String)
+    })).filter(g => g.rows.length && g.keys.length);
+    if (groups.length) out.push({ side: sideOf(t.team?.id), groups });
+  }
+  if (out.length) return out;
+  // Soccer has no box score: the line-ups carry each player's numbers.
+  for (const r of j.rosters || []) {
+    const rows = (r.roster || []).filter(p => p.starter || p.subbedIn).map(p => {
+      const s = Object.fromEntries((p.stats || []).map(x => [x.name, String(x.displayValue ?? x.value ?? '')]));
+      return {
+        n: athleteName(p.athlete), pos: p.position?.abbreviation || '', j: p.jersey || '',
+        st: !!p.starter, sub: !!p.subbedIn, out: !!p.subbedOut, v: SOCCER_KEYS.map(k => s[k] ?? '')
+      };
+    }).filter(x => x.n);
+    if (rows.length) out.push({ side: r.homeAway === 'away' ? 'away' : 'home', formation: r.formation || '', groups: [{ name: 'soccer', keys: SOCCER_KEYS, rows, tot: [] }] });
+  }
+  return out;
+}
+const SOCCER_KEYS = ['totalGoals', 'goalAssists', 'totalShots', 'shotsOnTarget', 'foulsCommitted', 'yellowCards', 'redCards', 'goalsConceded', 'shotsFaced'];
+
+// Team stats side by side: [{ k, label, h, a }].
+function teamStats(j, sideOf) {
+  const by = {};
+  for (const t of j.boxscore?.teams || []) {
+    const s = sideOf(t.team?.id);
+    for (const x of t.statistics || []) {
+      if (!x.name) continue;
+      (by[x.name] ||= { k: x.name, label: x.label || x.name })[s === 'away' ? 'a' : 'h'] = x.displayValue ?? '';
+    }
+  }
+  return Object.values(by).filter(x => x.h != null && x.a != null);
+}
+
+// Scoring plays and cards, oldest first: [{ per, clock, side, kind, who, ast, text, hs, as }].
+function timeline(j, l, sideOf) {
+  if (l === 'MLS') {
+    return (j.keyEvents || []).filter(e => /goal|card|penalty - (scored|missed|saved)/i.test(e.type?.text || '')).map(e => {
+      const t = e.type?.text || '';
+      const kind = /own goal/i.test(t) ? 'og' : /goal|penalty - scored/i.test(t) ? 'goal' : /red/i.test(t) ? 'rc' : /yellow/i.test(t) ? 'yc' : /penalty/i.test(t) ? 'pmiss' : 'other';
+      const ps = (e.participants || []).map(p => athleteName(p.athlete)).filter(Boolean);
+      return { per: e.period?.number ?? null, clock: e.clock?.displayValue || '', side: sideOf(e.team?.id), kind, pen: /penalty/i.test(t), who: ps[0] || '', ast: kind === 'goal' ? ps.slice(1) : [], text: '' };
+    });
+  }
+  if (l === 'NFL') {
+    return (j.scoringPlays || []).map(p => ({
+      per: p.period?.number ?? null, clock: p.clock?.displayValue || '', side: sideOf(p.team?.id),
+      kind: p.type?.abbreviation || p.type?.text || '', text: p.text || '', hs: num(p.homeScore), as: num(p.awayScore)
+    }));
+  }
+  if (l === 'NHL') {
+    return (j.plays || []).filter(p => p.scoringPlay).map(p => {
+      const ps = p.participants || [];
+      return {
+        per: p.period?.number ?? null, clock: p.clock?.displayValue || '', side: sideOf(p.team?.id), kind: 'goal',
+        who: athleteName((ps.find(x => x.type === 'scorer') || ps[0])?.athlete),
+        ast: ps.filter(x => x.type === 'assister').map(x => athleteName(x.athlete)).filter(Boolean),
+        pp: /power play/i.test(p.strength?.text || ''), sh: /short ?handed/i.test(p.strength?.text || ''), en: /empty net/i.test(p.text || ''),
+        text: '', hs: num(p.homeScore), as: num(p.awayScore)
+      };
+    });
+  }
+  return [];
+}
+
+// Home win probability during the game, thinned to at most `max` points: [[percent, period], …].
+function winProbability(j, max = 160) {
+  const wp = j.winprobability || [];
+  if (wp.length < 2) return [];
+  const per = new Map();
+  for (const p of j.plays || []) per.set(String(p.id), p.period?.number ?? null);
+  for (const d of [...(j.drives?.previous || []), ...(j.drives?.current ? [j.drives.current] : [])])
+    for (const p of d.plays || []) per.set(String(p.id), p.period?.number ?? null);
+  const step = Math.max(1, Math.ceil(wp.length / max));
+  const out = [];
+  for (let i = 0; i < wp.length; i += step) out.push(wp[i]);
+  if (out.at(-1) !== wp.at(-1)) out.push(wp.at(-1));
+  return out.map(x => [Math.round(num(x.homeWinPercentage) * 1000) / 10, per.get(String(x.playId)) ?? null])
+    .filter(x => Number.isFinite(x[0]));
+}
+
+function injuries(j, sideOf) {
+  return (j.injuries || []).map(t => ({
+    side: sideOf(t.team?.id),
+    items: (t.injuries || []).map(x => ({
+      n: athleteName(x.athlete), pos: x.athlete?.position?.abbreviation || '',
+      st: x.status || x.type?.description || '', what: x.details?.type || '', side: x.details?.side || '',
+      det: x.details?.detail || '', ret: x.details?.returnDate || ''
+    })).filter(x => x.n)
+  })).filter(t => t.items.length);
+}
+
+// Meetings between the two teams (this season; for soccer ESPN lists recent years).
+function series(j) {
+  const s = j.seasonseries?.[0];
+  if (!s) return null;
+  const games = (s.events || []).map(e => {
+    const c = e.competitors || [];
+    const one = w => { const x = c.find(y => y.homeAway === w) || {}; return { id: String(x.team?.id ?? x.id ?? ''), abbr: x.team?.abbreviation || '', score: num(x.score) }; };
+    return { id: String(e.id), date: e.date || '', state: e.statusType?.state || e.status?.type?.state || '', home: one('home'), away: one('away') };
+  }).filter(g => g.date);
+  return games.length ? { title: s.title || '', games } : null;
+}
+
+function lastFive(j, sideOf) {
+  return (j.lastFiveGames || []).map(t => {
+    const id = String(t.team?.id ?? '');
+    return {
+      side: sideOf(id),
+      games: (t.events || []).map(e => {
+        const home = String(e.homeTeamId) === id;
+        const mine = num(home ? e.homeTeamScore : e.awayTeamScore), their = num(home ? e.awayTeamScore : e.homeTeamScore);
+        return {
+          id: String(e.id), date: e.gameDate || '', at: e.atVs === '@', res: { W: 'V', L: 'I', D: 'E', T: 'E' }[e.gameResult] || '',
+          opp: e.opponent?.displayName || '', oppAbbr: e.opponent?.abbreviation || '', oppLogo: e.opponent?.logo || '', mine, their
+        };
+      })
+    };
+  }).filter(t => t.games.length);
+}
+
+// Highlight clips: only ESPN's own media hosts, so the page never embeds anything else.
+const MEDIA = /^https:\/\/[a-z0-9.-]*(espncdn\.com|espn\.com|akamaized\.net)\//i;
+function videos(j) {
+  return (j.videos || []).map(v => ({
+    title: v.headline || '', dur: num(v.duration),
+    mp4: v.links?.source?.HD?.href || v.links?.source?.href || '', thumb: v.thumbnail || ''
+  })).filter(v => MEDIA.test(v.mp4) && (!v.thumb || MEDIA.test(v.thumb))).slice(0, 4);
+}
+
+// NHL, before the game: the expected goalies.
+function goalies(j) {
+  const g = j.goalies;
+  if (!g) return [];
+  return [['home', g.homeTeam], ['away', g.awayTeam]].map(([side, t]) => {
+    const a = t?.athletes?.[0];
+    return a ? { side, n: athleteName(a), j: a.jersey || '' } : null;
+  }).filter(Boolean);
+}
+
+// Game page: line score, leaders, players, team stats, plays, win probability, injuries, history.
 export function normalizeSummary(j, l) {
   const comp = j.header?.competitions?.[0] || {};
   const side = w => (comp.competitors || []).find(x => x.homeAway === w) || {};
   const H = side('home'), A = side('away');
+  const homeId = String(H.team?.id ?? H.id ?? '');
+  const sideOf = id => (id != null && String(id) === homeId ? 'home' : 'away');
   const lines = x => (x.linescores || []).map(s => num(s.displayValue ?? s.value));
-  const leaders = (j.leaders || []).map(t => ({
+  const leaders = safe(() => (j.leaders || []).map(t => ({
     team: t.team?.displayName || '',
+    side: sideOf(t.team?.id),
     items: (t.leaders || []).slice(0, 4).map(c => ({
       cat: c.displayName || c.name || '',
       who: c.leaders?.[0]?.athlete?.displayName || '',
       val: c.leaders?.[0]?.displayValue || ''
     })).filter(x => x.who)
-  })).filter(t => t.items.length);
-  const goals = (j.keyEvents || [])
-    .filter(e => e.scoringPlay || /goal/i.test(e.type?.text || ''))
-    .map(e => ({
-      min: e.clock?.displayValue || '',
-      who: e.participants?.[0]?.athlete?.displayName || '',
-      team: e.team?.displayName || ''
-    }));
+  })).filter(t => t.items.length), []);
   const p = j.predictor;
   const predictor = p ? {
     home: num(p.homeTeam?.gameProjection), away: num(p.awayTeam?.gameProjection),
     tie: num(p.homeTeam?.teamChanceTie ?? p.awayTeam?.teamChanceTie)
   } : null;
   const g = j.gameInfo || {};
+  const plays = safe(() => timeline(j, l, sideOf), []);
   return {
     l,
     state: comp.status?.type?.state || '',
     detail: comp.status?.type?.shortDetail || '',
-    home: { name: H.team?.displayName || '', score: num(H.score), lines: lines(H) },
-    away: { name: A.team?.displayName || '', score: num(A.score), lines: lines(A) },
-    leaders, goals,
+    home: { name: H.team?.displayName || '', abbr: H.team?.abbreviation || '', score: num(H.score), lines: lines(H) },
+    away: { name: A.team?.displayName || '', abbr: A.team?.abbreviation || '', score: num(A.score), lines: lines(A) },
+    leaders,
+    plays,
+    box: safe(() => boxPlayers(j, sideOf), []),
+    teamStats: safe(() => teamStats(j, sideOf), []),
+    wp: safe(() => winProbability(j), []),
+    injuries: safe(() => injuries(j, sideOf), []),
+    series: safe(() => series(j), null),
+    last5: safe(() => lastFive(j, sideOf), []),
+    videos: safe(() => videos(j), []),
+    goalies: safe(() => goalies(j), []),
     predictor: predictor && predictor.home != null ? predictor : null,
     attendance: num(g.attendance),
     officials: (g.officials || []).slice(0, 1).map(o => o.displayName).join(''),

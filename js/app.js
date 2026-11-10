@@ -1,4 +1,7 @@
 import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, METROS, norm } from './teams.js';
+import { esc, $, emb, pickInk, theme, isDark, onSystemTheme } from './ui.js';
+import { detailRo, noteRo } from './ro.js';
+import { tabsHtml, panelHtml, wpHover } from './game.js';
 
 /* ================= data loading ================= */
 const CACHE_KEY = 'flcal-cache-v1';
@@ -130,8 +133,6 @@ for (const k in TZ) {
 const MONTHS = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
 const DOW = ['L', 'Ma', 'Mi', 'J', 'V', 'S', 'D'];
 const DOWFULL = ['duminică', 'luni', 'marți', 'miercuri', 'joi', 'vineri', 'sâmbătă'];
-const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-const $ = id => document.getElementById(id);
 const col = l => LEAGUES[l].color;
 const parts = k => k.split('-').map(Number);
 function addDays(k, n) { const [y, m, d] = parts(k); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
@@ -150,20 +151,6 @@ function ago(ts) {
   return m < 1 ? 'acum' : m < 60 ? `acum ${m} min` : `acum ${Math.round(m / 60)} h`;
 }
 
-// Team emblem: the official logo when it loads, a coloured circle with the abbreviation otherwise.
-function emb(side, cls = '') {
-  const k = side.key, T = k && TEAMS[k];
-  const bg = side.color || (T && T.col[0]) || null, fg = side.alt && side.alt.toLowerCase() !== (bg || '').toLowerCase() ? side.alt : (T ? T.col[1] : '#fff');
-  const style = bg ? `style="--bg-e:${bg};--fg-e:${pickInk(bg, fg)}"` : '';
-  const ab = esc(side.abbr || (side.name || '').split(' ').pop().slice(0, 3).toUpperCase());
-  const pic = side.logo ? `<picture>${side.logoDark ? `<source media="(prefers-color-scheme: dark)" srcset="${esc(side.logoDark)}">` : ''}<img src="${esc(side.logo)}" alt="" loading="lazy" decoding="async" onerror="this.parentNode.remove()"></picture>` : '';
-  return `<span class="emb ${cls}${bg ? '' : ' neutral'}" ${style}>${pic}<b>${ab}</b></span>`;
-}
-function pickInk(bg, fg) {
-  // Keep the abbreviation readable on the team colour.
-  const lum = h => { const n = parseInt(String(h).replace('#', ''), 16); if (isNaN(n)) return 0.5; const r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
-  return Math.abs(lum(bg) - lum(fg)) > 0.35 ? fg : (lum(bg) > 0.6 ? '#111' : '#fff');
-}
 const flSide = k => { const i = TEAMINFO[k] || {}; return { name: TEAMS[k].espn, abbr: i.abbr || TEAMS[k].ab, logo: i.logo, logoDark: i.logoDark, color: i.color, alt: i.alt, key: k }; };
 
 /* ================= state ================= */
@@ -172,7 +159,56 @@ const state = { tz: 'ro', leagues: new Set(['NBA', 'NHL', 'NFL', 'MLS']), team: 
   const s = store.get('flgames-tz'); if (s === 'fl' || s === 'ro') state.tz = s;
   const f = store.get('flgames-fav'); if (f && TEAMS[f]) state.fav = f;
   const v = store.get('flgames-view'); if (v === 'week' || v === 'month') state.view = v;
+  const t = store.get('flgames-theme'); if (t === 'light' || t === 'dark') theme.pref = t;
 }
+
+/* ----- filters live in the address (?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15), so a view can be shared ----- */
+const ALL_L = Object.keys(LEAGUES).filter(l => !LEAGUES[l].off);
+function readFilters() {
+  const q = new URLSearchParams(location.search);
+  const ls = (q.get('ligi') || '').split(',').map(x => x.trim().toUpperCase()).filter(l => ALL_L.includes(l));
+  if (ls.length) state.leagues = new Set(ls);
+  const t = q.get('echipa'); if (t && TEAMS[t]) state.team = t;
+  state.home = q.get('florida') === '1';
+  state.awake = q.get('ore') === '1';
+  const z = q.get('zi'); if (/^\d{4}-\d{2}-\d{2}$/.test(z || '')) { state.day = z; state.month = z.slice(0, 7); state.week = weekStart(z); }
+}
+function writeFilters() {
+  const q = new URLSearchParams();
+  if (ALL_L.some(l => !state.leagues.has(l))) q.set('ligi', ALL_L.filter(l => state.leagues.has(l)).join(','));
+  if (state.team) q.set('echipa', state.team);
+  if (state.home) q.set('florida', '1');
+  if (state.awake) q.set('ore', '1');
+  if (state.day) q.set('zi', state.day);
+  const s = q.toString().replace(/%2C/g, ',');
+  const url = location.pathname + (s ? '?' + s : '') + location.hash;
+  if (url !== location.pathname + location.search + location.hash) history.replaceState(history.state, '', url);
+}
+function weekStart(k) { return addDays(k, -((dowOf(k) + 6) % 7)); }
+readFilters();
+
+/* ----- theme ----- */
+function applyTheme() {
+  const r = document.documentElement;
+  if (theme.pref === 'auto') delete r.dataset.theme; else r.dataset.theme = theme.pref;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = isDark() ? '#0c1a1d' : '#f3f6f6';
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', b.dataset.themeSet === theme.pref));
+}
+function setTheme(t) {
+  theme.pref = t;
+  t === 'auto' ? store.del('flgames-theme') : store.set('flgames-theme', t);
+  applyTheme();
+  rerenderAll();
+}
+// Logos differ between light and dark, so everything with an emblem is drawn again.
+function rerenderAll() {
+  if (!GAMES.length) return;
+  renderStatic(); render();
+  if (!$('ov').hidden) route(true);
+}
+applyTheme();
+onSystemTheme(() => { applyTheme(); rerenderAll(); });
 
 function filtered() {
   return GAMES.filter(g => state.leagues.has(g.l) && (!state.team || g.teams.includes(state.team)) && (!state.home || g.inFL) && (!state.awake || played(g) || isLive(g) || g.aw === 'good'));
@@ -244,11 +280,11 @@ function renderHero() {
   const k = keyOf(g.d, state.tz), on = isLive(g);
   const soon = ups.filter(x => x !== g && x.d.getTime() - now < 864e5).slice(0, 6);
   const big = on ? `${g.hs ?? 0}–${g.as ?? 0}` : g.d.getTime() <= now ? 'Urmează să înceapă' : 'în ' + countdown(g.d.getTime() - now);
-  $('hero').innerHTML = `<div>
+  $('hero').innerHTML = `<div data-gid="${esc(g.id)}">
       <div class="k">${mine[0] === g ? 'Echipa ta · ' + esc(TEAMS[state.fav].s) : on ? 'În desfășurare' : 'Următorul meci'} · ${g.l}</div>
       <div class="duo">${emb(g.H)}<span class="at">vs</span>${emb(g.A)}</div>
       <div class="cd">${big}</div>
-      <div class="m">${esc(g.h)} – ${esc(g.a)}${on && g.detail ? ` <span class="tag live">LIVE · ${esc(g.detail)}</span>` : ''}</div>
+      <div class="m">${esc(g.h)} – ${esc(g.a)}${on && g.detail ? ` <span class="tag live">LIVE · ${esc(detailRo(g.detail, g.l))}</span>` : ''}</div>
       <div class="w">${dayLabel(k)}, ${fmtTime[state.tz].format(g.d)} ${TZNAME[state.tz]} · ${g.v ? esc(g.v) + ', ' : ''}${esc(g.city)}${g.tv ? ' · ' + esc(g.tv) : ''}</div>
       <button class="go" type="button" data-game="${g.id}">Detalii meci</button>
     </div>
@@ -329,13 +365,13 @@ function card(g) {
   const time = g.tbd ? '<span style="font-size:15px">oră neanunțată</span>' : fmtTime[state.tz].format(g.d);
   const alt = g.tbd ? '' : `<small>${fmtTime[other].format(g.d)} ${TZNAME[other]}<br>${fmtShort[other].format(g.d)}</small>`;
   let extra = '';
-  if (on) extra = `<span class="tag live">LIVE${g.detail ? ' · ' + esc(g.detail) : ''}</span>`;
+  if (on) extra = `<span class="tag live">LIVE${g.detail ? ' · ' + esc(detailRo(g.detail, g.l)) : ''}</span>`;
   else if (done) { const o = outcome(g, g.teams[0]); extra = `<span class="tag r-${o}">${OUT[o]}</span>`; }
   else if (!g.tbd) extra = `<span class="tag aw-${g.aw}">${AW[g.aw]}</span>`;
   const mid = done || on ? `<span class="sc">${g.hs ?? 0}–${g.as ?? 0}</span>` : '<span class="vs">vs</span>';
-  return `<article class="game${g.derby ? ' derby' : ''}${on ? ' live' : ''}" style="--c:${col(g.l)}">
+  return `<article class="game${g.derby ? ' derby' : ''}${on ? ' live' : ''}" style="--c:${col(g.l)}" data-gid="${esc(g.id)}">
     <div class="time">${time}${alt}</div>
-    <div><div class="tags"><span class="tag lg">${g.l}</span>${where}${extra}${g.note ? `<span class="tag note">${esc(g.note)}</span>` : ''}</div>
+    <div><div class="tags"><span class="tag lg">${g.l}</span>${where}${extra}${g.note ? `<span class="tag note">${esc(noteRo(g.note))}</span>` : ''}</div>
     <div class="match">${tn(g, g.H)}${mid}${tn(g, g.A)}</div>
     <div class="vrow"><span class="venue">${g.v ? esc(g.v) + ' · ' : ''}${esc(g.city)}${g.tv ? ` · <span class="tv">${esc(g.tv)}</span>` : ''}</span><button class="more" type="button" data-game="${g.id}">Detalii ›</button></div></div></article>`;
 }
@@ -396,19 +432,69 @@ function render() {
   $('v-month').setAttribute('aria-pressed', state.view === 'month');
   $('v-week').setAttribute('aria-pressed', state.view === 'week');
   $('team').value = state.team;
+  $('homeonly').checked = state.home; $('awake').checked = state.awake;
   const list = filtered(), busy = busyMap();
   if (state.day && !list.some(g => keyOf(g.d, state.tz) === state.day)) state.day = null;
   renderStatus(); renderHero(); renderHighlights(busy);
   $('cal').innerHTML = state.view === 'week' ? weekHtml(list, busy) : monthsHtml(list, busy);
   renderAgenda(list, busy); renderMap();
+  writeFilters();
 }
 
 /* ================= overlays ================= */
+// Each overlay has its own address: #meci/NBA/401909963[/tab] or #echipa/heat. Opening one adds a
+// history entry, so the phone's Back button closes it; the × closes the whole chain at once.
 let lastFocus = null, openGameId = null;
-function show(html) { if ($('ov').hidden) lastFocus = document.activeElement; $('prof').innerHTML = html; $('ov').hidden = false; $('ov').scrollTop = 0; const x = $('prof-x'); if (x) x.focus(); }
-function closeOv() { $('ov').hidden = true; openGameId = null; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+const gameView = { tab: 'rezumat', side: '' };
+function show(html, keep) {
+  const ov = $('ov'), wasHidden = ov.hidden;
+  if (wasHidden) lastFocus = document.activeElement;
+  const top = ov.scrollTop;
+  $('prof').innerHTML = html;
+  ov.hidden = false;
+  document.body.classList.add('noscroll');
+  $('page').inert = true;
+  if (keep) { ov.scrollTop = top; return; }
+  ov.scrollTop = 0;
+  const x = $('prof-x'); if (x) x.focus({ preventScroll: true });
+}
+function hideOv() {
+  if ($('ov').hidden) return;
+  $('ov').hidden = true; openGameId = null;
+  document.body.classList.remove('noscroll');
+  $('page').inert = false;
+  if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+}
+function closeOv() {
+  const depth = history.state && history.state.ov;
+  if (depth) history.go(-depth);            // popstate then hides it
+  else { history.replaceState(null, '', location.pathname + location.search); hideOv(); }
+}
+function go(hash) {
+  if (location.hash === hash) { route(); return; }
+  const depth = (history.state && history.state.ov) || 0;
+  history.pushState({ ov: depth + 1 }, '', location.pathname + location.search + hash);
+  route();
+}
+function route(keep) {
+  const h = decodeURIComponent(location.hash.slice(1)).split('/');
+  if (h[0] === 'meci' && BY_ID.has(h[2])) { const t = h[3] || 'rezumat'; if (openGameId !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
+  if (h[0] === 'echipa' && TEAMS[h[1]]) { openTeam(h[1], keep); return; }
+  if (location.hash && GAMES.length) history.replaceState(null, '', location.pathname + location.search);
+  hideOv();
+}
+window.addEventListener('popstate', () => route());
 
-function openTeam(k) {
+// Swipe the overlay down from its top edge to close it (phones).
+{
+  let y0 = null, dy = 0;
+  const prof = () => $('prof');
+  $('ov').addEventListener('touchstart', e => { y0 = $('ov').scrollTop <= 0 && e.touches.length === 1 && e.target.closest('.band') ? e.touches[0].clientY : null; dy = 0; }, { passive: true });
+  $('ov').addEventListener('touchmove', e => { if (y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); prof().style.transform = `translateY(${dy}px)`; }, { passive: true });
+  $('ov').addEventListener('touchend', () => { if (y0 == null) return; prof().style.transform = ''; if (dy > 90) closeOv(); y0 = null; });
+}
+
+function openTeam(k, keep) {
   const T = TEAMS[k]; if (!T) return;
   openGameId = null;
   const st = teamStats(k), now = Date.now(), side = flSide(k);
@@ -437,12 +523,13 @@ function openTeam(k) {
       <dt>Palmares</dt><dd>${esc(T.titles)}</dd>
       <dt>De știut</dt><dd>${esc(T.fact)}</dd>
     </dl>
-    <div><h3>Următoarele meciuri</h3><div class="rows">${next.length ? next.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}${g.note ? ` <span style="color:var(--muted);font-size:12.5px">· ${esc(g.note)}</span>` : ''}</span><span class="r">${isLive(g) ? 'LIVE' : g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`).join('') : '<div class="row"><span></span><span>Niciun meci programat.</span><span></span></div>'}</div></div>
+    <div><h3>Următoarele meciuri</h3><div class="rows">${next.length ? next.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}${g.note ? ` <span style="color:var(--muted);font-size:12.5px">· ${esc(noteRo(g.note))}</span>` : ''}</span><span class="r">${isLive(g) ? 'LIVE' : g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`).join('') : '<div class="row"><span></span><span>Niciun meci programat.</span><span></span></div>'}</div></div>
     <div><h3>Ultimele rezultate</h3><div class="rows">${last.map(g => { const o = outcome(g, k); const a = g.H.key === k ? g.hs : g.as, b = g.H.key === k ? g.as : g.hs; return `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}</span><span class="r ${o}">${OUTL[o]} ${a}–${b}</span></button>`; }).join('') || '<div class="row"><span></span><span>Niciun meci jucat încă.</span><span></span></div>'}</div></div>
     ${tableHtml(DIVISION_OF[k])}
     <div class="btns"><button class="primary" type="button" data-only="${k}">Arată doar meciurile echipei</button>
-      <button class="ghost" type="button" data-fav="${k}">${fav ? '★ Echipa mea (apasă ca să renunți)' : '☆ Setează ca echipa mea'}</button></div>
-    </div>`);
+      <button class="ghost" type="button" data-fav="${k}">${fav ? '★ Echipa mea (apasă ca să renunți)' : '☆ Setează ca echipa mea'}</button>
+      <button class="ghost" type="button" data-share>Copiază linkul</button></div>
+    </div>`, keep);
 }
 
 function sideInfo(g, side) {
@@ -450,39 +537,37 @@ function sideInfo(g, side) {
   if (k && TEAMS[k]) { const st = teamStats(k); return `<small>${st.rec}${st.conf != null ? ` · locul ${st.conf} ${esc(st.confN)}` : ''}</small><div class="form">${formChips(k)}</div>`; }
   const o = oppInfo(g.l, side.name); return o ? `<small>${esc(o)}</small>` : '<small>&nbsp;</small>';
 }
-const CAT_RO = { points: 'Puncte', rebounds: 'Recuperări', assists: 'Pase decisive', goals: 'Goluri', 'passing yards': 'Yarzi din pase', 'rushing yards': 'Yarzi din alergare', 'receiving yards': 'Yarzi la recepție', saves: 'Parade', 'save percentage': 'Procent parade', steals: 'Intercepții', blocks: 'Capace', shots: 'Șuturi', 'plus/minus': '+/-', sacks: 'Sack-uri', tackles: 'Placaje', 'goals against average': 'Goluri primite în medie', 'shots on goal': 'Șuturi pe poartă' };
-const catRo = c => CAT_RO[norm(c)] || c;
-function periodLabels(l, n) {
-  const base = l === 'NHL' ? ['R1', 'R2', 'R3'] : l === 'MLS' ? ['Rep. 1', 'Rep. 2'] : ['S1', 'S2', 'S3', 'S4'];
-  const out = []; for (let i = 0; i < n; i++) out.push(base[i] || (l === 'MLS' ? 'Prel.' : i === base.length ? 'Prel.' : 'Prel. ' + (i - base.length + 1)));
-  if (l === 'NHL' && n === 5) out[4] = 'Lov.';
-  return out;
+function gameStatus(g) {
+  const now = Date.now(), d = detailRo(g.detail, g.l);
+  if (played(g)) return d && d !== 'Final' ? d : 'Final';
+  if (isLive(g)) return 'LIVE · ' + d;
+  if (/postponed|canceled|cancelled|suspended|delayed/i.test(g.detail || '')) return d;
+  return g.tbd ? 'oră neanunțată' : g.d.getTime() > now ? 'începe în ' + countdown(g.d.getTime() - now) : 'urmează să înceapă';
 }
-function detailHtml(g, s) {
-  if (!s) return '';
-  let html = '';
-  const fh = !!g.H.key, fa = !!g.A.key;
-  if (s.predictor && !played(g)) {
-    const p = s.predictor, t = p.tie && g.l === 'MLS' ? p.tie : 0, sum = (p.home || 0) + (p.away || 0) + t || 1;
-    const pc = v => Math.round(v / sum * 100);
-    html += `<div><h3>Șanse de victorie</h3><div class="prob"><span class="${fh ? 'fl' : ''}" style="flex:${p.home}">${pc(p.home)}%</span>${t ? `<span class="dr" style="flex:${t}">egal ${pc(t)}%</span>` : ''}<span class="${fa ? 'fl' : ''}" style="flex:${p.away}">${pc(p.away)}%</span></div><div class="fn">Stânga: ${esc(g.h)}. Dreapta: ${esc(g.a)}. Estimare ESPN.</div></div>`;
-  }
-  const n = Math.max(s.home.lines.length, s.away.lines.length);
-  if (n && (played(g) || isLive(g))) {
-    const lab = periodLabels(g.l, n);
-    html += `<div><h3>Scor pe ${g.l === 'MLS' ? 'reprize' : g.l === 'NHL' ? 'reprize' : 'sferturi'}</h3><table><thead><tr><th></th><th>Echipă</th>${lab.map(x => `<th>${x}</th>`).join('')}<th>Total</th></tr></thead><tbody>
-      <tr><td></td><td>${esc(g.h)}</td>${s.home.lines.map(x => `<td>${x ?? ''}</td>`).join('')}<td><b>${s.home.score ?? ''}</b></td></tr>
-      <tr><td></td><td>${esc(g.a)}</td>${s.away.lines.map(x => `<td>${x ?? ''}</td>`).join('')}<td><b>${s.away.score ?? ''}</b></td></tr></tbody></table></div>`;
-  }
-  if (s.goals && s.goals.length) html += `<div><h3>Goluri</h3><ul class="notes">${s.goals.map(x => `<li>${esc(x.min)} ${esc(x.who)}${x.team ? ` <span style="color:var(--muted)">(${esc(x.team)})</span>` : ''}</li>`).join('')}</ul></div>`;
-  if (s.leaders && s.leaders.length) html += `<div><h3>${played(g) || isLive(g) ? 'Cei mai buni jucători' : 'Liderii echipelor în sezon'}</h3><div class="leaders">${s.leaders.map(t => `<div class="tbl"><h3>${esc(t.team)}</h3><ul>${t.items.map(i => `<li><span class="c">${esc(catRo(i.cat))}:</span> ${esc(i.who)} · <b>${esc(i.val)}</b></li>`).join('')}</ul></div>`).join('')}</div></div>`;
-  if (s.attendance) html += `<div class="fn">Spectatori: ${s.attendance.toLocaleString('ro-RO')}</div>`;
-  return html;
-}
-function openGame(id, cached) {
+const midScore = g => (played(g) || isLive(g) ? (g.hs ?? 0) + '–' + (g.as ?? 0) : g.tbd ? 'vs' : fmtTime[state.tz].format(g.d));
+function openGame(id, keep) {
   const g = BY_ID.get(String(id)); if (!g) return;
+  keep = keep && openGameId === g.id;
   openGameId = g.id;
-  const done = played(g), on = isLive(g), other = state.tz === 'ro' ? 'fl' : 'ro', k = keyOf(g.d, state.tz), now = Date.now();
+  const done = played(g), on = isLive(g), other = state.tz === 'ro' ? 'fl' : 'ro', k = keyOf(g.d, state.tz);
+  const ctx = gameContext(g);
+  const canFetch = DATA.mode !== 'snapshot';
+  const s = SUMMARY.get(g.l + g.id);
+  show(`<div class="band plain"><div><div class="lgn" style="color:${col(g.l)}">${g.l}${g.note ? ' · ' + esc(noteRo(g.note)) : ''}</div><h2 id="prof-name" style="font-size:22px">${dayLabel(k)}</h2></div>
+      <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
+    <div class="pbody">
+    <div class="duel">
+      <div class="side">${emb(g.H, 'lg')}<span>${esc(g.h)}</span>${sideInfo(g, g.H)}</div>
+      <div class="mid${on ? ' on' : ''}" id="gscore" aria-live="polite">${midScore(g)}<small>${esc(gameStatus(g))}</small></div>
+      <div class="side">${emb(g.A, 'lg')}<span>${esc(g.a)}</span>${sideInfo(g, g.A)}</div>
+    </div>
+    <div id="gtabs">${tabsHtml(g, s, gameView.tab)}</div>
+    <div id="gdetail" role="tabpanel">${gameView.tab === 'rezumat' || !s ? summaryTop(g, ctx, k, other, done, on) : ''}${s ? panelHtml(g, s, viewFor()) : canFetch ? '<div class="skeleton" style="height:70px"></div>' : '<div class="fn">Detaliile meciului (statistici, jucători, faze) apar când sursa live răspunde.</div>'}</div>
+    <div class="btns">${g.teams.map(t => `<button class="ghost" type="button" data-team="${t}">Profil ${esc(TEAMS[t].s)}</button>`).join('')}<button class="ghost" type="button" data-day="${k}" data-jump="1">Toate meciurile zilei</button><button class="ghost" type="button" data-share>Copiază linkul</button></div>
+    </div>`, keep);
+  if (canFetch && (!s || isLive(g))) loadGame(g);
+}
+function gameContext(g) {
   const ctx = [];
   if (g.derby) ctx.push('Derby al Floridei: ambele echipe sunt din stat.');
   const sameDiv = (() => { if (g.l === 'MLS') return null; for (const [dk, D] of Object.entries(DIVISIONS)) if (D.members && D.members.some(m => norm(m) === norm(g.h)) && D.members.some(m => norm(m) === norm(g.a))) return D.t.split(' · ')[1]; return null; })();
@@ -494,37 +579,40 @@ function openGame(id, cached) {
   if (!g.inFL && g.teams.length === 1) { const st = teamStats(g.teams[0]); if (st.away) ctx.push(`${TEAMS[g.teams[0]].s} are ${st.away} în deplasare în acest sezon.`); }
   const h2h = GAMES.filter(x => x !== g && played(x) && x.l === g.l && [x.h, x.a].includes(g.h) && [x.h, x.a].includes(g.a)).pop();
   if (h2h) ctx.push(`Ultimul meci direct (${tShort(h2h.d)}): ${h2h.h} ${h2h.hs}–${h2h.as} ${h2h.a}.`);
-  const status = done ? 'Final' + (g.detail && !/^final$/i.test(g.detail) ? ' · ' + g.detail : '') : on ? 'LIVE · ' + g.detail : g.tbd ? 'oră neanunțată' : g.d.getTime() > now ? 'începe în ' + countdown(g.d.getTime() - now) : 'urmează să înceapă';
-  const canFetch = DATA.mode !== 'snapshot';
-  show(`<div class="band plain"><div><div class="lgn" style="color:${col(g.l)}">${g.l}${g.note ? ' · ' + esc(g.note) : ''}</div><h2 id="prof-name" style="font-size:22px">${dayLabel(k)}</h2></div>
-      <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
-    <div class="pbody">
-    <div class="duel">
-      <div class="side">${emb(g.H, 'lg')}<span>${esc(g.h)}</span>${sideInfo(g, g.H)}</div>
-      <div class="mid">${done || on ? (g.hs ?? 0) + '–' + (g.as ?? 0) : g.tbd ? 'vs' : fmtTime[state.tz].format(g.d)}<small>${esc(status)}</small></div>
-      <div class="side">${emb(g.A, 'lg')}<span>${esc(g.a)}</span>${sideInfo(g, g.A)}</div>
-    </div>
-    <dl class="facts">
+  return ctx;
+}
+const viewFor = () => ({ ...gameView, known: id => BY_ID.has(String(id)) });
+function summaryTop(g, ctx, k, other, done, on) {
+  return `<dl class="facts">
       ${g.tbd ? '' : `<dt>Start</dt><dd>${fmtTime[state.tz].format(g.d)} ${TZNAME[state.tz]} · ${fmtTime[other].format(g.d)} ${TZNAME[other]} (${fmtShort[other].format(g.d).replace('.', '')})</dd>`}
       <dt>Unde</dt><dd>${g.v ? esc(g.v) + ', ' : ''}${esc(g.city)}</dd>
       ${g.tv ? `<dt>Transmisie SUA</dt><dd>${esc(g.tv)}</dd>` : ''}
       ${done || on || g.tbd ? '' : `<dt>Pentru România</dt><dd>${{ good: 'Oră bună, se poate urmări seara.', late: 'Târziu, începe în jurul miezului nopții.', night: 'Noapte albă, începe după ora 01:00.' }[g.aw]}</dd>`}
     </dl>
-    ${ctx.length ? `<div><h3>Context</h3><ul class="notes">${ctx.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
-    <div id="gdetail">${cached ? detailHtml(g, cached) : canFetch ? '<div class="skeleton" style="height:70px"></div>' : '<div class="fn">Detaliile meciului apar când sursa live răspunde.</div>'}</div>
-    <div class="btns">${g.teams.map(t => `<button class="ghost" type="button" data-team="${t}">Profil ${esc(TEAMS[t].s)}</button>`).join('')}<button class="ghost" type="button" data-day="${k}" data-jump="1">Toate meciurile zilei</button></div>
-    </div>`);
-  if (canFetch && !cached) loadGame(g);
+    ${ctx.length ? `<section><h3>Context</h3><ul class="notes">${ctx.map(c => `<li>${esc(c)}</li>`).join('')}</ul></section>` : ''}`;
+}
+// Draws the tabs and the open tab again, keeping the scroll position (new data, tab switch, live score).
+function refreshGame(g) {
+  if (openGameId !== g.id || !$('gdetail')) return;
+  const s = SUMMARY.get(g.l + g.id);
+  $('gscore').innerHTML = `${midScore(g)}<small>${esc(gameStatus(g))}</small>`;
+  $('gscore').classList.toggle('on', isLive(g));
+  $('gtabs').innerHTML = tabsHtml(g, s, gameView.tab);
+  const other = state.tz === 'ro' ? 'fl' : 'ro';
+  const top = gameView.tab === 'rezumat' ? summaryTop(g, gameContext(g), keyOf(g.d, state.tz), other, played(g), isLive(g)) : '';
+  $('gdetail').innerHTML = top + (s ? (panelHtml(g, s, viewFor()) || '') : '');
 }
 const SUMMARY = new Map();
 async function loadGame(g) {
   const key = g.l + g.id;
   try {
-    let s = SUMMARY.get(key);
-    if (!s || isLive(g)) { s = await getJSON(`/api/game?l=${g.l}&id=${encodeURIComponent(g.id)}`, 10000); SUMMARY.set(key, s); }
-    if (openGameId === g.id && $('gdetail')) $('gdetail').innerHTML = detailHtml(g, s) || '<div class="fn">ESPN nu are încă detalii pentru acest meci.</div>';
+    const s = await getJSON(`/api/game?l=${g.l}&id=${encodeURIComponent(g.id)}`, 10000);
+    SUMMARY.set(key, s);
+    refreshGame(g);
   } catch (e) {
-    if (openGameId === g.id && $('gdetail')) $('gdetail').innerHTML = '<div class="fn">Nu am putut încărca detaliile meciului. Încearcă din nou mai târziu.</div>';
+    if (openGameId === g.id && $('gdetail') && !SUMMARY.has(key)) {
+      $('gdetail').querySelector('.skeleton')?.replaceWith(Object.assign(document.createElement('div'), { className: 'fn', textContent: 'Nu am putut încărca detaliile meciului. Încearcă din nou mai târziu.' }));
+    }
   }
 }
 
@@ -538,16 +626,37 @@ $('homeonly').onchange = e => { state.home = e.target.checked; render(); };
 $('awake').onchange = e => { state.awake = e.target.checked; render(); };
 $('clear').onclick = () => { state.day = null; render(); };
 $('more').onclick = () => { state.horizon += 30; render(); };
+const gameHash = (g, tab) => `#meci/${g.l}/${g.id}${tab && tab !== 'rezumat' ? '/' + tab : ''}`;
+function setTab(t) {
+  const g = BY_ID.get(openGameId); if (!g) return;
+  gameView.tab = t;
+  history.replaceState(history.state, '', location.pathname + location.search + gameHash(g, t));
+  refreshGame(g);
+  const b = document.querySelector(`#gtabs [data-tab="${t}"]`); if (b) b.focus({ preventScroll: true });
+}
+async function share(btn) {
+  const url = location.href;
+  try {
+    if (navigator.share && matchMedia('(pointer:coarse)').matches) { await navigator.share({ title: document.title, url }); return; }
+    await navigator.clipboard.writeText(url);
+    btn.textContent = 'Link copiat ✓';
+  } catch (e) { if (e && e.name !== 'AbortError') btn.textContent = 'Nu am putut copia linkul'; }
+  setTimeout(() => { if (btn.isConnected) btn.textContent = 'Copiază linkul'; }, 2500);
+}
 function handle(e) {
   const q = s => e.target.closest(s);
+  let el;
+  if ((el = q('[data-theme-set]'))) { setTheme(el.dataset.themeSet); return; }
   if (!GAMES.length && !q('#reload')) return;
   if (q('#prof-x') || e.target === $('ov')) { closeOv(); return; }
-  let el;
   if ((el = q('#reload'))) { load(true); return; }
-  if ((el = q('[data-fav]'))) { const k = el.dataset.fav; state.fav = state.fav === k ? '' : k; state.fav ? store.set('flgames-fav', state.fav) : store.del('flgames-fav'); renderStatic(); render(); openTeam(k); return; }
+  if ((el = q('[data-share]'))) { share(el); return; }
+  if ((el = q('[data-tab]'))) { setTab(el.dataset.tab); return; }
+  if ((el = q('[data-side]'))) { gameView.side = el.dataset.side; const g = BY_ID.get(openGameId); if (g) refreshGame(g); return; }
+  if ((el = q('[data-fav]'))) { const k = el.dataset.fav; state.fav = state.fav === k ? '' : k; state.fav ? store.set('flgames-fav', state.fav) : store.del('flgames-fav'); renderStatic(); render(); openTeam(k, true); return; }
   if ((el = q('[data-only]'))) { resetFilters(); state.team = el.dataset.only; state.day = null; closeOv(); render(); $('cal').scrollIntoView({ block: 'start' }); return; }
-  if ((el = q('[data-game]'))) { openGame(el.dataset.game); return; }
-  if ((el = q('[data-team]'))) { openTeam(el.dataset.team); return; }
+  if ((el = q('[data-game]'))) { const g = BY_ID.get(el.dataset.game); if (g) { gameView.tab = 'rezumat'; gameView.side = ''; go(gameHash(g)); } return; }
+  if ((el = q('[data-team]'))) { go('#echipa/' + el.dataset.team); return; }
   if ((el = q('[data-l]'))) { const l = el.dataset.l; state.leagues.has(l) ? state.leagues.delete(l) : state.leagues.add(l); el.setAttribute('aria-pressed', state.leagues.has(l)); render(); return; }
   if ((el = q('[data-view]'))) { state.view = el.dataset.view; store.set('flgames-view', state.view); render(); return; }
   if ((el = q('[data-wk]'))) { state.week = addDays(state.week, +el.dataset.wk); render(); return; }
@@ -556,7 +665,7 @@ function handle(e) {
   if ((el = q('[data-day]'))) {
     const k = el.dataset.day, jump = !!el.dataset.jump;
     state.day = (state.day === k && !jump) ? null : k;
-    if (jump) { resetFilters(); if (!$('ov').hidden) closeOv(); state.week = addDays(k, -((dowOf(k) + 6) % 7)); state.month = k.slice(0, 7); }
+    if (jump) { resetFilters(); if (!$('ov').hidden) closeOv(); state.week = weekStart(k); state.month = k.slice(0, 7); }
     render(); if (jump || state.view === 'week') $('count').scrollIntoView({ block: 'start' });
   }
 }
@@ -564,7 +673,16 @@ document.addEventListener('click', handle);
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !$('ov').hidden) closeOv();
   if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('g[data-metro]')) { e.preventDefault(); handle(e); }
+  // Arrow keys move between the game tabs.
+  const tab = e.target.closest && e.target.closest('[role="tab"]');
+  if (tab && (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'Home' || e.key === 'End')) {
+    const all = [...tab.parentNode.querySelectorAll('[role="tab"]')], i = all.indexOf(tab);
+    const j = e.key === 'Home' ? 0 : e.key === 'End' ? all.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + all.length) % all.length;
+    e.preventDefault(); setTab(all[j].dataset.tab);
+  }
 });
+document.addEventListener('pointermove', wpHover);
+document.addEventListener('pointerleave', e => { if (e.target.matches && e.target.matches('svg.wp, svg.wp *')) wpHover({ ...e, type: 'pointerleave', target: e.target, clientX: e.clientX }); }, true);
 
 /* ================= loading, refresh, live scores ================= */
 function apply(raw, mode) {
@@ -573,7 +691,11 @@ function apply(raw, mode) {
   $('banner').hidden = true;
   renderStatic(); render();
   scheduleLive();
+  // First data: open the game or team named in the address. Later reloads only refresh what is open.
+  if (!routed) { routed = true; route(); }
+  else if (!$('ov').hidden) { const g = BY_ID.get(openGameId); if (g) refreshGame(g); }
 }
+let routed = false;
 let loading = false;
 async function load(manual) {
   if (loading) return; loading = true;
@@ -609,28 +731,42 @@ function scheduleLive() {
   if (DATA.mode === 'snapshot') return;
   const now = Date.now();
   const active = GAMES.filter(g => isLive(g) || (!played(g) && !g.tbd && g.d.getTime() <= now + 60e3 && g.end + 2 * 36e5 > now));
-  if (active.length) liveTimer = setTimeout(() => pollLive([...new Set(active.map(g => g.l))]), 60e3);
+  if (active.length) liveTimer = setTimeout(() => pollLive([...new Set(active.map(g => g.l))]), 30e3);
   else {
     const next = GAMES.find(g => !played(g) && !g.tbd && g.d.getTime() > now);
     if (next) liveTimer = setTimeout(scheduleLive, Math.min(next.d.getTime() - now + 30e3, 30 * 60e3));
   }
 }
 async function pollLive(leagues) {
-  if (document.hidden) { liveTimer = setTimeout(() => pollLive(leagues), 60e3); return; }
+  if (document.hidden) { liveTimer = setTimeout(() => pollLive(leagues), 30e3); return; }
   try {
     const r = await getJSON('/api/live?l=' + leagues.join(','), 10000);
     let changed = false, finished = false;
+    const scored = [];
     for (const x of r.games || []) {
       const g = BY_ID.get(String(x.id)); if (!g) continue;
       if (g.state !== x.state || g.hs !== x.hs || g.as !== x.as || g.detail !== x.detail) {
         if (x.state === 'post' && g.state !== 'post') finished = true;
+        if ((x.hs ?? 0) !== (g.hs ?? 0) || (x.as ?? 0) !== (g.as ?? 0)) scored.push(g.id);
         Object.assign(g, { state: x.state, hs: x.hs, as: x.as, detail: x.detail }); changed = true;
       }
     }
+    if (changed) {
+      render();
+      flash(scored);
+      const og = openGameId && BY_ID.get(openGameId);
+      if (og && changed) { refreshGame(og); if (isLive(og) || finished) loadGame(og); }
+    }
     if (finished) { load(); return; }
-    if (changed) { render(); if (openGameId && BY_ID.get(openGameId) && isLive(BY_ID.get(openGameId))) loadGame(BY_ID.get(openGameId)); }
   } catch (e) { /* keep the last known scores */ }
   scheduleLive();
+}
+// A short highlight on every card whose score just changed.
+function flash(ids) {
+  for (const id of ids) {
+    document.querySelectorAll(`[data-gid="${CSS.escape(id)}"]`).forEach(el => { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); });
+    if (openGameId === id && $('gscore')) { const el = $('gscore'); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  }
 }
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && DATA.mode !== 'snapshot' && Date.now() - DATA.loadedAt > 15 * 60e3) load();

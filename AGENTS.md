@@ -42,7 +42,10 @@ istoricul git, pe `main` până la merge-ul etapei 1).
 index.html                  pagina
 css/app.css                 stiluri (tokeni de culoare la început, temă luminoasă și întunecată)
 js/teams.js                 configurație comună pagină + funcții: ligi, echipe, divizii, orașe
-js/app.js                   încărcare date, randare, profiluri, pagini de meci, scor live
+js/app.js                   încărcare date, randare, filtre în adresă, ferestre (meci/echipă), scor live
+js/game.js                  pagina de meci: filele Rezumat, Jucători, Statistici, Faze, Absenți; graficul de șanse
+js/ro.js                    traducerea textelor ESPN (stare meci, note, statistici, accidentări); fără DOM
+js/ui.js                    funcții comune: esc, temă (auto/luminoasă/întunecată), embleme cu logo
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
 netlify/functions/schedule.mjs   GET /api/schedule  meciurile sezonului + clasamente (cache 15 min)
 netlify/functions/live.mjs       GET /api/live?l=NBA,NHL  scorurile de azi (cache 30 s)
@@ -67,6 +70,14 @@ Rulare locală cu funcții: `npx netlify dev`. Doar pagina (cu datele de rezerv�
   errors: [] }
 ```
 
+`/api/game` (o pagină de meci) are în plus, fiecare secțiune goală dacă ESPN nu o trimite:
+`box` (jucători, pe grupe cu `keys` ESPN), `teamStats` (`{k, label, h, a}`), `plays` (goluri,
+puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, `last5`, `videos`
+(doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`.
+
+Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`; filtrele în
+`?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
+
 Cheile echipelor din Florida sunt în `js/teams.js` (`heat`, `magic`, `panthers`, `lightning`,
 `dolphins`, `bucs`, `jaguars`, `intermiami`, `orlandocity`). Id-urile ESPN se caută după nume,
 nu se scriu de mână.
@@ -81,3 +92,10 @@ nu se scriu de mână.
   `schedule` scrie câte meciuri a adus fiecare sursă (`schedule sources`), iar răspunsul
   `/api/schedule` le are în câmpul `sources`.
 - După verificare: merge PR #3 în `main` (site Netlify: florida-sp-calendar).
+- Adăugat tot în PR #3 (11 noiembrie): pagina de meci cu file (jucători, statistici comparate,
+  faze, absenți, grafic de șanse, rezumate video, meciuri directe, forma), linkuri pentru meciuri
+  și echipe cu butonul Înapoi, filtre în adresă, temă aleasă manual, textele ESPN în română,
+  scor live la 30 s cu evidențierea scorului schimbat.
+- MLS (11 noiembrie): scoreboard-ul de fotbal nu mai acceptă intervale de date (400), doar o lună
+  întreagă (`dates=YYYYMM`); `scoreboardRange` cere acum lună cu lună. Local aduce meciurile de
+  playoff (Inter Miami–Columbus, Orlando–Cincinnati). Meciurile viitoare vin și din `fixture=true`.

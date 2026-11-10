@@ -54,7 +54,80 @@ const sm = normalizeSummary({
 }, 'NBA');
 assert.deepEqual(sm.home.lines, [30, 29, 22, 27]); assert.equal(sm.away.score, 114);
 assert.equal(sm.leaders[0].items[0].who, 'Giannis Antetokounmpo');
-assert.equal(sm.goals[0].who, 'Lionel Messi');
 assert.equal(sm.predictor.home, 55.1); assert.equal(sm.attendance, 17611);
+// Missing sections come back empty, never undefined.
+assert.deepEqual([sm.box, sm.teamStats, sm.wp, sm.injuries, sm.last5, sm.videos, sm.goalies], [[], [], [], [], [], [], []]);
+assert.equal(sm.series, null);
+
+// Full game summary: players, team stats, win probability, injuries, history, clips.
+const hdr = { competitions: [{ status: { type: { state: 'post' } }, competitors: [
+  { homeAway: 'home', team: { id: '23', displayName: 'Sacramento Kings', abbreviation: 'SAC' }, score: '108' },
+  { homeAway: 'away', team: { id: '14', displayName: 'Miami Heat', abbreviation: 'MIA' }, score: '114' }
+] }] };
+const full = normalizeSummary({
+  header: hdr,
+  boxscore: {
+    players: [{ team: { id: '14' }, statistics: [{ keys: ['minutes', 'points'], athletes: [
+      { athlete: { displayName: 'Bam Adebayo', jersey: '13', position: { abbreviation: 'C' } }, starter: true, stats: ['34', '18'] },
+      { athlete: { displayName: 'Nikola Jovic' }, didNotPlay: true, reason: "COACH'S DECISION", stats: [] }
+    ], totals: ['', '114'] }] }],
+    teams: [{ team: { id: '23' }, statistics: [{ name: 'fieldGoalPct', label: 'FG%', displayValue: '47' }] },
+      { team: { id: '14' }, statistics: [{ name: 'fieldGoalPct', label: 'FG%', displayValue: '52' }] }]
+  },
+  winprobability: [{ homeWinPercentage: 0.535, playId: '1' }, { homeWinPercentage: 0.2, playId: '2' }, { homeWinPercentage: 0, playId: '3' }],
+  plays: [{ id: '1', period: { number: 1 } }, { id: '2', period: { number: 2 } }, { id: '3', period: { number: 4 } }],
+  injuries: [{ team: { id: '14' }, injuries: [{ status: 'Day-To-Day', athlete: { displayName: 'Giannis Antetokounmpo', position: { abbreviation: 'F' } }, details: { type: 'Wrist', side: 'Right', detail: 'Sprain', returnDate: '2026-11-10' } }] }],
+  seasonseries: [{ title: 'Regular Season Series', events: [{ id: '9', date: '2026-11-09T02:00Z', statusType: { state: 'post' }, competitors: [
+    { homeAway: 'home', team: { id: '23', abbreviation: 'SAC' }, score: '108' }, { homeAway: 'away', team: { id: '14', abbreviation: 'MIA' }, score: '114' }] }] }],
+  lastFiveGames: [{ team: { id: '14' }, events: [{ id: '5', gameDate: '2026-11-05T02:00Z', atVs: '@', gameResult: 'W', homeTeamId: '12', homeTeamScore: '116', awayTeamScore: '117', opponent: { displayName: 'LA Clippers', abbreviation: 'LAC' } }] }],
+  videos: [
+    { headline: 'Highlights', duration: 74, thumbnail: 'https://espnmedia-cdn.akamaized.net/a.jpg', links: { source: { href: 'https://espnmedia-cdn.akamaized.net/a.mp4' } } },
+    { headline: 'Elsewhere', links: { source: { href: 'https://evil.example/x.mp4' } } }
+  ]
+}, 'NBA');
+const heat = full.box.find(b => b.side === 'away');
+assert.equal(heat.groups[0].rows[0].n, 'Bam Adebayo'); assert.deepEqual(heat.groups[0].rows[0].v, ['34', '18']);
+assert.equal(heat.groups[0].rows[1].dnp, true); assert.equal(heat.groups[0].tot[1], '114');
+assert.deepEqual(full.teamStats, [{ k: 'fieldGoalPct', label: 'FG%', h: '47', a: '52' }]);
+assert.deepEqual(full.wp, [[53.5, 1], [20, 2], [0, 4]]);
+assert.equal(full.injuries[0].side, 'away'); assert.equal(full.injuries[0].items[0].what, 'Wrist');
+assert.equal(full.series.games[0].home.score, 108);
+assert.deepEqual([full.last5[0].side, full.last5[0].games[0].res, full.last5[0].games[0].mine, full.last5[0].games[0].their, full.last5[0].games[0].at], ['away', 'V', 117, 116, true]);
+assert.equal(full.videos.length, 1, 'clips from other hosts are dropped');
+
+// NHL goals with assists, NFL scoring plays, soccer cards and line-ups.
+const nhl = normalizeSummary({ header: hdr, plays: [{ scoringPlay: true, period: { number: 2 }, clock: { displayValue: '1:53' }, team: { id: '23' }, strength: { text: 'Power Play' }, homeScore: 1, awayScore: 0,
+  participants: [{ type: 'scorer', athlete: { displayName: 'Cole Perfetti' } }, { type: 'assister', athlete: { displayName: 'Mark Scheifele' } }] }] }, 'NHL');
+assert.deepEqual([nhl.plays[0].who, nhl.plays[0].ast, nhl.plays[0].pp, nhl.plays[0].side], ['Cole Perfetti', ['Mark Scheifele'], true, 'home']);
+const nfl = normalizeSummary({ header: hdr, scoringPlays: [{ type: { abbreviation: 'TD' }, text: 'X 3 Yd Run (Y Kick)', period: { number: 1 }, clock: { displayValue: '9:38' }, team: { id: '14' }, homeScore: 0, awayScore: 7 }] }, 'NFL');
+assert.deepEqual([nfl.plays[0].kind, nfl.plays[0].side, nfl.plays[0].as], ['TD', 'away', 7]);
+const mls = normalizeSummary({ header: hdr,
+  keyEvents: [{ type: { text: 'Yellow Card' }, clock: { displayValue: "9'" }, team: { id: '23' }, participants: [{ athlete: { displayName: 'A' } }] },
+    { type: { text: 'Goal - Volley' }, scoringPlay: true, clock: { displayValue: "90'" }, team: { id: '14' }, participants: [{ athlete: { displayName: 'B' } }, { athlete: { displayName: 'C' } }] },
+    { type: { text: 'Substitution' }, clock: { displayValue: "60'" } }],
+  rosters: [{ homeAway: 'home', formation: '4-3-3', roster: [
+    { starter: true, athlete: { displayName: 'Keeper' }, position: { abbreviation: 'G' }, stats: [{ name: 'goalsConceded', displayValue: '3' }] },
+    { starter: false, subbedIn: false, athlete: { displayName: 'Unused' }, stats: [] }] }] }, 'MLS');
+assert.deepEqual(mls.plays.map(p => p.kind), ['yc', 'goal']); assert.deepEqual(mls.plays[1].ast, ['C']);
+assert.equal(mls.box[0].formation, '4-3-3'); assert.equal(mls.box[0].groups[0].rows.length, 1, 'unused substitutes are left out');
+// A broken section does not break the rest.
+const broken = normalizeSummary({ header: hdr, boxscore: { players: 'nonsense' }, injuries: [null], leaders: [{ team: { displayName: 'T' }, leaders: [] }] }, 'NBA');
+assert.deepEqual([broken.box, broken.injuries], [[], []]);
+
+// Romanian wording of ESPN strings.
+const ro = await import('../js/ro.js');
+assert.equal(ro.detailRo('7:21 - 3rd', 'NBA'), 'Sfertul 3 · 7:21');
+assert.equal(ro.detailRo('12:01 - 2nd', 'NHL'), 'Repriza 2 · 12:01');
+assert.equal(ro.detailRo('Final/OT', 'NBA'), 'Final după prelungiri');
+assert.equal(ro.detailRo('Final/SO', 'NHL'), 'Final după lovituri de departajare');
+assert.equal(ro.detailRo('HT', 'MLS'), 'Pauză');
+assert.equal(ro.detailRo('End of 2nd Period', 'NHL'), 'Finalul reprizei 2');
+assert.equal(ro.detailRo("67'", 'MLS'), "67'");
+assert.equal(ro.detailRo('Something new', 'NBA'), 'Something new', 'unknown wording is kept');
+assert.equal(ro.noteRo('NBA Cup - Group Play'), 'Cupa NBA · faza grupelor');
+assert.equal(ro.nflPlayRo('Bucky Irving 2 Yd Rush (Chase McLaughlin Kick)'), 'Bucky Irving, alergare de 2 yarzi (transformare Chase McLaughlin)');
+assert.equal(ro.bodyRo('Ankle', 'Sprain', 'Right'), 'gleznă (partea dreaptă), entorsă');
+assert.equal(ro.statNum('7-13', 'ratio'), 7 / 13); assert.equal(ro.statNum('31:15', 'clock'), 1875); assert.equal(ro.statNum('0.9', 'pct'), 90);
+assert.equal(ro.boxCols('NHL', 'forwards'), ro.boxCols('NHL', 'defenses'));
 
 console.log('all ESPN reader checks passed');

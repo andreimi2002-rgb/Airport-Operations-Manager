@@ -42,7 +42,10 @@ istoricul git, pe `main` până la merge-ul etapei 1).
 index.html                  pagina
 css/app.css                 stiluri (tokeni de culoare la început, temă luminoasă și întunecată)
 js/teams.js                 configurație comună pagină + funcții: ligi, echipe, divizii, orașe
-js/app.js                   încărcare date, randare, profiluri, pagini de meci, scor live
+js/app.js                   încărcare date, randare, filtre în adresă, ferestre (meci/echipă), scor live
+js/game.js                  pagina de meci: filele Rezumat, Jucători, Statistici, Faze, Absenți; graficul de șanse
+js/ro.js                    traducerea textelor ESPN (stare meci, note, statistici, accidentări); fără DOM
+js/ui.js                    funcții comune: esc, temă (auto/luminoasă/întunecată), embleme cu logo
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
 netlify/functions/schedule.mjs   GET /api/schedule  meciurile sezonului + clasamente (cache 15 min)
 netlify/functions/live.mjs       GET /api/live?l=NBA,NHL  scorurile de azi (cache 30 s)
@@ -66,6 +69,14 @@ Rulare locală cu funcții: `npx netlify dev`. Doar pagina (cu datele de rezerv�
   standings: { NBA: [{ name /* conferința */, entries: [{ name, w, l, otl, t, pts, seed, home, away, streak, ... }] }] },
   errors: [] }
 ```
+
+`/api/game` (o pagină de meci) are în plus, fiecare secțiune goală dacă ESPN nu o trimite:
+`box` (jucători, pe grupe cu `keys` ESPN), `teamStats` (`{k, label, h, a}`), `plays` (goluri,
+puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, `last5`, `videos`
+(doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`.
+
+Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`; filtrele în
+`?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 
 Cheile echipelor din Florida sunt în `js/teams.js` (`heat`, `magic`, `panthers`, `lightning`,
 `dolphins`, `bucs`, `jaguars`, `intermiami`, `orlandocity`). Id-urile ESPN se caută după nume,

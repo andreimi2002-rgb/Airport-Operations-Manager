@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Meciuri Florida</title>
 <meta name="description" content="Calendarul meciurilor echipelor din Florida: NBA, NHL, NFL și MLS, cu ora României.">
-<meta name="theme-color" content="#0f2a30">
+<meta name="theme-color" content="#f3f6f6">
+<script>
+  // Apply the chosen theme before the first paint, so the page never flashes in the wrong one.
+  try { var t = localStorage.getItem('flgames-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,16 +18,23 @@
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<div class="wrap">
+<div class="wrap" id="page">
   <header>
     <div>
       <h1>Meciuri Florida</h1>
       <p class="sub">NBA, NHL, NFL, MLS, MLB · ora României sau a Floridei</p>
       <div class="status" id="status" aria-live="polite">Se încarcă datele…</div>
     </div>
-    <div class="seg" role="group" aria-label="Fus orar">
-      <button id="tz-ro" type="button" aria-pressed="true">Ora României</button>
-      <button id="tz-fl" type="button" aria-pressed="false">Ora Floridei</button>
+    <div class="hctl">
+      <div class="seg" role="group" aria-label="Fus orar">
+        <button id="tz-ro" type="button" aria-pressed="true">Ora României</button>
+        <button id="tz-fl" type="button" aria-pressed="false">Ora Floridei</button>
+      </div>
+      <div class="seg theme" role="group" aria-label="Temă">
+        <button type="button" data-theme-set="auto" aria-pressed="true" title="Temă automată, ca pe dispozitiv">Auto</button>
+        <button type="button" data-theme-set="light" aria-pressed="false" title="Temă luminoasă" aria-label="Temă luminoasă"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></g></svg></button>
+        <button type="button" data-theme-set="dark" aria-pressed="false" title="Temă întunecată" aria-label="Temă întunecată"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z" fill="currentColor"/></svg></button>
+      </div>
     </div>
   </header>
 
