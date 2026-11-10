@@ -89,10 +89,17 @@ export async function floridaIds(errors) {
   return out;
 }
 
-export async function teamSchedule(l, id, seasontype) {
-  const q = seasontype ? `?seasontype=${seasontype}` : '';
-  const j = await getJSON(`${SITE}${LEAGUES[l].path}/teams/${id}/schedule${q}`);
+// `query` examples: '' (default), 'seasontype=3' (postseason), 'fixture=true' (soccer: upcoming games;
+// without it ESPN lists only played soccer games).
+export async function teamSchedule(l, id, query = '') {
+  const j = await getJSON(`${SITE}${LEAGUES[l].path}/teams/${id}/schedule${query ? '?' + query : ''}`);
   return { events: j.events || [], team: j.team || {} };
+}
+
+// All league games between two dates (YYYYMMDD). Used for MLS as a safety net for playoff fixtures.
+export async function scoreboardRange(l, from, to) {
+  const j = await getJSON(`${SITE}${LEAGUES[l].path}/scoreboard?dates=${from}-${to}&limit=300`);
+  return j.events || [];
 }
 
 // Standings stat lookup: ESPN uses `name` for numbers and `type` for record splits.

@@ -101,7 +101,7 @@ export function mockFetch(old) {
     if (/\/teams$/.test(p)) body = { sports: [{ leagues: [{ teams: Object.values(names[l] || {}).map(t => ({ team: t })) }] }] };
     else if (/\/teams\/\d+\/schedule$/.test(p)) {
       const id = p.split('/').at(-2);
-      if (u.searchParams.get('seasontype') === '3') body = { events: [], team: {} };
+      if (u.searchParams.get('seasontype') === '3' || u.searchParams.has('fixture')) body = { events: [], team: {} };
       else {
         const name = Object.keys(names[l]).find(n => names[l][n].id === id);
         const ot = old.TEAMS[name] || {};
