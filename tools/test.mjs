@@ -16,7 +16,8 @@ const ev = {
     broadcasts: [{ names: ['CBS'] }]
   }]
 };
-const g = normalizeEvent(ev, 'NFL', { 15: 'dolphins' });
+const g = normalizeEvent(ev, 'NFL', { 'NFL:15': 'dolphins', 'NBA:11': 'heat' });
+assert.equal(g.home.key, null, 'an id from another league must not match');
 assert.equal(g.home.name, 'Indianapolis Colts');
 assert.equal(g.home.logoDark, 'https://a.espncdn.com/i/teamlogos/nfl/500-dark/ind.png');
 assert.equal(g.away.key, 'dolphins');

@@ -8,7 +8,7 @@ const ymd = d => d.toISOString().slice(0, 10).replace(/-/g, '');
 export async function buildSchedule() {
   const errors = [];
   const ids = await floridaIds(errors);
-  const fl = Object.fromEntries(Object.entries(ids).map(([k, t]) => [t.id, k]));
+  const fl = Object.fromEntries(Object.entries(ids).map(([k, t]) => [TEAMS[k].l + ':' + t.id, k]));
   const games = new Map();
   const teams = {};
 

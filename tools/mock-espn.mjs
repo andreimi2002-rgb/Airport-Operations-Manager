@@ -14,13 +14,14 @@ export function loadOld(path) {
 
 export function mockFetch(old) {
   const names = {};           // league -> name -> {id, abbr, color}
-  let next = 1000;
+  const next = {};
   const flByName = Object.fromEntries(Object.values(FL).map(t => [norm(t.espn), t]));
   const team = (l, name) => {
     const m = (names[l] ||= {});
     if (!m[name]) {
       const f = flByName[norm(name)];
-      m[name] = { id: String(next++), displayName: name, abbreviation: f ? f.ab : name.split(' ').pop().slice(0, 3).toUpperCase(), color: f ? f.col[0].slice(1) : '777777', logos: [] };
+      next[l] = (next[l] || 0) + 1;
+      m[name] = { id: String(next[l]), displayName: name, abbreviation: f ? f.ab : name.split(' ').pop().slice(0, 3).toUpperCase(), color: f ? f.col[0].slice(1) : '777777', logos: [] };
     }
     return m[name];
   };

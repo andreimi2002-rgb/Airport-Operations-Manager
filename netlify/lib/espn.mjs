@@ -37,7 +37,8 @@ export function teamInfo(t) {
   };
 }
 
-// One ESPN event -> one game. `fl` maps ESPN team id -> Florida team key.
+// One ESPN event -> one game. `fl` maps 'LEAGUE:espnId' -> Florida team key.
+// ESPN ids repeat across leagues (NBA Jazz and NHL Panthers can share an id), so the league is part of the key.
 export function normalizeEvent(ev, l, fl = {}) {
   const c = ev?.competitions?.[0];
   if (!c) return null;
@@ -48,7 +49,7 @@ export function normalizeEvent(ev, l, fl = {}) {
   const addr = c.venue?.address || {};
   const team = x => {
     const t = teamInfo(x.team);
-    return { ...t, key: fl[t.id] || null, score: num(x.score), winner: x.winner ?? null };
+    return { ...t, key: fl[l + ':' + t.id] || null, score: num(x.score), winner: x.winner ?? null };
   };
   let note = c.notes?.[0]?.headline || '';
   if (!note && l === 'NFL' && ev.week?.number && (ev.seasonType?.type ?? 2) === 2) note = 'Etapa ' + ev.week.number;
