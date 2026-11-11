@@ -103,3 +103,11 @@ export const METROS = {
 
 // Lowercase, no accents: "Montréal Canadiens" and "Montreal Canadiens" compare equal.
 export const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+// "Echipele mele": a followed team is a Florida key ('heat') or any other team as 'NBA-2'
+// (league + ESPN id: ESPN reuses ids across leagues, so the league is part of it).
+export const CLUB_RE = /^(NBA|NHL|NFL|MLS|MLB)-(\d{1,8})$/;
+export const parseClub = s => { const m = CLUB_RE.exec(String(s || '')); return m ? { l: m[1], id: m[2] } : null; };
+export const validTeamId = s => Object.prototype.hasOwnProperty.call(TEAMS, s) || !!parseClub(s);
+// Is this side of a game (league l) one of the teams in the Set `want`?
+export const sideIn = (want, l, s) => !!s && ((!!s.key && want.has(s.key)) || want.has(`${l}-${s.id}`));

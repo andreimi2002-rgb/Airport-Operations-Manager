@@ -1,16 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- App icon: full-bleed background, the calendar from favicon.svg inside the maskable safe zone (centre 80%). -->
-  <rect width="512" height="512" fill="#0f2a30"/>
-  <g transform="translate(96 92) scale(5)">
-    <rect x="0" y="5" width="64" height="58" rx="11" fill="#f3f6f6"/>
-    <rect x="0" y="5" width="64" height="18" rx="11" fill="#0b7a83"/>
-    <rect x="0" y="15" width="64" height="8" fill="#0b7a83"/>
-    <rect x="13" y="0" width="7" height="14" rx="3.5" fill="#f3f6f6"/>
-    <rect x="44" y="0" width="7" height="14" rx="3.5" fill="#f3f6f6"/>
-    <circle cx="17" cy="35" r="5" fill="#d9541e"/>
-    <circle cx="32" cy="35" r="5" fill="#2563c9"/>
-    <circle cx="47" cy="35" r="5" fill="#2e8b3d"/>
-    <circle cx="17" cy="50" r="5" fill="#b8329a"/>
-    <circle cx="32" cy="50" r="5" fill="#0f2a30"/>
-  </g>
+  <!-- App icon (American Sports Hub): full-bleed navy, the red ring and the white star inside the maskable safe zone (centre 80%). -->
+  <rect width="512" height="512" fill="#0e1f3d"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#c8102e" stroke-width="26"/>
+  <polygon points="256,132 283.6,212 368.2,213.5 300.7,264.5 325.4,345.5 256,297 186.6,345.5 211.3,264.5 143.8,213.5 228.4,212" fill="#fff"/>
+  <rect x="0" y="452" width="512" height="22" fill="#c8102e"/>
+  <rect x="0" y="474" width="512" height="12" fill="#fff" opacity=".9"/>
 </svg>

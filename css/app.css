@@ -1,21 +1,23 @@
 /* Layout: next-game hero, teams strip, highlights, filters, month/week calendar, agenda, results, map, playoff bracket, standings. Team and match pages open as an overlay. */
 :root{
-  --bg:#f3f6f6; --surface:#ffffff; --ink:#0f2a30; --muted:#5b7177; --line:#d7e0e1;
-  --accent:#0b7a83; --accent-ink:#ffffff; --soft:#e3eff0;
+  --bg:#f4f6fa; --surface:#ffffff; --ink:#0e1f3d; --muted:#56637d; --line:#d8deea;
+  --accent:#c8102e; --accent-ink:#ffffff; --soft:#e7ecf5;
+  /* brand bar: navy with the red stripe, the same in both themes */
+  --brand:#0e1f3d; --brand-ink:#ffffff; --brand-red:#c8102e;
   --good:#1f8a4c; --warn:#b26a00; --bad:#c23b3b;
   --nba:#d9541e; --nhl:#2563c9; --nfl:#2e8b3d; --mls:#b8329a; --mlb:#8a8f98;
   /* game page: home team / away team (validated pair, see the dataviz palette check) */
   --wp-h:#00899c; --wp-a:#c95d1c;
   /* weather: climate bars (validated pair) and icon colours */
   --wx-hot:#d0652a; --wx-rain:#2f78c4; --wx-sun:#e8a317; --wx-cloud:#9aa9ad; --wx-cloud-d:#6c7c80; --wx-bolt:#f2b705;
-  --display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --display:"Saira Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#0c1a1d; --surface:#14262a; --ink:#e6f0f1; --muted:#93a9ad; --line:#274045;
-    --accent:#3fc1c9; --accent-ink:#06282b; --soft:#1b3438;
+    --bg:#0a1426; --surface:#12203a; --ink:#eef1f7; --muted:#97a3bb; --line:#243453;
+    --accent:#ff5a6e; --accent-ink:#0a1426; --soft:#1a2b4a; --brand:#060d1a; --brand-red:#e8243f;
     --good:#58cf8b; --warn:#f0b24a; --bad:#ff8080;
     --nba:#ff8a55; --nhl:#6ea3ff; --nfl:#5fce70; --mls:#ee7bd3; --mlb:#9aa1ab;
     --wp-h:#1ea3ad; --wp-a:#d9773a;
@@ -24,8 +26,8 @@
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#0c1a1d; --surface:#14262a; --ink:#e6f0f1; --muted:#93a9ad; --line:#274045;
-  --accent:#3fc1c9; --accent-ink:#06282b; --soft:#1b3438;
+  --bg:#0a1426; --surface:#12203a; --ink:#eef1f7; --muted:#97a3bb; --line:#243453;
+  --accent:#ff5a6e; --accent-ink:#0a1426; --soft:#1a2b4a; --brand:#060d1a; --brand-red:#e8243f;
   --good:#58cf8b; --warn:#f0b24a; --bad:#ff8080;
   --nba:#ff8a55; --nhl:#6ea3ff; --nfl:#5fce70; --mls:#ee7bd3; --mlb:#9aa1ab;
   --wp-h:#1ea3ad; --wp-a:#d9773a;
@@ -36,14 +38,24 @@ html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
 .wrap{max-width:980px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:20px}
 header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px}
-h1{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.05;margin:0;text-transform:uppercase;letter-spacing:.01em;text-wrap:balance}
-h2.sec{font-family:var(--display);font-size:19px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
+/* ---- brand bar: American Sports Hub, navy with the red stripe, full width above the page ---- */
+.topbar{background:var(--brand);color:var(--brand-ink);border-bottom:3px solid var(--brand-red);padding-top:env(safe-area-inset-top)}
+.topbar .in{max-width:980px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:11px;color:inherit;text-decoration:none;min-width:0}
+.brand .mk{width:40px;height:40px;border-radius:9px;flex:none;display:block}
+h1{font-family:var(--display);font-weight:800;font-style:italic;font-size:25px;line-height:.9;margin:0;text-transform:uppercase;letter-spacing:.01em}
+h1 small{display:block;font-family:var(--body);font-weight:600;font-style:normal;font-size:11px;line-height:1.2;letter-spacing:.34em;opacity:.8;margin-top:3px}
+.topbar .lgs{margin-left:auto;display:flex;gap:12px;font-family:var(--display);font-weight:800;font-style:italic;font-size:14px;letter-spacing:.04em;opacity:.9}
+.topbar .lgs span{display:inline-flex;align-items:center;gap:5px}
+.topbar .lgs span::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1.5px rgba(255,255,255,.35)}
+@media (max-width:560px){.topbar .lgs{display:none}}
+h2.sec{font-family:var(--display);font-weight:800;font-style:italic;font-size:20px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px}
 .sub{color:var(--muted);font-size:14px;margin:4px 0 0}
 button,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .seg button{border:0;background:none;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .emb{display:inline-grid;place-items:center;min-width:34px;height:34px;padding:0 5px;border-radius:999px;font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.02em;flex:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.28)}
 .emb.sm{min-width:24px;height:24px;font-size:10px;padding:0 4px;vertical-align:-6px;margin-right:6px}
 .emb.lg{min-width:54px;height:54px;font-size:19px}
@@ -67,6 +79,33 @@ button,select{font:inherit;color:inherit}
 .tbtn.fav{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
 .tbtn b{display:block;font-size:14px;line-height:1.2}
 .tbtn small{display:block;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+/* "Echipele mele": a card with × to take the team out, "+" card to add, the list of every team */
+.mcard{position:relative;display:flex}
+.mcard .tbtn{flex:1;min-width:0;padding-right:30px}
+.mcard .tbtn b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mx{position:absolute;top:4px;right:4px;width:24px;height:24px;border:0;border-radius:50%;background:none;color:var(--muted);font-size:17px;line-height:1;cursor:pointer}
+.mx:hover,.mx:focus-visible{background:var(--soft);color:var(--ink)}
+.tbtn.add{border-style:dashed;color:var(--ink)}
+.tbtn.add .plus{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--soft);font-size:22px;font-weight:600;flex:none}
+.tbtn.add[aria-expanded="true"]{border-color:var(--accent);border-style:solid}
+.minepick{margin-top:10px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.mphead{display:flex;gap:8px}
+.mphead input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--ink);font:inherit}
+.mplist{max-height:380px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;align-content:start}
+.mpgrp{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:2px 14px}
+.mpgrp>b{grid-column:1/-1;display:flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.06em;color:var(--muted);margin:6px 0 2px}
+.mpteam{display:flex;align-items:center;gap:8px;border:0;background:none;border-radius:8px;padding:5px 6px;cursor:pointer;text-align:left;color:var(--ink);font-size:13.5px}
+.mpteam .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mpteam i{font-style:normal;font-weight:700;color:var(--muted);width:18px;text-align:center}
+.mpteam.on i{color:var(--accent)}
+.mpteam:hover{background:var(--soft)}
+/* team pages: the Wikipedia text and photo, the team's own row in a table */
+.tabout .about{margin:0 0 4px;line-height:1.55}
+.tphoto{margin:0 0 10px;position:relative;border-radius:10px;overflow:hidden;background:var(--soft)}
+.tphoto img{display:block;width:100%;max-height:260px;object-fit:cover}
+.tphoto figcaption{position:absolute;right:6px;bottom:6px;font-size:10.5px;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;padding:2px 6px}
+.tphoto figcaption a{color:#fff}
+table.st tr.me th,table.st tr.me td{background:var(--soft);font-weight:700}
 
 .hl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
 .hlc{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
@@ -416,8 +455,8 @@ svg.wx .drop{stroke:var(--wx-rain);fill:none} svg.wx .fogl{stroke:var(--wx-cloud
 .flview,.lgview{display:flex;flex-direction:column;gap:20px}
 .flview[hidden],.lgview[hidden]{display:none}
 .viewtabs{flex-basis:100%;display:flex;gap:4px;border-bottom:2px solid var(--line)}
-.viewtabs a{text-decoration:none;color:var(--muted);font-family:var(--display);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.03em;padding:6px 12px 7px;border-bottom:3px solid transparent;margin-bottom:-2px}
-.viewtabs a small{font-family:var(--body);font-size:11.5px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted);margin-left:4px}
+.viewtabs a{text-decoration:none;color:var(--muted);font-family:var(--display);font-weight:800;font-style:italic;font-size:19px;text-transform:uppercase;letter-spacing:.03em;padding:6px 12px 7px;border-bottom:3px solid transparent;margin-bottom:-2px}
+.viewtabs a small{font-family:var(--body);font-style:normal;font-size:11.5px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted);margin-left:4px}
 .viewtabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
 .viewtabs a:hover{color:var(--ink)}
 /* jump bar: homepage sections, stuck to the top while scrolling (under the overlay, z-index 10) */
@@ -425,7 +464,7 @@ svg.wx .drop{stroke:var(--wx-rain);fill:none} svg.wx .fogl{stroke:var(--wx-cloud
 .jump::-webkit-scrollbar{display:none}
 .jump button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 13px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .jump button:hover{border-color:var(--accent)}
-.jump button[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.jump button[aria-current="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .jump button[hidden]{display:none}
 .flview>section,.flview>details{scroll-margin-top:62px}
 /* Ligile → Orașe și stadioane: a card per city with its stadiums */
@@ -571,7 +610,7 @@ details.rgrp summary span{color:var(--muted);font-weight:500;margin-left:4px}
 .tnhead h2.sec{margin:0}
 .tnhead .fn{margin:0}
 /* ---- installed app: keep clear of the phone's notch and home bar ---- */
-.wrap{padding-top:max(20px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-bottom:max(48px,env(safe-area-inset-bottom))}
+.wrap{padding-top:16px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-bottom:max(48px,env(safe-area-inset-bottom))}
 .ov{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
 /* ---- phone section and calendar page ---- */
 .phone{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
@@ -617,7 +656,7 @@ details.res>summary{list-style-position:inside}
 .vcard small{color:var(--muted);font-size:12.5px;display:flex;align-items:center;flex-wrap:wrap}
 .vcard .emb.sm{vertical-align:0}
 /* photo header of city and stadium pages */
-.band.photo{position:relative;padding:0;display:block;color:#fff;background:#0c1a1d;min-height:150px}
+.band.photo{position:relative;padding:0;display:block;color:#fff;background:#0a1426;min-height:150px}
 .hero-ph{margin:0;position:relative}
 .hero-ph img{display:block;width:100%;aspect-ratio:16/8;object-fit:cover;max-height:300px}
 .hero-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,.05) 55%,rgba(0,0,0,.25))}
@@ -703,3 +742,4 @@ svg.cl .hit{fill:transparent;cursor:pointer}
 @media (max-width:520px){svg.cl .ax,svg.cl .mo{font-size:19px}svg.wp .lab,svg.wp .perl{font-size:20px}svg.cl.months{height:auto}}
 @media (max-width:420px){table.box th[scope="row"]{min-width:112px;max-width:132px}.hctl{width:100%;justify-content:space-between}.duel .mid{font-size:26px}.tabs button{padding:9px 9px 8px}}
 #orase .tnhead{margin-bottom:8px}
+.ghost.on{border-color:var(--accent);color:var(--accent)}

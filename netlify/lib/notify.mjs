@@ -1,7 +1,7 @@
 // Which notifications a subscriber is due, and their Romanian text. Pure functions: tested offline.
-// A subscription: { id, endpoint, keys, teams: ['heat'], lead: 60 (minutes, 0 = none), final: true,
+// A subscription: { id, endpoint, keys, teams: ['heat', 'NBA-2'], lead: 60 (minutes, 0 = none), final: true,
 //                   created (ms), sent: { [gameId]: { p: ms, f: ms } } }
-import { LEAGUES, TEAMS } from '../../js/teams.js';
+import { LEAGUES, TEAMS, sideIn } from '../../js/teams.js';
 import { detailRo } from '../../js/ro.js';
 
 const SPORT = { NBA: '🏀', NHL: '🏒', NFL: '🏈', MLS: '⚽', MLB: '⚾' };
@@ -26,7 +26,7 @@ export function preMessage(g, min, site) {
 }
 export function finalMessage(g, teams, site) {
   const hs = g.home.score ?? 0, as = g.away.score ?? 0;
-  const mine = [g.home, g.away].find(s => s.key && teams.includes(s.key));
+  const want = new Set(teams), mine = [g.home, g.away].find(s => sideIn(want, g.l, s));
   let verdict = '';
   if (mine) {
     const my = mine === g.home ? hs : as, their = mine === g.home ? as : hs;
@@ -44,7 +44,7 @@ export function finalMessage(g, teams, site) {
 export function due(sub, games, now, site) {
   const out = [], want = new Set(sub.teams || []), sent = sub.sent || {};
   for (const g of games) {
-    if (!(want.has(g.home.key) || want.has(g.away.key))) continue;
+    if (!(sideIn(want, g.l, g.home) || sideIn(want, g.l, g.away))) continue;
     const start = new Date(g.date).getTime(), s = sent[g.id] || {};
     if (sub.lead > 0 && g.state === 'pre' && !g.tbd && !s.p) {
       const min = Math.round((start - now) / 6e4);

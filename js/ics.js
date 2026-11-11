@@ -1,7 +1,7 @@
 // iCalendar (.ics) for the games: the subscription feed (/api/calendar.ics) and the
 // "add this game" download on a game page. Pure functions, no DOM: used in Node and in the browser.
 // Times are written in UTC (…Z), so every calendar app shows them in the viewer's own time zone.
-import { LEAGUES, TEAMS } from './teams.js';
+import { LEAGUES, TEAMS, sideIn } from './teams.js';
 
 const SPORT = { NBA: '🏀', NHL: '🏒', NFL: '🏈', MLS: '⚽', MLB: '⚾' };
 
@@ -61,10 +61,10 @@ export function gameEvent(g, { site = '', alarm = 0, stamp = new Date() } = {}) 
 }
 
 // A whole calendar. `name` is what calendar apps show for the subscription.
-export function calendar(games, { name = 'Meciuri Florida', site = '', alarm = 0, stamp = new Date() } = {}) {
+export function calendar(games, { name = 'American Sports Hub', site = '', alarm = 0, stamp = new Date() } = {}) {
   const lines = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Meciuri Florida//RO', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-    `X-WR-CALNAME:${text(name)}`, 'X-WR-CALDESC:Meciurile echipelor din Florida (date ESPN)',
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//American Sports Hub//RO', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    `X-WR-CALNAME:${text(name)}`, 'X-WR-CALDESC:Meciurile echipelor tale, de la American Sports Hub (date ESPN)',
     // Ask subscribing apps to check again every few hours (Apple honours it; Google refreshes on its own schedule).
     'REFRESH-INTERVAL;VALUE=DURATION:PT4H', 'X-PUBLISHED-TTL:PT4H'
   ];
@@ -73,8 +73,8 @@ export function calendar(games, { name = 'Meciuri Florida', site = '', alarm = 0
   return lines.map(fold).join('\r\n') + '\r\n';
 }
 
-// Which games a subscription keeps: those of the chosen Florida teams, from `pastDays` ago on.
+// Which games a subscription keeps: those of the chosen teams (Florida keys or 'NBA-2'), from `pastDays` ago on.
 export function pick(games, teams, pastDays = 45, now = Date.now()) {
   const want = new Set(teams);
-  return games.filter(g => (want.has(g.home.key) || want.has(g.away.key)) && new Date(g.date).getTime() > now - pastDays * 864e5);
+  return games.filter(g => (sideIn(want, g.l, g.home) || sideIn(want, g.l, g.away)) && new Date(g.date).getTime() > now - pastDays * 864e5);
 }

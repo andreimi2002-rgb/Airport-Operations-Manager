@@ -251,6 +251,21 @@ assert.equal((await import('../js/teamx.js')).roNum('1,396'), '1.396');
 assert.equal((await import('../js/teamx.js')).roNum('.900'), '0,900');
 assert.equal((await import('../js/teamx.js')).roNum('27.7'), '27,7');
 
+// "Echipele mele": any team as 'NBA-2' in the calendar feed and the notifications; ids are per league.
+{
+  const { validTeamId, sideIn } = await import('../js/teams.js');
+  const { pick } = await import('../js/ics.js');
+  const { due } = await import('../netlify/lib/notify.mjs');
+  assert.ok(validTeamId('heat') && validTeamId('NBA-2') && !validTeamId('XYZ-2') && !validTeamId('constructor'));
+  const now = Date.parse('2026-11-12T00:00:00Z');
+  const g = (id, l, h, a, min) => ({ id, l, date: new Date(now + min * 6e4).toISOString(), state: 'pre', tbd: false, home: { id: h, name: 'H' + h, key: null }, away: { id: a, name: 'A' + a, key: null } });
+  const games = [g('1', 'NBA', '2', '5', 30), g('2', 'NFL', '2', '7', 30), g('3', 'NBA', '9', '8', 30)];
+  assert.deepEqual(pick(games, ['NBA-2'], 45, now).map(x => x.id), ['1']);   // NFL's team "2" is another team
+  assert.ok(sideIn(new Set(['NBA-2']), 'NBA', games[0].home) && !sideIn(new Set(['NBA-2']), 'NFL', games[1].home));
+  const items = due({ teams: ['NBA-2'], lead: 60, final: true, sent: {} }, games, now, 'https://x');
+  assert.deepEqual(items.map(i => i.kind + i.game.id), ['p1']);
+}
+
 // Installed apps only pick up a new version when sw.js changes: if the site's files differ from
 // main, VERSION in sw.js must differ too. Skipped when git or origin/main is not available.
 {

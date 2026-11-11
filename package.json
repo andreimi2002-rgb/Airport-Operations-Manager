@@ -1,5 +1,5 @@
 {
-  "name": "meciuri-florida",
+  "name": "american-sports-hub",
   "private": true,
   "type": "module",
   "description": "Site static + funcții Netlify. Singura dependență e pentru funcții: stocarea abonamentelor la notificări.",

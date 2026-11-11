@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Meciuri Florida</title>
-<meta name="description" content="Calendarul meciurilor echipelor din Florida: NBA, NHL, NFL și MLS, cu ora României.">
-<meta name="theme-color" content="#f3f6f6">
+<title>American Sports Hub</title>
+<meta name="description" content="Sportul american pe românește: echipele tale din NBA, NHL, NFL, MLS și MLB, cu ora României, scoruri, clasamente și calendar.">
+<meta name="theme-color" content="#0e1f3d">
 <script>
   // Apply the chosen theme before the first paint, so the page never flashes in the wrong one.
   try { var t = localStorage.getItem('flgames-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
@@ -14,20 +14,26 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Meciuri FL">
+<meta name="apple-mobile-web-app-title" content="Sports Hub">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://a.espncdn.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700;1,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+<div class="topbar"><div class="in">
+  <a class="brand" href="./" data-goview="florida" aria-label="American Sports Hub, pagina de start">
+    <svg class="mk" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#c8102e"/><polygon points="50,23 57.1,43.3 78.5,43.7 61.4,56.7 67.6,77.3 50,65 32.4,77.3 38.6,56.7 21.5,43.7 42.9,43.3" fill="#fff"/></svg>
+    <h1>American Sports<small>Hub</small></h1>
+  </a>
+  <div class="lgs" aria-hidden="true"><span style="--c:#ff8a55">NBA</span><span style="--c:#6ea3ff">NHL</span><span style="--c:#5fce70">NFL</span><span style="--c:#ee7bd3">MLS</span><span style="--c:#c9ced6">MLB</span></div>
+</div></div>
 <div class="wrap" id="page">
   <header>
     <div>
-      <h1>Meciuri Florida</h1>
-      <p class="sub">NBA, NHL, NFL, MLS, MLB · ora României sau a Floridei</p>
+      <p class="sub">Sportul american pe românește · echipele tale, cu ora României sau a Floridei</p>
       <div class="status" id="status" aria-live="polite">Se încarcă datele…</div>
     </div>
     <div class="hctl">
@@ -52,7 +58,7 @@
       <div class="qres" id="qres" role="listbox" hidden></div>
     </div>
     <nav class="viewtabs" aria-label="Pagini">
-      <a href="./" data-goview="florida" aria-current="page">Florida</a>
+      <a href="./" data-goview="florida" aria-current="page">Acasă <small>echipele mele</small></a>
       <a href="#ligi" data-goview="ligi">Ligile <small>toate echipele</small></a>
     </nav>
   </header>
@@ -64,8 +70,8 @@
   <div class="flview" id="flview">
   <nav class="jump" id="jump" aria-label="Secțiuni">
     <button type="button" data-jump="hero">Urmează</button>
+    <button type="button" data-jump="echipe">Echipele mele</button>
     <button type="button" data-jump="todaylg">Azi în ligi</button>
-    <button type="button" data-jump="echipe">Echipe</button>
     <button type="button" data-jump="orase">Orașe</button>
     <button type="button" data-jump="deurmarit">De urmărit</button>
     <button type="button" data-jump="program">Program</button>
@@ -76,12 +82,12 @@
   </nav>
   <section class="hero" id="hero" aria-label="Urmează"><div class="skeleton" style="grid-column:1/-1;background-color:transparent"></div></section>
 
-  <section class="todaylg" id="todaylg" aria-label="Azi în ligi" hidden></section>
-
-  <section id="echipe" aria-label="Echipe">
-    <h2 class="sec">Echipe</h2>
-    <div class="teams" id="teams"></div>
+  <section id="echipe" aria-label="Echipele mele">
+    <h2 class="sec">Echipele mele</h2>
+    <div id="teams"></div>
   </section>
+
+  <section class="todaylg" id="todaylg" aria-label="Azi în ligi" hidden></section>
 
   <section id="orase" aria-label="Orașe, stadioane și vremea">
     <div class="tnhead"><h2 class="sec">Orașe, stadioane și vremea</h2><a class="link" href="#ligi/orase" data-goview="ligi" data-lgto="orase">Toată America ›</a></div>

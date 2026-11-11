@@ -74,7 +74,8 @@ const STATUS = {
   error: ['warn', 'Nu am putut verifica notificările acum.']
 };
 
-export function notifyHtml(emb) {
+// `emb(id)` draws a team emblem; `clubs` = the followed teams from outside Florida: [{ id, l, name }].
+export function notifyHtml(emb, clubs = []) {
   const [kind, text] = STATUS[N.status] || STATUS.unknown;
   const can = ['off', 'on'].includes(N.status), on = N.status === 'on';
   const byL = {};
@@ -85,7 +86,7 @@ export function notifyHtml(emb) {
     <p class="lead">Un anunț înainte de meciurile echipelor tale și, dacă vrei, rezultatul final, chiar și cu aplicația închisă.</p>
     <p class="nstat ${kind}" role="status">${esc(text)}</p>
     ${can ? `<section><h3>Echipele</h3>
-      <div class="calteams">${Object.entries(byL).map(([l, ks]) => `<div class="calgrp"><b>${l}</b>${ks.map(k => `<label class="calteam"><input type="checkbox" data-ntfteam="${k}" ${N.teams.includes(k) ? 'checked' : ''}>${emb(k)}<span>${esc(TEAMS[k].espn)}</span></label>`).join('')}</div>`).join('')}</div>
+      <div class="calteams">${Object.entries(byL).map(([l, ks]) => `<div class="calgrp"><b>${l}</b>${ks.map(k => `<label class="calteam"><input type="checkbox" data-ntfteam="${k}" ${N.teams.includes(k) ? 'checked' : ''}>${emb(k)}<span>${esc(TEAMS[k].espn)}</span></label>`).join('')}</div>`).join('')}${clubs.length ? `<div class="calgrp"><b>Din alte orașe</b>${clubs.map(c => `<label class="calteam"><input type="checkbox" data-ntfteam="${esc(c.id)}" ${N.teams.includes(c.id) ? 'checked' : ''}>${emb(c.id)}<span>${esc(c.name)} <small>${esc(c.l)}</small></span></label>`).join('')}</div>` : ''}</div>
     </section>
     <section><h3>Când</h3>
       <select id="ntflead" aria-label="Cu cât timp înainte de meci">${LEADS.map(([m, t]) => `<option value="${m}" ${m === N.lead ? 'selected' : ''}>${t}</option>`).join('')}</select>
