@@ -220,4 +220,28 @@ assert.deepEqual(ics.pick([G('a', '2026-11-15T00:00:00Z'), G('b', '2026-01-01T00
   assert.deepEqual(Object.keys(nt.markSent({ sent: { old: { p: now - 5 * 864e5 } } }, [], now).sent), [], 'old entries forgotten');
 }
 
+// Standings: MLS gives a rank instead of a playoff seed.
+assert.equal(normalizeStandings({ children: [{ name: 'Eastern Conference', standings: { entries: [{ team: { displayName: 'Inter Miami CF' }, stats: [{ name: 'rank', value: 2 }, { name: 'points', value: 60 }] }] } }] })[0].entries[0].seed, 2);
+
+// Playoffs: rounds from ESPN slugs and notes; series and wins.
+{
+  const e = await import('../netlify/lib/espn.mjs');
+  assert.deepEqual(e.playoffRound({ season: { slug: 'eastern-conference-playoffs---round-one' } }), { conf: 'east', stage: 2, label: 'eastern conference playoffs round one' });
+  assert.equal(e.playoffRound({ competitions: [{ notes: [{ headline: 'East 1st Round - Game 3' }] }] }).stage, 2);
+  assert.equal(e.playoffRound({ competitions: [{ notes: [{ headline: 'NBA Finals - Game 1' }] }] }).stage, 5);
+  assert.equal(e.playoffRound({ competitions: [{ notes: [{ headline: 'AFC Wild Card Playoffs' }] }] }).conf, 'afc');
+  const b = await import('../js/bracket.js');
+  const pg = (id, h, a, hs, as, state = 'post') => ({ id, date: '2026-11-2' + id + 'T00:00Z', state, detail: '', round: { conf: 'east', stage: 2 }, home: { name: h, score: hs }, away: { name: a, score: as } });
+  const s = b.buildSeries([pg('1', 'Inter Miami CF', 'Columbus Crew', 2, 1), pg('2', 'Columbus Crew', 'Inter Miami CF', 1, 0), pg('3', 'Inter Miami CF', 'Columbus Crew', 3, 1), pg('4', 'Nashville SC', 'TBD Away', null, null, 'pre')]);
+  assert.equal(s.length, 2);
+  const mia = s.find(x => x.teams.some(t => t.name === 'Inter Miami CF'));
+  assert.deepEqual([mia.teams.find(t => t.name === 'Inter Miami CF').wins, mia.done, mia.winner.name], [2, true, 'Inter Miami CF']);
+  assert.equal(s.find(x => x !== mia).teams[1].name, 'De stabilit');
+  assert.equal(b.roundRo(5, 'MLS'), 'MLS Cup');
+  assert.equal(b.bracketLayout(s)[0].rounds[0].series.length, 2);
+}
+assert.equal((await import('../js/teamx.js')).roNum('1,396'), '1.396');
+assert.equal((await import('../js/teamx.js')).roNum('.900'), '0,900');
+assert.equal((await import('../js/teamx.js')).roNum('27.7'), '27,7');
+
 console.log('all ESPN reader checks passed');

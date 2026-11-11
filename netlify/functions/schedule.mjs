@@ -14,11 +14,14 @@ export async function buildSchedule() {
 
   const jobs = [];
   const counts = {};
+  // Baseball plays 162 games a season: only the ones from 45 days back to 60 days ahead are kept.
+  const now = Date.now();
+  const inWindow = (l, g) => l !== 'MLB' || Math.abs(new Date(g.date).getTime() - now - 7.5 * 864e5) <= 52.5 * 864e5;
   const addEvents = (l, events) => {
     let n = 0;
     for (const ev of events) {
       const g = normalizeEvent(ev, l, fl);
-      if (!g || !(g.home.key || g.away.key)) continue;
+      if (!g || !(g.home.key || g.away.key) || !inWindow(l, g)) continue;
       const prev = games.get(g.id);
       // Keep the most informative copy: a finished or live game beats a scheduled one.
       if (!prev || (prev.state === 'pre' && g.state !== 'pre')) { games.set(g.id, g); n++; }

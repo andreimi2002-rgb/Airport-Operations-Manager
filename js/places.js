@@ -119,7 +119,7 @@ export function gameWeatherHtml(g, v, w, durMin) {
     const m = +nyHourKey(g.d).slice(5, 7) - 1, c = city?.climate?.[m];
     if (!c) return '';
     const far = g.d - Date.now() > 15 * 864e5;
-    return `<section class="gwx"><h3>Vremea</h3><p>${far ? 'Prognoza apare cu cel mult 16 zile înainte de meci. ' : ''}De obicei în ${MONTHS[m]}, la ${esc(city.name)}: maxime de <b>${Math.round(c.hi)}°</b>, minime de <b>${Math.round(c.lo)}°</b> și ${c.wet} zile cu ploaie.${roof === 'closed' ? ` Meciul e în sală, la ${link}.` : ` Stadion: ${link}.`}</p></section>`;
+    return `<section class="gwx"><h3>Vremea</h3><p>${far ? 'Prognoza apare cu cel mult 16 zile înainte de meci. ' : ''}De obicei în ${MONTHS[m]}, la ${esc(city.name)}: maxime de <b>${Math.round(c.hi)}°</b>, minime de <b>${Math.round(c.lo)}°</b> și ${c.wet} zile cu ploaie.${roof === 'closed' ? ` Meciul e sub acoperiș, la ${link}.` : ` Stadion: ${link}.`}</p></section>`;
   }
   const n = Math.max(1, Math.round(durMin / 60)), idx = [];
   for (let i = i0; i < Math.min(hrs.time.length, i0 + n + 1); i++) idx.push(i);
@@ -127,8 +127,10 @@ export function gameWeatherHtml(g, v, w, durMin) {
   const H = idx.map(at), s = H[0];
   const ppMax = Math.max(...H.map(h => h.pp ?? 0)), gust = Math.max(...H.map(h => h.gust ?? 0)), storm = H.some(h => isStorm(h.code)), feels = Math.max(...H.map(h => h.feels ?? -99));
   const day = +s.t.slice(11, 13) >= 7 && +s.t.slice(11, 13) < 19;
-  if (roof === 'closed') {
-    return `<section class="gwx"><h3>Vremea</h3><div class="gwxrow">${wxIcon(s.code, day, 40)}<p>Meciul e în sală, la ${link}, deci vremea nu contează pentru joc. Afară, la ora de start: <b>${Math.round(s.temp)}°</b>, ${esc(wxText(s.code).toLowerCase())}${s.pp >= 30 ? `, șanse de ploaie ${s.pp}%` : ''}.</p></div></section>`;
+  if (roof === 'closed' || roof === 'retractable') {
+    const where = roof === 'retractable' ? `Stadionul ${link} are acoperiș retractabil, care se închide dacă plouă sau e foarte cald, deci meciul se joacă oricum.`
+      : `Meciul e ${v.kind === 'arena' ? 'în sală' : 'sub acoperiș'}, la ${link}, deci vremea nu contează pentru joc.`;
+    return `<section class="gwx"><h3>Vremea</h3><div class="gwxrow">${wxIcon(s.code, day, 40)}<p>${where} Afară, la ora de start: <b>${Math.round(s.temp)}°</b>, ${esc(wxText(s.code).toLowerCase())}${s.pp >= 30 ? `, șanse de ploaie ${s.pp}%` : ''}.</p></div></section>`;
   }
   const notes = [];
   if (storm) notes.push(['warn', 'Risc de furtună cu fulgere. În aer liber, jocul se întrerupe când sunt fulgere în apropiere și se reia după cel puțin 30 de minute fără descărcări.']);
@@ -147,7 +149,7 @@ export function gameWeatherHtml(g, v, w, durMin) {
 }
 
 /* ================= weather strip (home page) ================= */
-export const STRIP = ['miami', 'tampa', 'orlando', 'jacksonville'];
+export const STRIP = ['miami', 'tampa', 'orlando', 'jacksonville'];   // one city per metro area
 export function stripHtml(list) {
   const C = PLACES.data?.cities;
   if (!C) return '';
@@ -211,11 +213,13 @@ function photo(img, alt) {
   if (!img) return '';
   return `<figure class="hero-ph"><img src="${esc(img.big)}" srcset="${esc(img.small)} 500w, ${esc(img.big)} 1280w" sizes="(max-width: 640px) 100vw, 640px" alt="${esc(alt)}" loading="eager" decoding="async"><figcaption>Foto: ${esc(img.author)}, <a href="${esc(img.page)}" target="_blank" rel="noopener">${esc(img.license || 'Wikimedia Commons')}</a></figcaption></figure>`;
 }
-const ROOF = { closed: 'Închisă (arenă)', open: 'Deschis', canopy: 'Deschis, cu copertină peste tribune' };
+const ROOF = { closed: 'Acoperiș fix (se joacă în sală)', open: 'Deschis', canopy: 'Deschis, cu copertină peste tribune', retractable: 'Retractabil: se închide la ploaie sau căldură mare' };
+// Short words for a card: "arenă", "stadion acoperit", "acoperiș retractabil", "aer liber".
+export const roofWord = v => (v.roof === 'closed' ? (v.kind === 'arena' ? 'arenă' : 'stadion acoperit') : v.roof === 'retractable' ? 'acoperiș retractabil' : v.roof === 'canopy' ? 'stadion cu copertină' : 'stadion în aer liber');
 function sourcesHtml(list) {
   return `<details class="srcs"><summary>Surse</summary><ul>${list.map(s => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a></li>`).join('')}</ul></details>`;
 }
-const venueCard = (v, ctx) => `<button class="vcard" type="button" data-venue="${esc(v.id)}">${v.image ? `<img src="${esc(v.image.small)}" alt="" loading="lazy" decoding="async">` : ''}<span class="vb"><b>${esc(v.name)}</b><small>${v.teams.map(k => ctx.emb(k) + esc(TEAMS[k].s)).join(' · ')}</small><small>${num(v.capacity[0][1])} locuri · ${v.roof === 'closed' ? 'arenă' : v.roof === 'canopy' ? 'stadion cu copertină' : 'stadion în aer liber'}</small></span></button>`;
+const venueCard = (v, ctx) => `<button class="vcard" type="button" data-venue="${esc(v.id)}">${v.image ? `<img src="${esc(v.image.small)}" alt="" loading="lazy" decoding="async">` : ''}<span class="vb"><b>${esc(v.name)}</b><small>${v.teams.map(k => ctx.emb(k) + esc(TEAMS[k].s)).join(' · ')}</small><small>${num(v.capacity[0][1])} locuri · ${roofWord(v)}</small></span></button>`;
 export const cityCard = c => `<button class="ccard" type="button" data-city="${esc(c.id)}">${c.image ? `<img src="${esc(c.image.small)}" alt="" loading="lazy" decoding="async">` : ''}<span><b>${esc(c.name)}</b><small>${esc(c.summary)}</small></span></button>`;
 
 /* ================= city page ================= */
@@ -259,7 +263,7 @@ export function venueHtml(v, ctx) {
     <div class="stats">
       ${v.capacity.map(([k, n]) => `<div class="stat"><div class="v">${num(n)}</div><div class="l">locuri, ${esc(k)}</div></div>`).join('')}
       <div class="stat"><div class="v">${esc(v.opened)}</div><div class="l">deschis${+v.opened < now ? ` (acum ${now - +v.opened} ani)` : ''}</div></div>
-      <div class="stat"><div class="v roof-${v.roof}">${v.roof === 'closed' ? 'În sală' : v.roof === 'canopy' ? 'Copertină' : 'Aer liber'}</div><div class="l">${esc(ROOF[v.roof])}</div></div>
+      <div class="stat"><div class="v roof-${v.roof}">${v.roof === 'closed' ? (v.kind === 'arena' ? 'În sală' : 'Acoperit') : v.roof === 'canopy' ? 'Copertină' : v.roof === 'retractable' ? 'Retractabil' : 'Aer liber'}</div><div class="l">${esc(ROOF[v.roof])}</div></div>
     </div>
     <section><h3>Echipa gazdă</h3><div class="hosts">${v.teams.map(k => `<button class="host" type="button" data-team="${k}">${ctx.emb(k, 'lg')}<span><b>${esc(TEAMS[k].espn)}</b><small>${esc(TEAMS[k].l)}${ctx.homeRecord(k) ? ` · acasă în acest sezon: ${esc(ctx.homeRecord(k))}` : ''}</small></span></button>`).join('')}</div></section>
     <section><h3>${v.roof === 'closed' ? 'Vremea afară' : 'Vremea'}</h3><div id="pwx"><div class="skeleton" style="height:110px"></div></div></section>

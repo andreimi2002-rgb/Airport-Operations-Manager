@@ -3,8 +3,10 @@ import { esc, $, emb, pickInk, theme, isDark, onSystemTheme } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
 import { tabsHtml, panelHtml, wpHover } from './game.js';
 import { registerSW, onInstallChange, install, installHtml, calendarHtml, downloadGame, canInstall } from './phone.js';
+import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
+import { teamTabsHtml, seasonChartHtml, seasonHover, leadersHtml, rosterHtml, newsHtml } from './teamx.js';
 import { N, setNotifyRender, refreshNotify, enableNotify, saveNotify, testNotify, disableNotify, notifyHtml } from './notify.js';
-import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, stripHtml, STRIP, cityHtml, venueHtml, placeWeatherHtml, climateHover, floridaClock, cityCard } from './places.js';
+import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, stripHtml, STRIP, cityHtml, venueHtml, placeWeatherHtml, climateHover, floridaClock, cityCard, roofWord } from './places.js';
 
 /* ================= data loading ================= */
 const CACHE_KEY = 'flcal-cache-v1';
@@ -32,12 +34,13 @@ function awake(d) {
   const [h, m] = fmtRoH.format(d).split(':').map(Number); const t = (h % 24) * 60 + m;
   return t >= 720 && t <= 1380 ? 'good' : (t > 1380 || t < 60) ? 'late' : 'night';
 }
-function confShort(n) {
+// Conference names: "Eastern Conference" -> Est; NFL -> AFC/NFC; baseball's leagues -> AL/NL.
+function confShort(n, l) {
   const x = norm(n);
   if (x.includes('east')) return 'Est';
   if (x.includes('west')) return 'Vest';
-  if (x.includes('american')) return 'AFC';
-  if (x.includes('national')) return 'NFC';
+  if (x.includes('american')) return l === 'MLB' ? 'AL' : 'AFC';
+  if (x.includes('national')) return l === 'MLB' ? 'NL' : 'NFC';
   return n;
 }
 function teamSide(t) {
@@ -47,7 +50,7 @@ function teamSide(t) {
 function build(raw) {
   ENTRY = new Map();
   for (const [l, groups] of Object.entries(raw.standings || {})) {
-    for (const g of groups) for (const e of g.entries) ENTRY.set(l + '|' + norm(e.name), { ...e, conf: confShort(g.name || g.abbr), lg: l });
+    for (const g of groups) for (const e of g.entries) ENTRY.set(l + '|' + norm(e.name), { ...e, conf: confShort(g.name || g.abbr, l), lg: l });
   }
   TEAMINFO = raw.teams || {};
   GAMES = (raw.games || []).map(x => {
@@ -67,6 +70,8 @@ function build(raw) {
     return g;
   }).filter(g => g && g.teams.length).sort((a, b) => a.d - b.d);
   BY_ID = new Map(GAMES.map(g => [g.id, g]));
+  // Baseball is "extrasezon" while no game of the Florida teams is ahead (the schedule keeps 60 days).
+  LEAGUES.MLB.off = !GAMES.some(g => g.l === 'MLB' && g.state !== 'post');
 }
 
 /* ----- per-team numbers ----- */
@@ -77,7 +82,7 @@ function recordOf(e, l) {
   if (l === 'MLS') return `${e.w}–${e.l}–${e.t ?? 0}`;
   return `${e.w}–${e.l}`;
 }
-const REC_LABEL = { NBA: 'V–Î', NFL: 'V–Î', NHL: 'V–Î–Îp', MLS: 'V–Î–E' };
+const REC_LABEL = { NBA: 'V–Î', NFL: 'V–Î', NHL: 'V–Î–Îp', MLS: 'V–Î–E', MLB: 'V–Î' };
 function ptsOf(e, l) { return e.pts ?? (l === 'NHL' ? 2 * (e.w || 0) + (e.otl || 0) : l === 'MLS' ? 3 * (e.w || 0) + (e.t || 0) : null); }
 function pctOf(e) { return e.pct ?? ((e.w || 0) + (e.l || 0) ? (e.w || 0) / ((e.w || 0) + (e.l || 0) + (e.t || 0)) : 0); }
 function sortDiv(rows, l) {
@@ -157,7 +162,7 @@ function ago(ts) {
 const flSide = k => { const i = TEAMINFO[k] || {}; return { name: TEAMS[k].espn, abbr: i.abbr || TEAMS[k].ab, logo: i.logo, logoDark: i.logoDark, color: i.color, alt: i.alt, key: k }; };
 
 /* ================= state ================= */
-const state = { tz: 'ro', leagues: new Set(['NBA', 'NHL', 'NFL', 'MLS']), team: '', home: false, awake: false, day: null, view: 'month', week: null, month: null, metro: 'mia', fav: '', horizon: 30, agendaDays: 7 };
+const state = { tz: 'ro', leagues: new Set(['NBA', 'NHL', 'NFL', 'MLS', 'MLB']), team: '', home: false, awake: false, day: null, view: 'month', week: null, month: null, metro: 'mia', fav: '', horizon: 30, agendaDays: 7 };
 {
   const s = store.get('flgames-tz'); if (s === 'fl' || s === 'ro') state.tz = s;
   const f = store.get('flgames-fav'); if (f && TEAMS[f]) state.fav = f;
@@ -299,6 +304,91 @@ function renderHero() {
     </div>
     <div class="soon"><div class="k">În următoarele 24 de ore</div>${soon.length ? soon.map(x => `<button class="srow" type="button" data-game="${x.id}"><b>${isLive(x) ? `${x.hs}–${x.as}` : fmtTime[state.tz].format(x.d)}</b><span>${esc(x.h)} – ${esc(x.a)} <span style="opacity:.7">· ${x.l}${isLive(x) ? ' · LIVE' : ''}</span></span></button>`).join('') : '<div class="w">Niciun alt meci în următoarele 24 de ore.</div>'}</div>`;
 }
+/* ================= render: tonight in Romania ================= */
+// A moment as Romanian wall-clock: the ms of `dateKey` at `hour`:00 in Bucharest.
+function roMs(k, hour) {
+  const [y, m, d] = parts(k), guess = Date.UTC(y, m - 1, d, hour);
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Bucharest', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric' }).formatToParts(new Date(guess)).map(x => [x.type, +x.value]));
+  return guess - (Date.UTC(p.year, p.month - 1, p.day, p.hour) - guess);
+}
+// The evening to show: 18:00–06:00 Romanian time. Daytime -> this evening; evening -> from now; small hours -> until 06:00.
+function tonightWindow(now = Date.now()) {
+  const k = keyOf(new Date(now), 'ro'), h = +fmtHM.ro.format(new Date(now)).slice(0, 2);
+  if (h < 6) return { from: roMs(addDays(k, -1), 18), to: roMs(k, 6), label: 'Noaptea asta' };
+  return { from: roMs(k, 18), to: roMs(addDays(k, 1), 6), label: h >= 18 ? 'În seara asta' : 'Diseară' };
+}
+// Why one game is the pick of the evening: points and the reasons, in Romanian.
+function pickScore(g, now) {
+  let s = 0; const why = [];
+  if (state.fav && g.teams.includes(state.fav)) { s += 100; why.push('joacă echipa ta'); }
+  if (isLive(g)) { s += 40; why.push('e în desfășurare'); }
+  if (g.derby) { s += 60; why.push('derby al Floridei'); }
+  if (/round|playoff|final|wild card|semifinal|runda|play-in/i.test(g.note)) { s += 50; why.push('meci de playoff'); }
+  const eh = entryOf(g.l, g.h), ea = entryOf(g.l, g.a);
+  const sh = eh && (eh.seed ?? eh.order), sa = ea && (ea.seed ?? ea.order);
+  if (sh && sa && sh <= 8 && sa <= 8) { s += 15; why.push('ambele echipe sunt în prima parte a clasamentului'); }
+  else if (sh && sa && Math.abs(sh - sa) <= 2 && eh.conf === ea.conf) { s += 10; why.push('echipe apropiate în clasament'); }
+  if (g.aw === 'good') { s += 30; why.push('începe la o oră bună în România'); }
+  else if (g.aw === 'late') s += 10;
+  else s -= 10;
+  if (g.tv && /espn|tnt|abc|nbc|cbs|fox|prime|apple/i.test(g.tv)) s += 3;
+  return { s, why };
+}
+const durMs = g => LEAGUES[g.l].dur * 6e4;
+function renderTonight() {
+  const now = Date.now();
+  let w = tonightWindow(now), list = [];
+  const inWin = (W, g) => !g.tbd && !played(g) && (isLive(g) || (g.d.getTime() >= W.from && g.d.getTime() < W.to));
+  list = GAMES.filter(g => inWin(w, g));
+  if (!list.length) {
+    // Nothing tonight: the next evening that has games, within a week.
+    for (let i = 1; i <= 7 && !list.length; i++) {
+      const k = addDays(keyOf(new Date(w.from), 'ro'), i);
+      const W = { from: roMs(k, 18), to: roMs(addDays(k, 1), 6), label: `Următoarea seară cu meciuri: ${dayLabel(k)}` };
+      list = GAMES.filter(g => inWin(W, g));
+      if (list.length) w = W;
+    }
+  }
+  const sec = $('tonight');
+  if (!list.length) { sec.hidden = true; return; }
+  sec.hidden = false;
+  list.sort((a, b) => a.d - b.d);
+  // Timeline: the evening from 18:00 to 06:00, one lane per overlapping game.
+  const span = w.to - w.from, x = t => Math.max(0, Math.min(100, (t - w.from) / span * 100));
+  const lanes = [];
+  const bars = list.map(g => {
+    const a = Math.max(g.d.getTime(), w.from), b = Math.min(g.d.getTime() + durMs(g), w.to);
+    let ln = lanes.findIndex(end => end <= a); if (ln < 0) { ln = lanes.length; lanes.push(0); } lanes[ln] = b;
+    const lab = g.teams.map(t => TEAMS[t].s).join(' – ') || `${g.h} – ${g.a}`;
+    return `<button class="tnbar${isLive(g) ? ' live' : ''}" type="button" data-game="${g.id}" style="--c:${col(g.l)};left:${x(a).toFixed(2)}%;width:${Math.max(4, x(b) - x(a)).toFixed(2)}%;top:${6 + ln * 30}px" title="${esc(fmtTime.ro.format(g.d))} ${esc(g.h)} – ${esc(g.a)}"><b>${esc(fmtTime.ro.format(g.d))}</b> ${esc(lab)}</button>`;
+  }).join('');
+  const ticks = [18, 20, 22, 0, 2, 4, 6].map((h, i) => `<span style="left:${(i * 2 / 12 * 100).toFixed(2)}%">${String(h).padStart(2, '0')}</span>`).join('');
+  const nowMark = now > w.from && now < w.to ? `<i class="tnnow" style="left:${x(now).toFixed(2)}%" title="acum"></i>` : '';
+  // Overlaps, in words.
+  const over = [];
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+    const A = list[i], B = list[j];
+    if (B.d.getTime() < A.d.getTime() + durMs(A)) over.push(`${A.teams.map(t => TEAMS[t].s).join('/')} și ${B.teams.map(t => TEAMS[t].s).join('/')}`);
+  }
+  const ranked = list.map(g => ({ g, ...pickScore(g, now) })).sort((a, b) => b.s - a.s || a.g.d - b.g.d);
+  const top = ranked[0], g = top.g;
+  if (!top.why.length) top.why.push(list.length === 1 ? 'singurul meci al serii' : g === list[0] ? 'începe primul' : 'cel mai interesant dintre meciurile serii');
+  const allNight = list.every(x => x.aw === 'night' && !isLive(x));
+  const title = { 'Diseară': 'Ce văd diseară', 'În seara asta': 'Ce văd în seara asta', 'Noaptea asta': 'Ce mai văd la noapte' }[w.label] || 'Următoarea seară cu meciuri';
+  const when = w.label.startsWith('Următoarea') ? dayLabel(keyOf(new Date(w.from), 'ro')) + ' · ' : '';
+  sec.innerHTML = `<div class="tnhead"><h2 class="sec">${title}</h2><span class="fn">${when}${list.length} ${list.length === 1 ? 'meci' : 'meciuri'} între 18:00 și 06:00, ora României</span></div>
+    <button class="tnpick" type="button" data-game="${g.id}" style="--c:${col(g.l)}">
+      <span class="k">${list.length > 1 ? 'Recomandarea serii' : 'Meciul serii'} · ${g.l}</span>
+      <span class="duo">${emb(g.H)}<span class="at">vs</span>${emb(g.A)}</span>
+      <span class="t">${esc(g.h)} – ${esc(g.a)}</span>
+      <span class="w">${isLive(g) ? `LIVE ${g.hs ?? 0}–${g.as ?? 0} · ${esc(detailRo(g.detail, g.l))}` : `${esc(fmtTime.ro.format(g.d))} ora României · ${esc(AW[g.aw])}`}${g.tv ? ' · ' + esc(g.tv) : ''}</span>
+      ${top.why.length ? `<span class="why">${top.why.slice(0, 3).map(r => `<i>${esc(r)}</i>`).join('')}</span>` : ''}
+    </button>
+    ${list.length > 1 ? `<div class="tntrack" style="height:${12 + lanes.length * 30}px" aria-label="Meciurile serii pe ore">${bars}${nowMark}</div><div class="tnaxis">${ticks}</div>` : ''}
+    ${over.length ? `<div class="fn">Se suprapun: ${over.slice(0, 3).map(esc).join('; ')}.</div>` : ''}
+    ${allNight ? '<div class="fn">Toate meciurile încep după ora 01:00. Dimineața găsești pe pagina fiecărui meci scorul, cei mai buni jucători și rezumatele video.</div>' : ''}`;
+}
+
 function renderHighlights(busy) {
   const now = Date.now(), today = todayKey(), lim = keyOf(new Date(horizonEnd()), state.tz);
   let html = '';
@@ -443,7 +533,7 @@ function renderMap() {
   const venues = P ? Object.values(P.venues).filter(v => cities.some(c => c.id === v.city)) : [];
   $('mpanel').innerHTML = `<h3>${M.n}</h3><p>${gs.length} ${gs.length === 1 ? 'meci' : 'meciuri'} acasă în următoarele ${state.horizon} de zile. Numărul din cerc arată meciurile de acasă.</p>
     ${cities.length ? `<div class="mcities">${cities.map(cityCard).join('')}</div>` : ''}
-    ${venues.length ? `<div class="mvenues">${venues.map(v => `<button type="button" data-venue="${v.id}">${v.image ? `<img src="${esc(v.image.small)}" alt="" loading="lazy">` : ''}<span><b>${esc(v.name)}</b><small>${v.teams.map(k => esc(TEAMS[k].s)).join(', ')} · ${v.roof === 'closed' ? 'arenă' : 'aer liber'}</small></span></button>`).join('')}</div>` : `<div class="mteams">${ks.map(k => `<button type="button" data-team="${k}">${emb(flSide(k), 'sm')}${esc(TEAMS[k].s)}</button>`).join('')}</div>`}
+    ${venues.length ? `<div class="mvenues">${venues.map(v => `<button type="button" data-venue="${v.id}">${v.image ? `<img src="${esc(v.image.small)}" alt="" loading="lazy">` : ''}<span><b>${esc(v.name)}</b><small>${v.teams.map(k => esc(TEAMS[k].s)).join(', ')} · ${roofWord(v)}</small></span></button>`).join('')}</div>` : `<div class="mteams">${ks.map(k => `<button type="button" data-team="${k}">${emb(flSide(k), 'sm')}${esc(TEAMS[k].s)}</button>`).join('')}</div>`}
     <div class="rows">${gs.slice(0, 7).map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${esc(TEAMS[g.H.key].s)} – ${esc(g.a)}</span><span class="r">${g.tbd ? '' : fmtTime[state.tz].format(g.d)}</span></button>`).join('') || '<div class="row"><span></span><span>Niciun meci acasă în perioadă.</span><span></span></div>'}</div>
     ${gs.length > 7 ? `<div class="fn">și încă ${gs.length - 7}; vezi lista completă cu filtrul „Jucate în Florida”.</div>` : ''}`;
 }
@@ -457,7 +547,7 @@ function render() {
   $('homeonly').checked = state.home; $('awake').checked = state.awake;
   const list = filtered(), busy = busyMap();
   if (state.day && !list.some(g => keyOf(g.d, state.tz) === state.day)) state.day = null;
-  renderStatus(); renderHero(); renderHighlights(busy);
+  renderStatus(); renderHero(); renderTonight(); renderHighlights(busy);
   $('cal').innerHTML = state.view === 'week' ? weekHtml(list, busy) : monthsHtml(list, busy);
   renderAgenda(list, busy); renderMap();
   writeFilters();
@@ -501,7 +591,7 @@ function go(hash) {
 function route(keep) {
   const h = decodeURIComponent(location.hash.slice(1)).split('/');
   if (h[0] === 'meci' && BY_ID.has(h[2])) { const t = h[3] || 'rezumat'; if (openGameId !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
-  if (h[0] === 'echipa' && TEAMS[h[1]]) { openTeam(h[1], keep); return; }
+  if (h[0] === 'echipa' && TEAMS[h[1]]) { teamView.tab = ['sezon', 'lot', 'stiri'].includes(h[2]) ? h[2] : 'rezumat'; openTeam(h[1], keep); return; }
   if (h[0] === 'notificari') {
     const pre = (h[1] || '').split(',').filter(k => TEAMS[k]);
     if (pre.length && !keep && N.status !== 'on') N.teams = pre;
@@ -536,6 +626,8 @@ window.addEventListener('popstate', () => route());
 function openTeam(k, keep) {
   const T = TEAMS[k]; if (!T) return;
   openGameId = null; openPlaceId = null;
+  teamView.k = k;
+  loadTeamX(k);
   const st = teamStats(k), now = Date.now(), side = flSide(k);
   const mine = GAMES.filter(g => g.teams.includes(k));
   const last = lastGames(k).reverse(), next = mine.filter(g => !played(g) && (isLive(g) || g.end > now)).slice(0, 5);
@@ -544,10 +636,12 @@ function openTeam(k, keep) {
   const bandBg = side.color || T.col[0], bandFg = pickInk(bandBg, side.alt || T.col[1]);
   show(`<div class="band" style="background:${bandBg};color:${bandFg}"><div class="id">${emb(side, 'xl')}<div><div class="lgn">${T.l} · ${esc(T.city)}</div><h2 id="prof-name">${esc(T.espn)}</h2></div></div>
       <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
-    <div class="pbody">
+    <div class="ttabs">${teamTabsHtml(teamView.tab)}</div>
+    <div class="pbody" id="tpanel">
+    ${teamView.tab !== 'rezumat' ? teamPanel(k) : ''}${teamView.tab === 'rezumat' ? `
     <div class="stats">
       <div class="stat"><div class="v">${st.rec}</div><div class="l">Bilanț (${st.recL})</div></div>
-      ${st.conf != null ? `<div class="stat"><div class="v">Locul ${st.conf}</div><div class="l">${T.l === 'NFL' ? 'în ' + esc(st.confN) : 'în conferința de ' + esc(st.confN)}</div></div>` : st.standing ? `<div class="stat"><div class="v" style="font-size:16px">${esc(st.standing)}</div><div class="l">Clasament</div></div>` : ''}
+      ${st.conf != null ? `<div class="stat"><div class="v">Locul ${st.conf}</div><div class="l">${T.l === 'NFL' || T.l === 'MLB' ? 'în ' + esc(st.confN) : 'în conferința de ' + esc(st.confN)}</div></div>` : st.standing ? `<div class="stat"><div class="v" style="font-size:16px">${esc(st.standing)}</div><div class="l">Clasament</div></div>` : ''}
       ${isMLS && st.pts != null ? `<div class="stat"><div class="v">${st.pts}</div><div class="l">puncte</div></div>` : st.div ? `<div class="stat"><div class="v">Locul ${st.div}</div><div class="l">în ${esc(DIVISIONS[DIVISION_OF[k]].t.split(' · ')[1])}</div></div>` : ''}
       ${st.home ? `<div class="stat"><div class="v">${st.home}</div><div class="l">Acasă</div></div>` : ''}
       ${st.away ? `<div class="stat"><div class="v">${st.away}</div><div class="l">În deplasare</div></div>` : ''}
@@ -564,7 +658,7 @@ function openTeam(k, keep) {
     </dl>
     <div><h3>Următoarele meciuri</h3><div class="rows">${next.length ? next.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}${g.note ? ` <span style="color:var(--muted);font-size:12.5px">· ${esc(noteRo(g.note))}</span>` : ''}</span><span class="r">${isLive(g) ? 'LIVE' : g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`).join('') : '<div class="row"><span></span><span>Niciun meci programat.</span><span></span></div>'}</div></div>
     <div><h3>Ultimele rezultate</h3><div class="rows">${last.map(g => { const o = outcome(g, k); const a = g.H.key === k ? g.hs : g.as, b = g.H.key === k ? g.as : g.hs; return `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}</span><span class="r ${o}">${OUTL[o]} ${a}–${b}</span></button>`; }).join('') || '<div class="row"><span></span><span>Niciun meci jucat încă.</span><span></span></div>'}</div></div>
-    ${tableHtml(DIVISION_OF[k])}
+    ${tableHtml(DIVISION_OF[k])}` : ''}
     <div class="btns"><button class="primary" type="button" data-only="${k}">Arată doar meciurile echipei</button>
       <button class="ghost" type="button" data-team-cal="${k}">Calendarul echipei</button>
       <button class="ghost" type="button" data-team-ntf="${k}">Notificări</button>
@@ -572,6 +666,143 @@ function openTeam(k, keep) {
       <button class="ghost" type="button" data-share>Copiază linkul</button></div>
     </div>`, keep);
 }
+
+/* ----- team page tabs: season, roster, news (from /api/team, loaded on first use) ----- */
+const teamView = { k: '', tab: 'rezumat' };
+const TEAMX = new Map();
+function teamPanel(k) {
+  const T = TEAMS[k], x = TEAMX.get(k), info = TEAMINFO[k];
+  if (teamView.tab === 'sezon') {
+    const rows = GAMES.filter(g => g.teams.includes(k) && played(g) && g.hs != null).map(g => {
+      const home = g.H.key === k;
+      return { id: g.id, d: g.d, opp: home ? g.a : g.h, home, mine: home ? g.hs : g.as, their: home ? g.as : g.hs };
+    });
+    return `<section><h3>Sezonul, meci cu meci</h3>${seasonChartHtml(rows, T.l)}</section>${x ? leadersHtml(x) : info?.id ? '<div class="skeleton" style="height:120px"></div>' : ''}`;
+  }
+  if (!info?.id) return '<div class="fn">Datele echipei nu sunt disponibile acum.</div>';
+  if (!x) return '<div class="skeleton" style="height:180px"></div>';
+  return teamView.tab === 'lot' ? `<section>${rosterHtml(x, T.l)}</section>` : `<section>${newsHtml(x)}</section>`;
+}
+async function loadTeamX(k) {
+  const info = TEAMINFO[k];
+  if (!info?.id || TEAMX.has(k) || DATA.mode === 'snapshot') return;
+  try {
+    const x = await getJSON(`/api/team?l=${TEAMS[k].l}&id=${info.id}`, 12000);
+    TEAMX.set(k, x);
+  } catch (e) { TEAMX.set(k, { roster: [], leaders: [], news: [] }); }
+  if (teamView.k === k && $('tpanel') && teamView.tab !== 'rezumat' && location.hash.startsWith('#echipa/' + k)) openTeam(k, true);
+}
+function setTeamTab(t) {
+  const k = teamView.k; if (!TEAMS[k]) return;
+  teamView.tab = t;
+  history.replaceState(history.state, '', location.pathname + location.search + `#echipa/${k}${t !== 'rezumat' ? '/' + t : ''}`);
+  openTeam(k, true);
+  const b = document.querySelector(`[data-ttab="${t}"]`); if (b) b.focus({ preventScroll: true });
+}
+
+/* ================= playoff bracket ================= */
+// Shown for each league where a Florida team has playoff games around now (60 days back, 45 ahead).
+const PLAYOFFS = new Map();
+let poLeague = '';
+const playoffLike = n => /playoff|round|runda|wild card|final|play-in|semifinal|championship|super bowl/i.test(n || '') && !/nba cup|cupa nba/i.test(n || '');
+function playoffLeagues() {
+  const now = Date.now();
+  return [...new Set(GAMES.filter(g => playoffLike(g.note) && Math.abs(g.d.getTime() - now) < 60 * 864e5).map(g => g.l))];
+}
+async function renderPlayoffs() {
+  const sec = $('playoffs'), ls = playoffLeagues();
+  if (!ls.length || DATA.mode === 'snapshot') { sec.hidden = true; return; }
+  if (!ls.includes(poLeague)) poLeague = ls[0];
+  const l = poLeague;
+  if (!PLAYOFFS.has(l)) {
+    PLAYOFFS.set(l, null);
+    getJSON(`/api/playoffs?l=${l}`, 15000).then(j => { PLAYOFFS.set(l, j); renderPlayoffs(); }, () => PLAYOFFS.delete(l));
+  }
+  const data = PLAYOFFS.get(l);
+  const head = `<div class="tnhead"><h2 class="sec">Playoff ${l}</h2>${ls.length > 1 ? `<div class="seg" role="group" aria-label="Liga">${ls.map(x => `<button type="button" data-pl="${x}" aria-pressed="${x === l}">${x}</button>`).join('')}</div>` : ''}</div>`;
+  if (!data) { sec.hidden = false; sec.innerHTML = head + '<div class="skeleton" style="height:140px"></div>'; return; }
+  const layout = bracketLayout(buildSeries(data.games || []));
+  if (!layout.length) { sec.hidden = true; return; }
+  const flName = n => Object.keys(TEAMS).find(k => TEAMS[k].l === l && norm(TEAMS[k].espn) === norm(n));
+  const card = s => {
+    const fl = s.teams.map(t => flName(t.name)).find(Boolean);
+    const target = fl && (s.next ? BY_ID.get(s.next.id) : BY_ID.get(s.games[s.games.length - 1].id));
+    const many = s.games.length > 1;
+    const status = s.winner ? `${esc(TEAMS[flName(s.winner.name)]?.s || s.winner.abbr || s.winner.name)} merge mai departe${many ? ` (${s.winner.wins}–${Math.min(...s.teams.map(t => t.wins))})` : ''}`
+      : s.next ? `${s.next.tbd ? 'oră neanunțată' : `${tShort(new Date(s.next.date))}, ${fmtTime.ro.format(new Date(s.next.date))}`}${many && s.teams.some(t => t.wins) ? ` · seria ${s.teams[0].wins}–${s.teams[1].wins}` : ''}`
+      : '';
+    const row = t => {
+      const k = flName(t.name), e = !t.tbd && entryOf(l, t.name), seed = e && (e.seed ?? e.order);
+      const side = { name: t.name, abbr: t.abbr, logo: t.logo, logoDark: t.logoDark, color: t.color, key: k || null };
+      return `<div class="srow2${s.winner && s.winner.name !== t.name ? ' out' : ''}${k ? ' fl' : ''}">${t.tbd ? '<span class="emb sm neutral"><b>?</b></span>' : emb(side, 'sm')}<span class="nm">${seed ? `<small>${seed}</small>` : ''}${esc(k ? TEAMS[k].s : t.name)}</span>${many || s.done ? `<b>${many ? t.wins : (t.score ?? '')}</b>` : ''}</div>`;
+    };
+    return `<${target ? `button type="button" data-game="${target.id}"` : 'div'} class="ser${fl ? ' fl' : ''}">${row(s.teams[0])}${row(s.teams[1])}${status ? `<small class="ss">${status}</small>` : ''}</${target ? 'button' : 'div'}>`;
+  };
+  sec.hidden = false;
+  sec.innerHTML = head + layout.map(b => `<div class="bconf">${b.conf ? `<h3>${esc(confRo(b.conf))}</h3>` : ''}<div class="bcols">${b.rounds.map(r => `<div class="bcol"><div class="bround">${esc(roundRo(r.stage, l))}</div><div class="bser">${r.series.map(card).join('')}</div></div>`).join('')}</div></div>`).join('')
+    + '<div class="fn">Numărul mic din fața echipei e locul din sezonul regulat. Echipele din Florida sunt evidențiate; apasă pe seria lor pentru pagina meciului.</div>';
+}
+
+/* ================= search ================= */
+// Everything findable: Florida teams, every opponent in the schedule, cities, stadiums.
+function searchIndex() {
+  const out = [];
+  for (const k in TEAMS) out.push({ kind: 'Echipă', text: `${TEAMS[k].espn} ${TEAMS[k].s} ${TEAMS[k].city} ${TEAMS[k].l}`, label: TEAMS[k].espn, sub: `${TEAMS[k].l} · ${TEAMS[k].city}`, hash: '#echipa/' + k, side: flSide(k), rank: 0 });
+  const now = Date.now(), opp = new Map();
+  for (const g of GAMES) for (const s of [g.H, g.A]) {
+    if (s.key) continue;
+    const o = opp.get(s.name) || { side: s, l: g.l, next: null, last: null };
+    if (!played(g) && g.end > now) { if (!o.next) o.next = g; } else if (played(g)) o.last = g;
+    opp.set(s.name, o);
+  }
+  for (const [name, o] of opp) {
+    const g = o.next || o.last; if (!g) continue;
+    out.push({ kind: 'Adversar', text: `${name} ${o.side.abbr} ${o.l}`, label: name, sub: o.next ? `următorul meci: ${tShort(g.d)}, ${g.teams.map(t => TEAMS[t].s).join(', ')}` : `ultimul meci: ${tShort(g.d)}, ${g.hs}–${g.as}`, hash: `#meci/${g.l}/${g.id}`, side: o.side, rank: 1 });
+  }
+  const P = PLACES.data;
+  if (P) {
+    for (const c of Object.values(P.cities)) out.push({ kind: 'Oraș', text: `${c.name} ${c.county} florida`, label: c.name, sub: `comitatul ${c.county}`, hash: '#oras/' + c.id, img: c.image?.small, rank: 2 });
+    for (const v of Object.values(P.venues)) out.push({ kind: 'Stadion', text: `${v.name} ${(v.espn || []).join(' ')} ${(v.names || []).map(n => n[0]).join(' ')} ${P.cities[v.city]?.name || ''}`, label: v.name, sub: `${v.teams.map(k => TEAMS[k].s).join(', ')} · ${P.cities[v.city]?.name || ''}`, hash: '#stadion/' + v.id, img: v.image?.small, rank: 3 });
+  }
+  return out;
+}
+let qSel = -1, qHits = [];
+function runSearch() {
+  const raw = $('q').value, q = norm(raw);
+  const box = $('qres');
+  if (q.length < 2) { box.hidden = true; $('q').setAttribute('aria-expanded', 'false'); qHits = []; return; }
+  const words = q.split(/\s+/).filter(Boolean);
+  qHits = searchIndex().map(x => {
+    const t = norm(x.text), lab = norm(x.label);
+    if (!words.every(w => t.includes(w))) return null;
+    return { ...x, score: (lab.startsWith(q) ? 0 : lab.split(' ').some(p => p.startsWith(words[0])) ? 1 : 2) * 10 + x.rank };
+  }).filter(Boolean).sort((a, b) => a.score - b.score || a.label.localeCompare(b.label)).slice(0, 8);
+  qSel = qHits.length ? 0 : -1;
+  box.innerHTML = qHits.length ? qHits.map((x, i) => `<button type="button" role="option" id="qo${i}" class="qopt${i === qSel ? ' sel' : ''}" aria-selected="${i === qSel}" data-qi="${i}">${x.side ? emb(x.side, 'sm') : x.img ? `<img src="${esc(x.img)}" alt="" loading="lazy">` : ''}<span><b>${esc(x.label)}</b><small>${esc(x.kind)} · ${esc(x.sub)}</small></span></button>`).join('')
+    : `<div class="qnone">Nimic găsit pentru „${esc(raw)}”.</div>`;
+  box.hidden = false;
+  $('q').setAttribute('aria-expanded', 'true');
+  $('q').setAttribute('aria-activedescendant', qSel >= 0 ? 'qo' + qSel : '');
+}
+function pickSearch(i) {
+  const x = qHits[i]; if (!x) return;
+  $('q').value = ''; $('qres').hidden = true; $('q').setAttribute('aria-expanded', 'false');
+  if (x.hash.startsWith('#meci/')) { gameView.tab = 'rezumat'; gameView.side = ''; }
+  go(x.hash);
+}
+$('q').addEventListener('input', runSearch);
+$('q').addEventListener('focus', runSearch);
+$('q').addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!qHits.length) return;
+    e.preventDefault();
+    qSel = (qSel + (e.key === 'ArrowDown' ? 1 : -1) + qHits.length) % qHits.length;
+    document.querySelectorAll('.qopt').forEach((b, i) => { b.classList.toggle('sel', i === qSel); b.setAttribute('aria-selected', i === qSel); });
+    $('q').setAttribute('aria-activedescendant', 'qo' + qSel);
+  } else if (e.key === 'Enter') { e.preventDefault(); pickSearch(Math.max(0, qSel)); }
+  else if (e.key === 'Escape') { $('q').value = ''; runSearch(); }
+});
+document.addEventListener('click', e => { if (!e.target.closest('.search')) { $('qres').hidden = true; $('q').setAttribute('aria-expanded', 'false'); } });
 
 /* ================= city and stadium pages ================= */
 const placeCtx = {
@@ -764,7 +995,7 @@ async function loadGame(g) {
 
 /* ================= events ================= */
 function setTz(z) { state.tz = z; state.day = null; state.week = null; state.month = null; store.set('flgames-tz', z); render(); }
-function resetFilters() { state.team = ''; state.home = false; state.awake = false; $('homeonly').checked = false; $('awake').checked = false; ['NBA', 'NHL', 'NFL', 'MLS'].forEach(l => state.leagues.add(l)); renderStatic(); }
+function resetFilters() { state.team = ''; state.home = false; state.awake = false; $('homeonly').checked = false; $('awake').checked = false; Object.keys(LEAGUES).forEach(l => state.leagues.add(l)); renderStatic(); }
 $('tz-ro').onclick = () => setTz('ro');
 $('tz-fl').onclick = () => setTz('fl');
 $('team').onchange = e => { state.team = e.target.value; render(); };
@@ -816,6 +1047,9 @@ function handle(e) {
   }
   if ((el = q('[data-ics-game]'))) { const raw = (DATA.raw.games || []).find(x => x.id === el.dataset.icsGame); if (raw) downloadGame(raw); return; }
   if ((el = q('[data-tab]'))) { setTab(el.dataset.tab); return; }
+  if ((el = q('[data-ttab]'))) { setTeamTab(el.dataset.ttab); return; }
+  if ((el = q('[data-qi]'))) { pickSearch(+el.dataset.qi); return; }
+  if ((el = q('[data-pl]'))) { poLeague = el.dataset.pl; renderPlayoffs(); return; }
   if ((el = q('[data-side]'))) { gameView.side = el.dataset.side; const g = BY_ID.get(openGameId); if (g) refreshGame(g); return; }
   if ((el = q('[data-fav]'))) { const k = el.dataset.fav; state.fav = state.fav === k ? '' : k; state.fav ? store.set('flgames-fav', state.fav) : store.del('flgames-fav'); renderStatic(); render(); openTeam(k, true); return; }
   if ((el = q('[data-only]'))) { resetFilters(); state.team = el.dataset.only; state.day = null; closeOv(); render(); $('cal').scrollIntoView({ block: 'start' }); return; }
@@ -869,11 +1103,15 @@ document.addEventListener('keydown', e => {
   if (tab && (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'Home' || e.key === 'End')) {
     const all = [...tab.parentNode.querySelectorAll('[role="tab"]')], i = all.indexOf(tab);
     const j = e.key === 'Home' ? 0 : e.key === 'End' ? all.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + all.length) % all.length;
-    e.preventDefault(); setTab(all[j].dataset.tab);
+    e.preventDefault(); all[j].dataset.ttab ? setTeamTab(all[j].dataset.ttab) : setTab(all[j].dataset.tab);
   }
 });
-document.addEventListener('pointermove', e => { wpHover(e); climateHover(e); });
-document.addEventListener('pointerleave', e => { if (e.target.matches && e.target.matches('.clim svg, .clim svg *')) climateHover({ type: 'pointerleave', target: e.target }); }, true);
+document.addEventListener('pointermove', e => { wpHover(e); climateHover(e); seasonHover(e); });
+document.addEventListener('pointerleave', e => {
+  if (!e.target.matches) return;
+  if (e.target.matches('.clim svg, .clim svg *')) climateHover({ type: 'pointerleave', target: e.target });
+  if (e.target.matches('.seas svg, .seas svg *')) seasonHover({ type: 'pointerleave', target: e.target });
+}, true);
 document.addEventListener('pointerleave', e => { if (e.target.matches && e.target.matches('svg.wp, svg.wp *')) wpHover({ ...e, type: 'pointerleave', target: e.target, clientX: e.clientX }); }, true);
 
 /* ================= loading, refresh, live scores ================= */
@@ -883,6 +1121,7 @@ function apply(raw, mode) {
   $('banner').hidden = true;
   renderStatic(); render();
   scheduleLive();
+  PLAYOFFS.clear(); renderPlayoffs();
   // First data: open the game or team named in the address. Later reloads only refresh what is open.
   if (!routed) { routed = true; route(); }
   else if (!$('ov').hidden) { const g = BY_ID.get(openGameId); if (g) refreshGame(g); }
@@ -964,4 +1203,5 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && DATA.mode !== 'snapshot' && Date.now() - DATA.loadedAt > 15 * 60e3) load();
 });
 setInterval(() => { if (GAMES.length) { renderHero(); renderStatus(); } }, 30000);
+setInterval(() => { if (GAMES.length && !document.hidden) renderTonight(); }, 5 * 60e3);
 setInterval(() => { if (!document.hidden) load(); }, 15 * 60e3);

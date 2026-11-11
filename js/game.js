@@ -73,8 +73,8 @@ function summaryHtml(g, s, known) {
   if (s.wp?.length > 5 && (played(g) || isLive(g))) html += wpHtml(g, s);
   const n = Math.max(s.home.lines.length, s.away.lines.length);
   if (n && (played(g) || isLive(g))) {
-    const lab = []; for (let i = 0; i < n; i++) lab.push(i < (g.l === 'NHL' ? 3 : g.l === 'MLS' ? 2 : 4) ? periodShort(g.l, i + 1) : (g.l === 'NHL' && i === 4 ? 'Lov.' : 'Prel.'));
-    html += `<section><h3>Scor pe ${g.l === 'NBA' || g.l === 'NFL' ? 'sferturi' : 'reprize'}</h3><div class="scroll"><table class="lines"><thead><tr><th>Echipă</th>${lab.map(x => `<th>${x}</th>`).join('')}<th>Total</th></tr></thead><tbody>
+    const lab = []; for (let i = 0; i < n; i++) lab.push(g.l === 'MLB' ? String(i + 1) : i < (g.l === 'NHL' ? 3 : g.l === 'MLS' ? 2 : 4) ? periodShort(g.l, i + 1) : (g.l === 'NHL' && i === 4 ? 'Lov.' : 'Prel.'));
+    html += `<section><h3>Scor pe ${g.l === 'NBA' || g.l === 'NFL' ? 'sferturi' : g.l === 'MLB' ? 'inning-uri' : 'reprize'}</h3><div class="scroll"><table class="lines"><thead><tr><th>Echipă</th>${lab.map(x => `<th>${x}</th>`).join('')}<th>Total</th></tr></thead><tbody>
       ${['home', 'away'].map(w => `<tr><td>${emb(sideOf(g, w), 'sm')}${esc(shortOf(g, w))}</td>${s[w].lines.map(x => `<td>${x ?? ''}</td>`).join('')}<td><b>${s[w].score ?? ''}</b></td></tr>`).join('')}</tbody></table></div></section>`;
   }
   if (s.goalies?.length && !played(g)) html += `<section><h3>Portari probabili</h3><ul class="notes">${s.goalies.map(x => `<li>${esc(shortOf(g, x.side))}: <b>${esc(x.n)}</b>${x.j ? ` (#${esc(x.j)})` : ''}</li>`).join('')}</ul></section>`;
@@ -188,6 +188,8 @@ function boxHtml(g, s, want) {
     if (gk) html += table('Portari', boxCols('NHL', 'goalies'), gk.rows, gk);
   } else if (g.l === 'NFL') {
     for (const grp of b.groups) { const cols = boxCols('NFL', grp.name); if (cols) html += table(NFL_GROUP[grp.name] || grp.name, cols, grp.rows.slice(0, 8), grp); }
+  } else if (g.l === 'MLB') {
+    for (const grp of b.groups) { const cols = boxCols('MLB', grp.name); if (cols) html += table(grp.name === 'batting' ? 'La bătaie' : 'Aruncători', cols, grp.rows, grp); }
   } else if (g.l === 'MLS') {
     const grp = b.groups[0], gkRows = grp.rows.filter(r => r.pos === 'G'), field = grp.rows.filter(r => r.pos !== 'G');
     html += table('Jucători de câmp', boxCols('MLS', 'soccer'), field, grp, { split: true });
