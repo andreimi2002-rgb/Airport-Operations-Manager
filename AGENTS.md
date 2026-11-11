@@ -48,7 +48,7 @@ gratuite, fiecare merge în `main` consumă. Mai multe etape merg pe un singur b
 baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la final.
 
 4. **Etapa 4** (în lucru, branch `stage-4-america`, un singur merge la final):
-   - **Partea 1, în plus pentru Florida:** „Ce văd diseară”, profil de echipă bogat (lot,
+   - **Partea 1, în plus pentru Florida:** profil de echipă bogat (lot,
      lideri, grafic al sezonului, știri), căutare, tabloul de playoff, MLB automat
      (Marlins, Rays).
    - **Partea 2, restul Americii, varianta ușoară:** profiluri bogate doar pentru Florida; pentru
@@ -171,7 +171,7 @@ nu se scriu de mână.
   acceptată de serverul Google (răspunde 410 pentru un abonament inventat, 403 cu cheia greșită).
   O notificare reală nu se poate vedea în browserul fără fereastră: se testează pe preview.
   Necesită variabilele VAPID în Netlify înainte de deploy.
-- Etapa 4, partea 1 (11 noiembrie), branch `stage-4-america`: „Ce văd diseară”, file în profilul
+- Etapa 4, partea 1 (11 noiembrie), branch `stage-4-america`: file în profilul
   echipei (Sezon, Lot, Știri; `/api/team`), căutare în antet, tabloul de playoff (`/api/playoffs`),
   MLB (Marlins, Rays, loanDepot park, Tropicana Field, St. Petersburg). Reparat: locul în
   clasamentul MLS (ESPN dă `rank`, nu `playoffSeed`), notele de playoff MLS, AL/NL la MLB.

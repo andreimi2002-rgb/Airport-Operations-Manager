@@ -305,97 +305,13 @@ function renderHero() {
   const big = on ? `${g.hs ?? 0}–${g.as ?? 0}` : g.d.getTime() <= now ? 'Urmează să înceapă' : 'în ' + countdown(g.d.getTime() - now);
   $('hero').innerHTML = `<div data-gid="${esc(g.id)}">
       <div class="k">${mine[0] === g ? 'Echipa ta · ' + esc(TEAMS[state.fav].s) : on ? 'În desfășurare' : 'Următorul meci'} · ${g.l}</div>
-      <div class="duo">${emb(g.H)}<span class="at">vs</span>${emb(g.A)}</div>
+      <div class="duo">${emb(g.H, '', true)}<span class="at">vs</span>${emb(g.A, '', true)}</div>
       <div class="cd">${big}</div>
       <div class="m">${esc(g.h)} – ${esc(g.a)}${on && g.detail ? ` <span class="tag live">LIVE · ${esc(detailRo(g.detail, g.l))}</span>` : ''}</div>
       <div class="w">${dayLabel(k)}, ${fmtTime[state.tz].format(g.d)} ${TZNAME[state.tz]} · ${g.v ? esc(g.v) + ', ' : ''}${esc(g.city)}${g.tv ? ' · ' + esc(g.tv) : ''}</div>
       <button class="go" type="button" data-game="${g.id}">Detalii meci</button>
     </div>
     <div class="soon"><div class="k">În următoarele 24 de ore</div>${soon.length ? soon.map(x => `<button class="srow" type="button" data-game="${x.id}"><b>${isLive(x) ? `${x.hs}–${x.as}` : fmtTime[state.tz].format(x.d)}</b><span>${esc(x.h)} – ${esc(x.a)} <span style="opacity:.7">· ${x.l}${isLive(x) ? ' · LIVE' : ''}</span></span></button>`).join('') : '<div class="w">Niciun alt meci în următoarele 24 de ore.</div>'}</div>`;
-}
-/* ================= render: tonight in Romania ================= */
-// A moment as Romanian wall-clock: the ms of `dateKey` at `hour`:00 in Bucharest.
-function roMs(k, hour) {
-  const [y, m, d] = parts(k), guess = Date.UTC(y, m - 1, d, hour);
-  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Bucharest', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric' }).formatToParts(new Date(guess)).map(x => [x.type, +x.value]));
-  return guess - (Date.UTC(p.year, p.month - 1, p.day, p.hour) - guess);
-}
-// The evening to show: 18:00–06:00 Romanian time. Daytime -> this evening; evening -> from now; small hours -> until 06:00.
-function tonightWindow(now = Date.now()) {
-  const k = keyOf(new Date(now), 'ro'), h = +fmtHM.ro.format(new Date(now)).slice(0, 2);
-  if (h < 6) return { from: roMs(addDays(k, -1), 18), to: roMs(k, 6), label: 'Noaptea asta' };
-  return { from: roMs(k, 18), to: roMs(addDays(k, 1), 6), label: h >= 18 ? 'În seara asta' : 'Diseară' };
-}
-// Why one game is the pick of the evening: points and the reasons, in Romanian.
-function pickScore(g, now) {
-  let s = 0; const why = [];
-  if (state.fav && g.teams.includes(state.fav)) { s += 100; why.push('joacă echipa ta'); }
-  if (isLive(g)) { s += 40; why.push('e în desfășurare'); }
-  if (g.derby) { s += 60; why.push('derby al Floridei'); }
-  if (/round|playoff|final|wild card|semifinal|runda|play-in/i.test(g.note)) { s += 50; why.push('meci de playoff'); }
-  const eh = entryOf(g.l, g.h), ea = entryOf(g.l, g.a);
-  const sh = eh && (eh.seed ?? eh.order), sa = ea && (ea.seed ?? ea.order);
-  if (sh && sa && sh <= 8 && sa <= 8) { s += 15; why.push('ambele echipe sunt în prima parte a clasamentului'); }
-  else if (sh && sa && Math.abs(sh - sa) <= 2 && eh.conf === ea.conf) { s += 10; why.push('echipe apropiate în clasament'); }
-  if (g.aw === 'good') { s += 30; why.push('începe la o oră bună în România'); }
-  else if (g.aw === 'late') s += 10;
-  else s -= 10;
-  if (g.tv && /espn|tnt|abc|nbc|cbs|fox|prime|apple/i.test(g.tv)) s += 3;
-  return { s, why };
-}
-const durMs = g => LEAGUES[g.l].dur * 6e4;
-function renderTonight() {
-  const now = Date.now();
-  let w = tonightWindow(now), list = [];
-  const inWin = (W, g) => !g.tbd && !played(g) && (isLive(g) || (g.d.getTime() >= W.from && g.d.getTime() < W.to));
-  list = GAMES.filter(g => inWin(w, g));
-  if (!list.length) {
-    // Nothing tonight: the next evening that has games, within a week.
-    for (let i = 1; i <= 7 && !list.length; i++) {
-      const k = addDays(keyOf(new Date(w.from), 'ro'), i);
-      const W = { from: roMs(k, 18), to: roMs(addDays(k, 1), 6), label: `Următoarea seară cu meciuri: ${dayLabel(k)}` };
-      list = GAMES.filter(g => inWin(W, g));
-      if (list.length) w = W;
-    }
-  }
-  const sec = $('tonight');
-  if (!list.length) { sec.hidden = true; return; }
-  sec.hidden = false;
-  list.sort((a, b) => a.d - b.d);
-  // Timeline: the evening from 18:00 to 06:00, one lane per overlapping game.
-  const span = w.to - w.from, x = t => Math.max(0, Math.min(100, (t - w.from) / span * 100));
-  const lanes = [];
-  const bars = list.map(g => {
-    const a = Math.max(g.d.getTime(), w.from), b = Math.min(g.d.getTime() + durMs(g), w.to);
-    let ln = lanes.findIndex(end => end <= a); if (ln < 0) { ln = lanes.length; lanes.push(0); } lanes[ln] = b;
-    const lab = g.teams.map(t => TEAMS[t].s).join(' – ') || `${g.h} – ${g.a}`;
-    return `<button class="tnbar${isLive(g) ? ' live' : ''}" type="button" data-game="${g.id}" style="--c:${col(g.l)};left:${x(a).toFixed(2)}%;width:${Math.max(4, x(b) - x(a)).toFixed(2)}%;top:${6 + ln * 30}px" title="${esc(fmtTime.ro.format(g.d))} ${esc(g.h)} – ${esc(g.a)}"><b>${esc(fmtTime.ro.format(g.d))}</b> ${esc(lab)}</button>`;
-  }).join('');
-  const ticks = [18, 20, 22, 0, 2, 4, 6].map((h, i) => `<span style="left:${(i * 2 / 12 * 100).toFixed(2)}%">${String(h).padStart(2, '0')}</span>`).join('');
-  const nowMark = now > w.from && now < w.to ? `<i class="tnnow" style="left:${x(now).toFixed(2)}%" title="acum"></i>` : '';
-  // Overlaps, in words.
-  const over = [];
-  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
-    const A = list[i], B = list[j];
-    if (B.d.getTime() < A.d.getTime() + durMs(A)) over.push(`${A.teams.map(t => TEAMS[t].s).join('/')} și ${B.teams.map(t => TEAMS[t].s).join('/')}`);
-  }
-  const ranked = list.map(g => ({ g, ...pickScore(g, now) })).sort((a, b) => b.s - a.s || a.g.d - b.g.d);
-  const top = ranked[0], g = top.g;
-  if (!top.why.length) top.why.push(list.length === 1 ? 'singurul meci al serii' : g === list[0] ? 'începe primul' : 'cel mai interesant dintre meciurile serii');
-  const allNight = list.every(x => x.aw === 'night' && !isLive(x));
-  const title = { 'Diseară': 'Ce văd diseară', 'În seara asta': 'Ce văd în seara asta', 'Noaptea asta': 'Ce mai văd la noapte' }[w.label] || 'Următoarea seară cu meciuri';
-  const when = w.label.startsWith('Următoarea') ? dayLabel(keyOf(new Date(w.from), 'ro')) + ' · ' : '';
-  sec.innerHTML = `<div class="tnhead"><h2 class="sec">${title}</h2><span class="fn">${when}${list.length} ${list.length === 1 ? 'meci' : 'meciuri'} între 18:00 și 06:00, ora României</span></div>
-    <button class="tnpick" type="button" data-game="${g.id}" style="--c:${col(g.l)}">
-      <span class="k">${list.length > 1 ? 'Recomandarea serii' : 'Meciul serii'} · ${g.l}</span>
-      <span class="duo">${emb(g.H)}<span class="at">vs</span>${emb(g.A)}</span>
-      <span class="t">${esc(g.h)} – ${esc(g.a)}</span>
-      <span class="w">${isLive(g) ? `LIVE ${g.hs ?? 0}–${g.as ?? 0} · ${esc(detailRo(g.detail, g.l))}` : `${esc(fmtTime.ro.format(g.d))} ora României · ${esc(AW[g.aw])}`}${g.tv ? ' · ' + esc(g.tv) : ''}</span>
-      ${top.why.length ? `<span class="why">${top.why.slice(0, 3).map(r => `<i>${esc(r)}</i>`).join('')}</span>` : ''}
-    </button>
-    ${list.length > 1 ? `<div class="tntrack" style="height:${12 + lanes.length * 30}px" aria-label="Meciurile serii pe ore">${bars}${nowMark}</div><div class="tnaxis">${ticks}</div>` : ''}
-    ${over.length ? `<div class="fn">Se suprapun: ${over.slice(0, 3).map(esc).join('; ')}.</div>` : ''}
-    ${allNight ? '<div class="fn">Toate meciurile încep după ora 01:00. Dimineața găsești pe pagina fiecărui meci scorul, cei mai buni jucători și rezumatele video.</div>' : ''}`;
 }
 
 function renderHighlights(busy) {
@@ -556,7 +472,7 @@ function render() {
   $('homeonly').checked = state.home; $('awake').checked = state.awake;
   const list = filtered(), busy = busyMap();
   if (state.day && !list.some(g => keyOf(g.d, state.tz) === state.day)) state.day = null;
-  renderStatus(); renderHero(); renderTonight(); renderHighlights(busy);
+  renderStatus(); renderHero(); renderHighlights(busy);
   $('cal').innerHTML = state.view === 'week' ? weekHtml(list, busy) : monthsHtml(list, busy);
   renderAgenda(list, busy); renderMap();
   writeFilters();
@@ -658,7 +574,7 @@ function openTeam(k, keep) {
   const opp = g => (g.H.key === k ? 'vs ' : 'la ') + esc(g.H.key === k ? g.a : g.h);
   const isMLS = T.l === 'MLS', fav = state.fav === k;
   const bandBg = side.color || T.col[0], bandFg = pickInk(bandBg, side.alt || T.col[1]);
-  show(`<div class="band" style="background:${bandBg};color:${bandFg}"><div class="id">${emb(side, 'xl')}<div><div class="lgn">${T.l} · ${esc(T.city)}</div><h2 id="prof-name">${esc(T.espn)}</h2></div></div>
+  show(`<div class="band" style="background:${bandBg};color:${bandFg}"><div class="id">${emb(side, 'xl', true)}<div><div class="lgn">${T.l} · ${esc(T.city)}</div><h2 id="prof-name">${esc(T.espn)}</h2></div></div>
       <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
     <div class="ttabs">${teamTabsHtml(teamView.tab)}</div>
     <div class="pbody" id="tpanel">
@@ -879,7 +795,7 @@ function openClub(l, id, keep) {
     const rows = mine.filter(g => g.state === 'post' && g.hs != null).map(g => { const home = g.H.id === String(id); return { id: g.id, d: g.d, opp: home ? g.a : g.h, home, mine: home ? g.hs : g.as, their: home ? g.as : g.hs }; });
     body = `<section><h3>Sezonul, meci cu meci</h3>${seasonChartHtml(rows, l)}</section>${leadersHtml(c.x)}`;
   } else body = clubView.tab === 'lot' ? `<section>${rosterHtml(c.x, l)}</section>` : `<section>${newsHtml(c.x)}</section>`;
-  show(`<div class="band" style="background:${bg};color:${fg}"><div class="id">${emb(side, 'xl')}<div><div class="lgn">${l}${e?.conf ? ' · ' + esc(e.conf) : ''}</div><h2 id="prof-name">${esc(name)}</h2></div></div>
+  show(`<div class="band" style="background:${bg};color:${fg}"><div class="id">${emb(side, 'xl', true)}<div><div class="lgn">${l}${e?.conf ? ' · ' + esc(e.conf) : ''}</div><h2 id="prof-name">${esc(name)}</h2></div></div>
       <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
     <div class="ttabs">${teamTabsHtml(clubView.tab)}</div>
     <div class="pbody">${body}<div class="btns"><button class="ghost" type="button" data-share>Copiază linkul</button></div></div>`, keep);
@@ -1378,5 +1294,4 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && DATA.mode !== 'snapshot' && Date.now() - DATA.loadedAt > 15 * 60e3) load();
 });
 setInterval(() => { if (GAMES.length) { renderHero(); renderStatus(); } }, 30000);
-setInterval(() => { if (GAMES.length && !document.hidden) renderTonight(); }, 5 * 60e3);
 setInterval(() => { if (!document.hidden) load(); }, 15 * 60e3);

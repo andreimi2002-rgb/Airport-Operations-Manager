@@ -48,7 +48,7 @@ gratuite, fiecare merge în `main` consumă. Mai multe etape merg pe un singur b
 baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la final.
 
 4. **Etapa 4** (în lucru, branch `stage-4-america`, un singur merge la final):
-   - **Partea 1, în plus pentru Florida:** „Ce văd diseară”, profil de echipă bogat (lot,
+   - **Partea 1, în plus pentru Florida:** profil de echipă bogat (lot,
      lideri, grafic al sezonului, știri), căutare, tabloul de playoff, MLB automat
      (Marlins, Rays).
    - **Partea 2, restul Americii, varianta ușoară:** profiluri bogate doar pentru Florida; pentru
