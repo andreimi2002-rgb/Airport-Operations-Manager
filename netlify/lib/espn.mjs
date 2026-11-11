@@ -53,6 +53,8 @@ export function normalizeEvent(ev, l, fl = {}) {
   };
   let note = c.notes?.[0]?.headline || '';
   if (!note && l === 'NFL' && ev.week?.number && (ev.seasonType?.type ?? 2) === 2) note = 'Etapa ' + ev.week.number;
+  // Soccer playoffs carry the round only in the season slug ("eastern-conference-playoffs---round-one").
+  if (!note && /playoff/i.test(ev.season?.slug || '')) note = ev.season.slug.replace(/-+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const home = team(H), away = team(A);
   // Soccer venues come without a state (only "USA"): a Florida team at home, not on a neutral
   // ground, is playing in Florida.
@@ -133,7 +135,8 @@ export function normalizeStandings(j) {
       return {
         ...teamInfo(e.team),
         order: i + 1,
-        seed: v('playoffSeed'),
+        // MLS has no playoffSeed, only its conference rank; its list is not in rank order.
+        seed: v('playoffSeed') ?? v('rank'),
         w: v('wins'), l: v('losses'), otl: v('otLosses', 'overtimeLosses'), t: v('ties'),
         pts: v('points'), pct: v('winPercent'),
         gp: v('gamesPlayed'),
@@ -360,6 +363,126 @@ export function normalizeSummary(j, l) {
 
 export async function summary(l, id) {
   return normalizeSummary(await getJSON(`${SITE}${LEAGUES[l].path}/summary?event=${encodeURIComponent(id)}`), l);
+}
+
+/* ---------- scores: every game of one day, in every league (one request per league) ---------- */
+export async function scoresDay(ymd, leagues = Object.keys(LEAGUES)) {
+  const errors = [], out = {};
+  await Promise.all(leagues.map(async l => {
+    try {
+      const j = await getJSON(`${SITE}${LEAGUES[l].path}/scoreboard?dates=${ymd}&limit=300`, 8000);
+      out[l] = (j.events || []).map(ev => normalizeEvent(ev, l)).filter(Boolean)
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    } catch (e) { out[l] = []; errors.push(`${l}: ${e.message || e}`); }
+  }));
+  return { date: ymd, leagues: out, errors };
+}
+
+// A team's season games, for the page of any team (Florida teams already have theirs in /api/schedule).
+export async function teamGames(l, id) {
+  const qs = l === 'MLS' ? ['', 'fixture=true'] : l === 'NFL' ? ['', 'seasontype=3'] : [''];
+  const lists = await Promise.all(qs.map(q => teamSchedule(l, id, q).catch(() => ({ events: [], team: {} }))));
+  const seen = new Set(), games = [];
+  for (const { events } of lists) for (const ev of events) {
+    const g = normalizeEvent(ev, l);
+    if (g && !seen.has(g.id)) { seen.add(g.id); games.push(g); }
+  }
+  games.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const team = lists[0].team || {};
+  return { l, id: String(id), record: team.recordSummary || null, standing: team.standingSummary || null, games };
+}
+
+/* ---------- playoffs: every postseason game of a league, for the bracket ---------- */
+const isPlayoff = ev => /playoff|post-?season/i.test(ev.season?.slug || '') || ev.season?.type === 3;
+// "eastern-conference-playoffs---round-one" -> { conf: 'east', round: 'round one' }; NBA/NHL notes: "East 1st Round - Game 3".
+export function playoffRound(ev) {
+  const note = ev.competitions?.[0]?.notes?.[0]?.headline || '';
+  const slug = ev.season?.slug || '';
+  const text = (note || slug.replace(/-+/g, ' ')).replace(/\s*-\s*game\s*\d+.*$/i, '').replace(/\bgame\s*\d+\b/i, '').trim();
+  const conf = /\beast/i.test(text) ? 'east' : /\bwest/i.test(text) ? 'west' : /\bafc\b/i.test(text) ? 'afc' : /\bnfc\b/i.test(text) ? 'nfc' : '';
+  const r = text.toLowerCase();
+  const stage = /wild ?card|play-?in/.test(r) ? 1 : /round one|1st round|first round/.test(r) ? 2 : /semifinal|2nd round|second round|divisional/.test(r) ? 3
+    : /conference final|conference championship|afc championship|nfc championship/.test(r) ? 4 : /final|cup|super bowl|championship/.test(r) ? 5 : 0;
+  return { conf, stage, label: text };
+}
+export async function playoffs(l, now = new Date()) {
+  const months = [];
+  for (let i = -3; i <= 1; i++) { const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + i, 1)); months.push(`${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}`); }
+  const lists = await Promise.all(months.map(ym => getJSON(`${SITE}${LEAGUES[l].path}/scoreboard?dates=${ym}&limit=400`, 8000).then(j => j.events || [], () => [])));
+  const seen = new Set(), games = [];
+  for (const ev of lists.flat()) {
+    if (!isPlayoff(ev) || seen.has(ev.id)) continue;
+    seen.add(ev.id);
+    const g = normalizeEvent(ev, l);
+    if (!g) continue;
+    games.push({ ...g, round: playoffRound(ev) });
+  }
+  games.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  return { l, updated: now.toISOString(), games };
+}
+
+/* ---------- team page extras: roster, season leaders, news ---------- */
+const CORE_API = 'https://sports.core.api.espn.com/v2/sports/';
+const CORE_PATH = { NBA: 'basketball/leagues/nba', NHL: 'hockey/leagues/nhl', NFL: 'football/leagues/nfl', MLS: 'soccer/leagues/usa.1', MLB: 'baseball/leagues/mlb' };
+// The categories worth showing, in order, per league (ESPN has many more).
+export const LEADER_CATS = {
+  NBA: ['pointsPerGame', 'reboundsPerGame', 'assistsPerGame', 'stealsPerGame', 'blocksPerGame'],
+  NHL: ['points', 'goals', 'assists', 'plusMinus', 'savePct', 'wins'],
+  NFL: ['passingYards', 'rushingYards', 'receivingYards', 'totalTackles', 'sacks', 'interceptions'],
+  MLS: ['goals', 'assists', 'totalShots', 'saves'],
+  MLB: ['avg', 'homeRuns', 'RBIs', 'ERA', 'strikeouts']
+};
+const cm = s => { const m = /(\d+)'\s*(\d+)?/.exec(s || ''); return m ? Math.round((+m[1] * 12 + (+m[2] || 0)) * 2.54) : null; };
+const kg = s => { const m = /([\d.]+)\s*lbs/.exec(s || ''); return m ? Math.round(+m[1] * 0.4536) : null; };
+
+export function normalizeRoster(j) {
+  const a = j?.athletes || [];
+  // NHL and NFL group the roster by position; NBA and MLS give one list.
+  const groups = a[0]?.items ? a.map(g => ({ name: g.position || '', items: g.items })) : [{ name: '', items: a }];
+  return groups.map(g => ({
+    name: g.name,
+    players: (g.items || []).map(p => ({
+      id: String(p.id ?? ''), n: p.displayName || p.fullName || '', j: p.jersey || '',
+      pos: p.position?.abbreviation || '', posName: p.position?.displayName || '',
+      age: num(p.age), cm: cm(p.displayHeight), kg: kg(p.displayWeight),
+      born: [p.birthPlace?.city, p.birthPlace?.state || p.birthPlace?.country].filter(Boolean).join(', '),
+      head: p.headshot?.href || '', out: (p.injuries || []).length > 0 || (p.status?.type && p.status.type !== 'active'),
+      exp: num(p.experience?.years)
+    })).filter(p => p.n)
+  })).filter(g => g.players.length);
+}
+export function normalizeNews(j) {
+  return (j?.articles || []).map(x => ({
+    h: x.headline || '', d: x.description || '', date: x.published || '', type: x.type || '',
+    img: x.images?.[0]?.url || '', link: x.links?.web?.href || ''
+  })).filter(x => x.h && /^https?:\/\/([a-z0-9-]+\.)*espn\.com\//i.test(x.link)).slice(0, 8);
+}
+// Core API leaders name athletes only by link; the roster gives their names.
+export function normalizeLeaders(j, l, roster) {
+  const byId = new Map(roster.flatMap(g => g.players).map(p => [p.id, p]));
+  const want = LEADER_CATS[l] || [];
+  return want.map(name => {
+    const c = (j?.categories || []).find(x => x.name === name);
+    const top = c?.leaders?.[0];
+    const id = /athletes\/(\d+)/.exec(top?.athlete?.$ref || '')?.[1];
+    const p = id && byId.get(id);
+    return p ? { cat: name, label: c.displayName || name, val: top.displayValue || '', who: p.n, id, head: p.head, pos: p.pos } : null;
+  }).filter(Boolean);
+}
+export async function teamExtras(l, id) {
+  const base = `${SITE}${LEAGUES[l].path}`;
+  const [rosterJ, newsJ, teamJ] = await Promise.all([
+    getJSON(`${base}/teams/${id}/roster`).catch(() => null),
+    getJSON(`${base}/news?team=${id}&limit=10`).catch(() => null),
+    getJSON(`${base}/teams/${id}`).catch(() => null)
+  ]);
+  const roster = normalizeRoster(rosterJ);
+  // The season of the team's next (or last) game, e.g. 2027 for the NBA's 2026–27 season.
+  const ev = teamJ?.team?.nextEvent?.[0];
+  const year = ev?.season?.year || new Date().getFullYear();
+  let leaders = [];
+  try { leaders = normalizeLeaders(await getJSON(`${CORE_API}${CORE_PATH[l]}/seasons/${year}/types/2/teams/${id}/leaders`, 8000), l, roster); } catch (e) { /* leaders are optional */ }
+  return { l, id: String(id), season: year, roster, leaders, news: normalizeNews(newsJ) };
 }
 
 export function json(body, { browser = 60, cdn = 300, swr = 86400, status = 200 } = {}) {

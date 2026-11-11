@@ -19,6 +19,12 @@ export function detailRo(d, l) {
   if (/^(final|ft|full time|full-time)$/i.test(s)) return 'Final';
   if ((m = s.match(/^final\s*\/\s*(\d*)\s*OT$/i))) return 'Final după prelungiri' + (m[1] > 1 ? ` (${m[1]})` : '');
   if (/^final\s*\/\s*SO$/i.test(s)) return 'Final după lovituri de departajare';
+  // Baseball: "Final/11", "Top 5th", "Bot 7th", "Mid 3rd", "End 6th".
+  if ((m = s.match(/^final\s*\/\s*(\d+)$/i))) return `Final după ${m[1]} inning-uri`;
+  if ((m = s.match(/^(top|bot|bottom|mid|middle|end)\s+(\d+)(?:st|nd|rd|th)$/i))) {
+    const k = m[1].toLowerCase(), n = m[2];
+    return k === 'top' ? `Inning-ul ${n}, prima parte` : k.startsWith('bot') ? `Inning-ul ${n}, a doua parte` : k.startsWith('mid') ? `Pauză în inning-ul ${n}` : `Finalul inning-ului ${n}`;
+  }
   if (/^(AET|FT-AET|final\s*\/\s*AET)$/i.test(s)) return 'Final după prelungiri';
   if (/pens|penalties|FT-Pens/i.test(s) && /^(final|ft|aet|ft-pens)/i.test(s)) return 'Final după lovituri de la 11 metri';
   if (/^(HT|half|halftime|half-time)$/i.test(s)) return 'Pauză';
@@ -54,7 +60,9 @@ const NOTE_RULES = [
   [/\bWild Card( Round)?\b/gi, 'wild card'], [/\bDivisional Round\b/gi, 'runda divizională'],
   [/\bSuper Bowl\b/gi, 'Super Bowl'], [/\bMLS Cup\b/gi, 'MLS Cup'], [/\bMLS Is Back\b/gi, 'MLS Is Back'],
   [/\bBest of (\d)\b/gi, 'cel mai bun din $1'], [/\bGame (\d+)\b/gi, 'meciul $1'],
+  [/\bEastern Conference Playoffs\b ?/gi, 'Playoff Est · '], [/\bWestern Conference Playoffs\b ?/gi, 'Playoff Vest · '],
   [/\bEastern Conference\b/gi, 'Conferința de Est'], [/\bWestern Conference\b/gi, 'Conferința de Vest'],
+  [/\bPlayoffs\b/gi, 'playoff'],
   [/\bEast\b/g, 'Est'], [/\bWest\b/g, 'Vest'],
   [/\bPreseason\b/gi, 'amical de pregătire'], [/\bRegular Season\b/gi, 'sezon regulat'],
   [/\bInternational Series\b/gi, 'meci în străinătate'], [/\bNeutral Site\b/gi, 'teren neutru'],
@@ -167,6 +175,12 @@ export const BOX_COLS = {
     punting: [P('punts', 'Nr.', 'degajări'), P('grossAvgPuntYards', 'Medie', 'yarzi pe degajare'), P('puntsInside20', 'În 20', 'degajări în ultimele 20 de yarzi'), P('longPunt', 'Max')],
     kickReturns: [P('kickReturns', 'Nr.', 'returnări'), P('kickReturnYards', 'Yarzi'), P('longKickReturn', 'Max'), P('kickReturnTouchdowns', 'TD')],
     puntReturns: [P('puntReturns', 'Nr.', 'returnări'), P('puntReturnYards', 'Yarzi'), P('longPuntReturn', 'Max'), P('puntReturnTouchdowns', 'TD')]
+  },
+  MLB: {
+    batting: [P('hits-atBats', 'L-B', 'lovituri bune – bătăi'), P('runs', 'P', 'puncte (run-uri)'), P('RBIs', 'RBI', 'puncte aduse coechipierilor'),
+      P('homeRuns', 'HR', 'home run-uri'), P('walks', 'BB', 'ajunsuri pe bază din 4 aruncări greșite'), P('strikeouts', 'K', 'strikeout-uri'), P('avg', 'Medie', 'medie la bătaie în sezon')],
+    pitching: [P('fullInnings.partInnings', 'Inn.', 'inning-uri aruncate'), P('hits', 'L', 'lovituri primite'), P('earnedRuns', 'PM', 'puncte primite din vina aruncătorului'),
+      P('walks', 'BB', 'ajunsuri pe bază acordate'), P('strikeouts', 'K', 'strikeout-uri'), P('pitches', 'Arunc.', 'aruncări'), P('ERA', 'ERA', 'puncte primite la 9 inning-uri, în sezon')]
   },
   MLS: {
     soccer: [P('totalGoals', 'G', 'goluri'), P('goalAssists', 'PG', 'pase de gol'), P('totalShots', 'Ș', 'șuturi'), P('shotsOnTarget', 'ȘP', 'șuturi pe poartă'),

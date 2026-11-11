@@ -5,11 +5,11 @@
 // - Schedule, live scores, weather, calendar feed: network only. The schedule has its own saved copy
 //   in the page (localStorage), which the page labels as saved data; live scores and weather must
 //   never be shown old as if they were current.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL = `shell-${VERSION}`, API = `api-${VERSION}`, IMG = `img-${VERSION}`;
 const FILES = [
   '/', '/index.html', '/css/app.css', '/favicon.svg', '/manifest.webmanifest', '/icons/icon-192.png',
-  '/js/app.js', '/js/teams.js', '/js/ui.js', '/js/ro.js', '/js/game.js', '/js/places.js', '/js/ics.js', '/js/phone.js', '/js/notify.js',
+  '/js/app.js', '/js/teams.js', '/js/ui.js', '/js/ro.js', '/js/game.js', '/js/places.js', '/js/ics.js', '/js/phone.js', '/js/notify.js', '/js/teamx.js', '/js/bracket.js', '/js/leagues.js',
   '/data/places.json', '/data/snapshot.json'
 ];
 
@@ -74,7 +74,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const u = new URL(req.url);
   if (u.origin === location.origin) {
-    if (u.pathname === '/api/game') { e.respondWith(networkFirst(req, API, 8000)); return; }
+    if (u.pathname === '/api/game' || u.pathname === '/api/team') { e.respondWith(networkFirst(req, API, 8000)); return; }
     if (u.pathname.startsWith('/api/')) return;                       // network only
     if (req.mode === 'navigate') { e.respondWith(networkFirst(req, SHELL, 5000, '/index.html')); return; }
     e.respondWith(networkFirst(req, SHELL, 5000));

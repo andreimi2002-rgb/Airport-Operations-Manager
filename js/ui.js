@@ -17,13 +17,14 @@ export function pickInk(bg, fg) {
 }
 
 // Team emblem: the official logo when it loads (the dark-background version in the dark theme),
-// a coloured circle with the abbreviation otherwise.
-export function emb(side, cls = '') {
+// a coloured circle with the abbreviation otherwise. `onWhite`: the emblem sits on a white disc
+// (hero, team band), so the normal logo is right in both themes (a white dark-theme logo would vanish).
+export function emb(side, cls = '', onWhite = false) {
   const k = side.key, T = k && TEAMS[k];
   const bg = side.color || (T && T.col[0]) || null, fg = side.alt && side.alt.toLowerCase() !== (bg || '').toLowerCase() ? side.alt : (T ? T.col[1] : '#fff');
   const style = bg ? `style="--bg-e:${esc(bg)};--fg-e:${esc(pickInk(bg, fg))}"` : '';
   const ab = esc(side.abbr || (side.name || '').split(' ').pop().slice(0, 3).toUpperCase());
-  const src = isDark() && side.logoDark ? side.logoDark : side.logo;
+  const src = isDark() && !onWhite && side.logoDark ? side.logoDark : side.logo;
   const pic = src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : '';
   return `<span class="emb ${cls}${bg ? '' : ' neutral'}${src ? ' has-logo' : ''}" ${style}>${pic}<b>${ab}</b></span>`;
 }

@@ -6,7 +6,8 @@ export const LEAGUES = {
   NHL: { path: 'hockey/nhl', color: 'var(--nhl)', dur: 155 },
   NFL: { path: 'football/nfl', color: 'var(--nfl)', dur: 195 },
   MLS: { path: 'soccer/usa.1', color: 'var(--mls)', dur: 115 },
-  MLB: { path: 'baseball/mlb', color: 'var(--mlb)', dur: 180, off: true }
+  // MLB plays March–October; the page marks it "extrasezon" by itself when no games are near.
+  MLB: { path: 'baseball/mlb', color: 'var(--mlb)', dur: 180 }
 };
 
 // key -> team. `espn` is the team's displayName on ESPN, used to find its id.
@@ -65,6 +66,18 @@ export const TEAMS = {
     city: 'Orlando', arena: 'Inter&Co Stadium', cap: 'aprox. 25.500', since: '2015',
     titles: 'U.S. Open Cup 2022', rivals: 'Inter Miami CF',
     fact: 'Poreclită „The Lions”; culoarea clubului e movul.'
+  },
+  marlins: {
+    l: 'MLB', espn: 'Miami Marlins', s: 'Marlins', ab: 'MIA', col: ['#00A3E0', '#000000'], metro: 'mia',
+    city: 'Miami', arena: 'loanDepot park', cap: 'aprox. 37.000', since: '1993',
+    titles: '2 World Series (1997, 2003)', rivals: 'Atlanta Braves, New York Mets, Philadelphia Phillies',
+    fact: 'Au câștigat ambele World Series venind din wild card, fără să fi câștigat vreodată divizia.'
+  },
+  rays: {
+    l: 'MLB', espn: 'Tampa Bay Rays', s: 'Rays', ab: 'TB', col: ['#092C5C', '#8FBCE6'], metro: 'tpa',
+    city: 'St. Petersburg (zona Tampa Bay)', arena: 'Tropicana Field', cap: 'aprox. 25.000', since: '1998',
+    titles: 'Niciun World Series; finale în 2008 și 2020', rivals: 'New York Yankees, Boston Red Sox',
+    fact: 'Tropicana Field e singurul stadion din MLB cu acoperiș fix. După uraganul Milton din 2024 au jucat un sezon la Tampa, apoi s-au întors în 2026.'
   }
 };
 
@@ -75,9 +88,11 @@ export const DIVISIONS = {
   AFCE: { l: 'NFL', t: 'NFL · AFC East', members: ['Buffalo Bills', 'Miami Dolphins', 'New England Patriots', 'New York Jets'] },
   NFCS: { l: 'NFL', t: 'NFL · NFC South', members: ['Atlanta Falcons', 'Carolina Panthers', 'New Orleans Saints', 'Tampa Bay Buccaneers'] },
   AFCS: { l: 'NFL', t: 'NFL · AFC South', members: ['Houston Texans', 'Indianapolis Colts', 'Jacksonville Jaguars', 'Tennessee Titans'] },
-  MLSE: { l: 'MLS', t: 'MLS · Conferința de Est', conference: 'east' }
+  MLSE: { l: 'MLS', t: 'MLS · Conferința de Est', conference: 'east' },
+  NLE: { l: 'MLB', t: 'MLB · NL East', members: ['Atlanta Braves', 'Miami Marlins', 'New York Mets', 'Philadelphia Phillies', 'Washington Nationals'] },
+  ALE: { l: 'MLB', t: 'MLB · AL East', members: ['Baltimore Orioles', 'Boston Red Sox', 'New York Yankees', 'Tampa Bay Rays', 'Toronto Blue Jays'] }
 };
-export const DIVISION_OF = { heat: 'SE', magic: 'SE', panthers: 'ATL', lightning: 'ATL', dolphins: 'AFCE', bucs: 'NFCS', jaguars: 'AFCS', intermiami: 'MLSE', orlandocity: 'MLSE' };
+export const DIVISION_OF = { heat: 'SE', magic: 'SE', panthers: 'ATL', lightning: 'ATL', dolphins: 'AFCE', bucs: 'NFCS', jaguars: 'AFCS', intermiami: 'MLSE', orlandocity: 'MLSE', marlins: 'NLE', rays: 'ALE' };
 
 export const METROS = {
   jax: { n: 'Jacksonville', lat: 30.33, lon: -81.66, lx: -10, ly: -12, anc: 'end' },

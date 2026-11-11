@@ -39,20 +39,22 @@ istoricul git, pe `main` până la merge-ul etapei 1).
 
 ## Plan pe etape
 
-1. **Site cu date live** (în lucru, PR #3): calendarul mutat de pe claude.ai, cu date ESPN
-   live, logo-uri oficiale, scor live, pagini de meci complete, plus orașele, stadioanele și
-   vremea pentru echipele din Florida.
-2. **Pe telefon** (în lucru, branch `stage-2-telefon`, PR cu baza `stage-1-calendar`): PWA
-   instalabilă, merge offline, abonare la calendar (link .ics pentru Google Calendar/iPhone/
-   Outlook) cu meciurile echipelor alese. Merge în `main` o singură dată, după etapele 2 și 3:
-   branch-urile se unesc între ele (3 → 2 → 1), apoi PR #3 în `main`. Instalarea și abonarea
-   „pe bune” se fac după merge, pe adresa finală (pe preview sunt legate de adresa preview-ului).
-3. **Notificări** (în lucru, branch `stage-3-notificari`, pornit din `stage-2-telefon`):
-   anunț înainte de meciurile echipelor alese și rezultatul final. Funcția programată
-   (`push-cron`, la 15 minute) rulează doar în producție; pe preview merg abonarea și testul.
-   Preview-urile Netlify se fac doar pentru PR-uri spre `main`, deci PR-urile de etapă au baza
-   `main`; la final se face merge doar la ultimul (le conține pe toate), restul se închid.
-4. **Toate echipele** din cele 5 ligi, cu „Echipele mele” și filtru pe stat/oraș.
+Etapele 1–3 sunt în producție (PR #5, 11 noiembrie 2026): site cu date live, pagini de meci
+complete, orașele, stadioanele și vremea Floridei; aplicație instalabilă, offline, abonare la
+calendar; notificări (Web Push, `push-cron` la 15 minute, doar în producție).
+
+**Cum publicăm:** creditele Netlify sunt puține. Preview-urile (PR-uri spre `main`) sunt
+gratuite, fiecare merge în `main` consumă. Mai multe etape merg pe un singur branch / PR cu
+baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la final.
+
+4. **Etapa 4** (în lucru, branch `stage-4-america`, un singur merge la final):
+   - **Partea 1, în plus pentru Florida:** profil de echipă bogat (lot,
+     lideri, grafic al sezonului, știri), căutare, tabloul de playoff, MLB automat
+     (Marlins, Rays).
+   - **Partea 2, restul Americii, varianta ușoară:** profiluri bogate doar pentru Florida; pentru
+     restul: scoruri pe zile din toate ligile, clasamente complete, pagină simplă de echipă,
+     orașe și stadioane cu fapte, ora locală și vremea. Datele pe ligă și zi (nu pe echipă),
+     ca să nu se înmulțească cererile la ESPN.
 
 ## Structura
 
@@ -68,6 +70,9 @@ js/places.js                orașe și stadioane: pagini, vremea, banda cu vreme
 js/phone.js                 service worker, instalarea aplicației, pagina de abonare la calendar
 js/ics.js                   fișiere .ics (iCalendar), folosit de pagină și de funcția de calendar; fără DOM
 js/notify.js                pagina de notificări: permisiune, abonare push, alegerile (#notificari)
+js/teamx.js                 filele profilului de echipă: Sezon (grafic, lideri), Lot, Știri
+js/bracket.js               tabloul de playoff: serii din meciurile de playoff; fără DOM
+js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele; banda „Azi în ligi”
 sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
 manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
@@ -77,6 +82,10 @@ netlify/functions/live.mjs       GET /api/live?l=NBA,NHL  scorurile de azi (cach
 netlify/functions/game.mjs       GET /api/game?l=NBA&id=…  detaliile unui meci
 netlify/functions/weather.mjs    GET /api/weather?lat=…&lon=…[&brief=1]  vremea, doar în Florida (cache 30 min)
 netlify/functions/calendar.mjs   GET /api/calendar.ics?e=heat,panthers[&a=60]  calendar de abonare (cache 1 h)
+netlify/functions/team.mjs       GET /api/team?l=NBA&id=14  lot, liderii sezonului, știri ESPN (cache 3 h)
+netlify/functions/playoffs.mjs   GET /api/playoffs?l=MLS  meciurile de playoff ale ligii, pentru tablou (cache 1 h)
+netlify/functions/scores.mjs     GET /api/scores?d=20261111  toate meciurile unei zile (SUA), din toate ligile
+netlify/functions/teamgames.mjs  GET /api/teamgames?l=NBA&id=2  sezonul oricărei echipe (pagina simplă de echipă)
 netlify/functions/push.mjs       /api/push  salvează / citește / testează / șterge un abonament la notificări
 netlify/functions/push-cron.mjs  programată, la 15 minute, doar în producție: trimite notificările datorate
 netlify/lib/webpush.mjs     Web Push fără bibliotecă: semnătură VAPID (RFC 8292), criptare (RFC 8291)
@@ -85,6 +94,9 @@ netlify/lib/subs.mjs        stocarea abonamentelor (Netlify Blobs; local, fișie
 tools/vapid-keys.mjs        generează perechea de chei VAPID: node tools/vapid-keys.mjs
 data/snapshot.json          date de rezervă (format /api/schedule)
 data/places.json            orașe și stadioane, GENERAT: nu se editează de mână
+data/america.json           stadioanele și orașele echipelor din afara Floridei (fapte), GENERAT de
+                            tools/build-america.mjs: stadionul din meciurile de acasă (nu „franchise
+                            venue” de la ESPN, adesea istoric), poze ESPN, oraș geocodat Open-Meteo
 tools/places-src.json       sursa lui places.json: textele în română, fapte, surse, numele pozelor
 tools/build-places.mjs      generează places.json (coordonate, poze, climă, rute): node tools/build-places.mjs
 tools/test.mjs              teste offline pentru cititoare și traduceri: node tools/test.mjs
@@ -117,10 +129,13 @@ puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, 
 (doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`.
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
-`#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
+`#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei),
+`#ligi[/scoruri|clasamente|echipe][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
 filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 
 Cheile echipelor din Florida sunt în `js/teams.js` (`heat`, `magic`, `panthers`, `lightning`,
-`dolphins`, `bucs`, `jaguars`, `intermiami`, `orlandocity`). Id-urile ESPN se caută după nume,
+`dolphins`, `bucs`, `jaguars`, `intermiami`, `orlandocity`, `marlins`, `rays`). MLB nu mai e
+marcată de mână „extrasezon”: pagina o marchează singură când nu urmează niciun meci MLB, iar
+`/api/schedule` păstrează pentru MLB doar meciurile de la 45 de zile în urmă la 60 înainte. Id-urile ESPN se caută după nume,
 nu se scriu de mână.

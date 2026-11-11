@@ -46,11 +46,26 @@
         <button type="button" data-theme-set="dark" aria-pressed="false" title="Temă întunecată" aria-label="Temă întunecată"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z" fill="currentColor"/></svg></button>
       </div>
     </div>
+    <div class="search" role="search">
+      <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Caută o echipă, un adversar, un oraș sau un stadion" aria-label="Caută" aria-controls="qres" aria-expanded="false" role="combobox" aria-autocomplete="list">
+      <div class="qres" id="qres" role="listbox" hidden></div>
+    </div>
+    <nav class="viewtabs" aria-label="Pagini">
+      <a href="./" data-goview="florida" aria-current="page">Florida</a>
+      <a href="#ligi" data-goview="ligi">Ligile <small>toate echipele</small></a>
+    </nav>
   </header>
 
   <div id="banner" hidden></div>
 
+  <div class="lgview" id="lgview" hidden></div>
+
+  <div class="flview" id="flview">
   <section class="hero" id="hero" aria-label="Urmează"><div class="skeleton" style="grid-column:1/-1;background-color:transparent"></div></section>
+
+
+  <section class="todaylg" id="todaylg" aria-label="Azi în ligi" hidden></section>
 
   <section aria-label="Echipe">
     <h2 class="sec">Echipe</h2>
@@ -67,6 +82,8 @@
     <h2 class="sec">De urmărit</h2>
     <div class="hl" id="hl"></div>
   </section>
+
+  <section class="playoffs" id="playoffs" aria-label="Playoff" hidden></section>
 
   <section aria-label="Calendar" style="display:flex;flex-direction:column;gap:12px">
     <div class="filters">
@@ -114,9 +131,10 @@
     <h2 class="sec">Pe telefon și în calendar</h2>
     <div class="phone" id="phone"></div>
   </section>
+  </div>
 
   <footer>
-    <div><b>MLB:</b> Miami Marlins și Tampa Bay Rays sunt în extrasezon; sezonul începe la sfârșitul lui martie și le adăugăm atunci.</div>
+    <div><b>MLB:</b> Miami Marlins și Tampa Bay Rays apar singure în program când se apropie sezonul (de la sfârșitul lui martie până în octombrie); în rest, liga e marcată „extrasezon”.</div>
     <div>Date de la ESPN (program, scoruri, clasamente) și logo-uri ESPN, pentru uz personal. Orele se pot modifica, în special la NFL.</div>
   </footer>
 </div>

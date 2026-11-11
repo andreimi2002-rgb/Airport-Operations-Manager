@@ -95,9 +95,66 @@
         { "title": "Jacksonville, Florida (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Jacksonville,_Florida" },
         { "title": "Jaguars prep for home season with EverBank Stadium getting renovated (NFL.com)", "url": "https://www.nfl.com/news/jaguars-everbank-stadium-renovation-2026-season" }
       ]
+    },
+    "st-petersburg": {
+      "name": "St. Petersburg", "metro": "tpa", "wiki": "St. Petersburg, Florida", "county": "Pinellas", "pop": 258308, "founded": "1892",
+      "airport": { "code": "TPA", "name": "Aeroportul Internațional Tampa" },
+      "image": "File:Skyline StPetersburgFL.jpg",
+      "summary": "Orașul de pe peninsula Pinellas, peste golf de Tampa, unde joacă Tampa Bay Rays.",
+      "about": [
+        "St. Petersburg e al doilea oraș ca mărime din zona Tampa Bay, cu aproape 260.000 de locuitori, așezat pe o peninsulă între golful Tampa și Golful Mexic. I se spune „Sunshine City”, pentru numărul mare de zile însorite.",
+        "Pentru vizitatori, orașul e cunoscut pentru plajele de pe coasta Golfului și pentru Muzeul Salvador Dalí, cu cea mai mare colecție de lucrări Dalí din afara Europei.",
+        "Tampa Bay Rays joacă aici, la Tropicana Field, din 1998. După ce uraganul Milton a rupt acoperișul stadionului în octombrie 2024, echipa a jucat sezonul 2025 la Tampa și s-a întors în aprilie 2026."
+      ],
+      "sources": [
+        { "title": "St. Petersburg, Florida (Wikipedia)", "url": "https://en.wikipedia.org/wiki/St._Petersburg,_Florida" },
+        { "title": "No place like home: Tampa Bay makes return to Tropicana Field (Spectrum News)", "url": "https://mynews13.com/fl/orlando/sports/2026/04/03/no-place-like-home--tampa-bay-makes-return-to-tropicana-field-" }
+      ]
     }
   },
   "venues": {
+    "loandepot-park": {
+      "name": "loanDepot park", "city": "miami", "wiki": "LoanDepot Park", "kind": "stadium", "roof": "retractable",
+      "surface": "gazon artificial (din 2020)",
+      "teams": ["marlins"], "espn": ["loanDepot park", "LoanDepot Park", "Marlins Park"],
+      "address": "501 Marlins Way, Miami", "opened": "2012", "owner": "Comitatul Miami-Dade",
+      "capacity": [["baseball", 36742]],
+      "names": [["Marlins Park", 2012, 2021], ["loanDepot park", 2021, null]],
+      "image": "File:Marlins Park windows open.jpg",
+      "summary": "Stadionul lui Miami Marlins din 2012, cu acoperiș retractabil, în cartierul Little Havana.",
+      "about": [
+        "S-a deschis pe 4 aprilie 2012, pe locul fostului stadion Orange Bowl, în Little Havana, la vreo 3 km vest de centrul orașului. Acoperișul se închide în zilele cu ploaie sau căldură mare, ceea ce în Miami se întâmplă des vara.",
+        "Până în 2021 s-a numit Marlins Park. A găzduit All-Star Game-ul MLB din 2017 și fazele finale ale World Baseball Classic din 2023, încheiate cu finala Japonia – SUA."
+      ],
+      "moments": [
+        "Sculptura colorată care se aprindea la fiecare home run al lui Marlins a fost mutată în 2018 pe esplanada din fața stadionului."
+      ],
+      "sources": [
+        { "title": "LoanDepot Park (Wikipedia)", "url": "https://en.wikipedia.org/wiki/LoanDepot_Park" }
+      ]
+    },
+    "tropicana-field": {
+      "name": "Tropicana Field", "city": "st-petersburg", "wiki": "Tropicana Field", "kind": "stadium", "roof": "closed",
+      "surface": "gazon artificial",
+      "teams": ["rays"], "espn": ["Tropicana Field"],
+      "address": "1 Tropicana Drive, St. Petersburg", "opened": "1990", "owner": "Orașul St. Petersburg",
+      "capacity": [["baseball", 25000]],
+      "names": [["Florida Suncoast Dome", 1990, 1993], ["ThunderDome", 1993, 1996], ["Tropicana Field", 1996, null]],
+      "image": "File:Tropicana Field Playing Field Opening Day 2010.JPG",
+      "summary": "Stadionul lui Tampa Bay Rays, singurul din MLB cu acoperiș fix, refăcut după uraganul din 2024.",
+      "about": [
+        "S-a deschis în 1990 ca Florida Suncoast Dome, construit ca să atragă o echipă de baseball în zonă. Rays au venit abia în 1998. Între 1993 și 1996, sub numele ThunderDome, aici a jucat Tampa Bay Lightning.",
+        "În octombrie 2024, uraganul Milton a rupt o mare parte din acoperiș. Rays au jucat sezonul 2025 la Steinbrenner Field din Tampa, iar stadionul a primit un acoperiș nou, făcut să reziste la vânturi de uragan. Echipa s-a întors aici în aprilie 2026."
+      ],
+      "moments": [
+        "E singurul stadion din MLB cu acoperiș fix, așa că un meci al lui Rays nu se amână niciodată din cauza ploii."
+      ],
+      "sources": [
+        { "title": "Tropicana Field (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Tropicana_Field" },
+        { "title": "Final roof panel installed at Tropicana Field (St. Pete Rising)", "url": "https://stpeterising.com/home/final-roof-panel-installed-at-tropicana-field-as-st-pete-races-toward-2026-reopening" },
+        { "title": "Rays open 2026 season in St. Louis as Tropicana Field repairs wrap up (FOX 13)", "url": "https://www.fox13news.com/news/rays-open-2026-season-st-lous-tropicana-field-repairs-wrap-up" }
+      ]
+    },
     "kaseya-center": {
       "name": "Kaseya Center", "city": "miami", "wiki": "Kaseya Center", "kind": "arena", "roof": "closed",
       "teams": ["heat"], "espn": ["Kaseya Center"],
