@@ -36,6 +36,9 @@ istoricul git, pe `main` până la merge-ul etapei 1).
   publicarea în producție (merge în `main`) consumă credit. Lucrăm local, verificăm cu
   serverul local și capturi de ecran, iar la final facem push și deschidem PR-ul.
 - Trebuie să meargă bine pe telefon și pe desktop, în temă luminoasă și întunecată.
+- **Versiunea aplicației:** la orice schimbare a fișierelor site-ului, crește `VERSION` în `sw.js`
+  (`tools/test.mjs` verifică față de `main`). Doar așa aplicația instalată vede versiunea nouă:
+  la revenirea în aplicație caută una nouă și, când e gata, se reîncarcă singură (`js/phone.js`).
 
 ## Plan pe etape
 

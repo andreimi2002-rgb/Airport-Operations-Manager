@@ -251,4 +251,22 @@ assert.equal((await import('../js/teamx.js')).roNum('1,396'), '1.396');
 assert.equal((await import('../js/teamx.js')).roNum('.900'), '0,900');
 assert.equal((await import('../js/teamx.js')).roNum('27.7'), '27,7');
 
+// Installed apps only pick up a new version when sw.js changes: if the site's files differ from
+// main, VERSION in sw.js must differ too. Skipped when git or origin/main is not available.
+{
+  const { execSync } = await import('node:child_process');
+  const { readFileSync } = await import('node:fs');
+  let changed = null, mainSw = null;
+  try {
+    changed = execSync('git diff --name-only origin/main --', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().split('\n')
+      .filter(f => /^(index\.html|manifest\.webmanifest|favicon\.svg|css\/|js\/|data\/|icons\/)/.test(f));
+    mainSw = execSync('git show origin/main:sw.js', { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
+  } catch { /* no git here */ }
+  if (changed?.length && mainSw) {
+    const ver = s => (s.match(/const VERSION = '([^']+)'/) || [])[1];
+    assert.notEqual(ver(readFileSync(new URL('../sw.js', import.meta.url), 'utf8')), ver(mainSw),
+      `site files changed (${changed.slice(0, 3).join(', ')}…) but VERSION in sw.js is the same as on main: bump it, or installed apps keep the old version`);
+  }
+}
+
 console.log('all ESPN reader checks passed');

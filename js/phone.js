@@ -7,8 +7,27 @@ import { calendar } from './ics.js';
 /* ================= offline ================= */
 export function registerSW() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+  const sw = navigator.serviceWorker;
   // After the page has loaded, so the first visit is not slowed down.
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  window.addEventListener('load', () => sw.register('/sw.js', { updateViaCache: 'none' }).catch(() => {}));
+  // An installed app is usually brought back from the background, not started again: the old page
+  // stays in memory and the browser only looks for a new version on a full start. So look on every
+  // return to the app (at most every 2 minutes) and, when the new version has taken over, reload once.
+  let checked = Date.now();
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    if (pendingReload) { location.reload(); return; }
+    if (Date.now() - checked < 120e3) return;
+    checked = Date.now();
+    sw.getRegistration().then(r => r?.update()).catch(() => {});
+  });
+  const hadController = !!sw.controller;   // the first install also "takes over": no reload for that
+  let reloaded = false, pendingReload = false;
+  sw.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded) return;
+    reloaded = true;
+    if (document.hidden) pendingReload = true; else location.reload();
+  });
 }
 
 /* ================= install ================= */
