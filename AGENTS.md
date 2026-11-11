@@ -57,7 +57,9 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
      ca să nu se înmulțească cererile la ESPN.
 5. **Etapa 5** (în lucru, branch `stage-5-navigare`): pagina de start mai ușor de parcurs, cu o
    bară de secțiuni lipită sus (`#jump` în `index.html`, `setupJump` în `js/app.js`): un buton
-   duce direct la secțiune, fără să schimbe adresa. Playoff-ul MLS e mutat după Clasamente.
+   duce direct la secțiune, fără să schimbe adresa. Playoff-ul MLS e mutat după Clasamente. Fila
+   „Orașe și stadioane” din Ligile (toată America, `allPlaces` în `js/places.js`); căutarea
+   găsește orașele și stadioanele din toată America.
 
 ## Structura
 
@@ -75,7 +77,7 @@ js/ics.js                   fișiere .ics (iCalendar), folosit de pagină și de
 js/notify.js                pagina de notificări: permisiune, abonare push, alegerile (#notificari)
 js/teamx.js                 filele profilului de echipă: Sezon (grafic, lideri), Lot, Știri
 js/bracket.js               tabloul de playoff: serii din meciurile de playoff; fără DOM
-js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele; banda „Azi în ligi”
+js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele, orașele și stadioanele; banda „Azi în ligi”
 sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
 manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
@@ -133,7 +135,7 @@ puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, 
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
 `#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei),
-`#ligi[/scoruri|clasamente|echipe][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
+`#ligi[/scoruri|clasamente|echipe|orase][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
 filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 

@@ -38,6 +38,56 @@ export const venueOfTeam = k => Object.values(PLACES.data?.venues || {}).find(v 
 export const venueOfClub = (l, id) => Object.values(AMERICA.data?.venues || {}).find(v => v.teams.some(t => t.l === l && t.id === String(id))) || null;
 export const cityOf = v => (v.lite ? AMERICA.data?.cities?.[v.city] : PLACES.data?.cities?.[v.city]) || null;
 
+/* ================= every city and stadium: the "Orașe și stadioane" tab and the search ================= */
+// Florida (places.json) and the rest (america.json) in one shape:
+//   { id, name, region, country, fl, img, venues: [{ id, name, kind, img, alias, teams: [{ l, name }] }] }
+export function allPlaces() {
+  const out = [], P = PLACES.data, A = AMERICA.data;
+  if (P) for (const c of Object.values(P.cities)) {
+    const venues = Object.values(P.venues).filter(v => v.city === c.id).map(v => ({
+      id: v.id, name: v.name, kind: v.kind, img: v.image?.small || '',
+      alias: [...(v.espn || []), ...(v.names || []).map(n => n[0])],
+      teams: v.teams.map(k => ({ l: TEAMS[k].l, name: TEAMS[k].espn })) }));
+    out.push({ id: c.id, name: c.name, region: 'Florida', country: 'SUA', fl: true, img: c.image?.small || '', venues });
+  }
+  if (A) for (const c of Object.values(A.cities)) {
+    const venues = c.venues.map(id => A.venues[id]).filter(Boolean).map(v => ({
+      id: v.id, name: v.name, kind: v.kind, img: v.photo || '',
+      alias: [...(v.espn || []), ...(v.names || []).map(n => n[0])],
+      teams: v.teams.map(t => ({ l: t.l, name: t.name })) }));
+    out.push({ id: c.id, name: c.name, region: c.state, country: c.country, fl: false, img: c.image?.url?.replace('/1280px-', '/330px-') || venues.find(v => v.img)?.img || '', venues });
+  }
+  return out;
+}
+
+// The tab: one block per state (Florida first, Canada at the end), a card per city with its stadiums.
+// `chosen`: the leagues ticked above; a stadium shows when one of its teams plays in them.
+export function placesIndexHtml(chosen, col) {
+  const list = allPlaces();
+  if (!list.length) return '<div class="skeleton" style="height:240px"></div>';
+  const groups = new Map();
+  for (const c of list) {
+    const venues = c.venues.filter(v => v.teams.some(t => chosen.has(t.l)));
+    if (!venues.length) continue;
+    const g = c.region + '|' + c.country;
+    if (!groups.has(g)) groups.set(g, { region: c.region, country: c.country, fl: c.fl, cities: [] });
+    groups.get(g).cities.push({ ...c, venues });
+  }
+  const coll = new Intl.Collator('ro');
+  const order = [...groups.values()].sort((a, b) => (b.fl - a.fl) || ((a.country === 'Canada') - (b.country === 'Canada')) || coll.compare(a.region, b.region));
+  let nc = 0, nv = 0;
+  const html = order.map(g => {
+    g.cities.sort((a, b) => coll.compare(a.name, b.name));
+    const v = g.cities.reduce((s, c) => s + c.venues.length, 0); nc += g.cities.length; nv += v;
+    return `<section class="lgblock"><h3>${esc(g.region)}${g.country === 'Canada' ? ', Canada' : ''} <small>${g.cities.length} ${g.cities.length === 1 ? 'oraș' : 'orașe'} · ${v} ${v === 1 ? 'stadion' : 'stadioane'}</small></h3><div class="pgrid">${g.cities.map(c => `<div class="pcity${c.fl ? ' fl' : ''}">
+      <button class="pcname" type="button" data-city="${esc(c.id)}">${c.img ? `<img src="${esc(c.img)}" alt="" loading="lazy" decoding="async">` : '<span class="noimg"></span>'}<b>${esc(c.name)}</b></button>
+      <div class="pvs">${c.venues.map(v => `<button class="pv" type="button" data-venue="${esc(v.id)}"><b>${esc(v.name)}</b><small>${v.teams.map(t => `<span class="ldot" style="--c:${col(t.l)}"></span>${esc(t.name)}`).join(' · ')}</small></button>`).join('')}</div>
+    </div>`).join('')}</div></section>`;
+  }).join('');
+  return (html ? `<div class="fn">${nc} orașe și ${nv} stadioane ale echipelor din ligile alese. Apasă pe un oraș sau pe un stadion: fapte, ora locală și vremea.</div>` + html
+    : '<div class="empty">Niciun stadion pentru ligile alese.</div>');
+}
+
 /* ================= weather data ================= */
 const WCACHE = new Map();
 // points: [{lat, lon}]; brief = current + 7 days only. Cached 10 minutes in the page (30 on the CDN).

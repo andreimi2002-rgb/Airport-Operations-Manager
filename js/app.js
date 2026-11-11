@@ -7,7 +7,7 @@ import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
 import { lgHeadHtml, scoresHtml, standingsHtml, teamsHtml, todayStripHtml } from './leagues.js';
 import { teamTabsHtml, seasonChartHtml, seasonHover, leadersHtml, rosterHtml, newsHtml } from './teamx.js';
 import { N, setNotifyRender, refreshNotify, enableNotify, saveNotify, testNotify, disableNotify, notifyHtml } from './notify.js';
-import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, stripHtml, STRIP, cityHtml, venueHtml, placeWeatherHtml, climateHover, floridaClock, cityCard, roofWord, AMERICA, loadAmerica, getVenue, getCity, venueOfClub, cityLiteHtml, venueLiteHtml, clockIn, hoursBehindRomania } from './places.js';
+import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, stripHtml, STRIP, cityHtml, venueHtml, placeWeatherHtml, climateHover, floridaClock, cityCard, roofWord, AMERICA, loadAmerica, getVenue, getCity, venueOfClub, cityLiteHtml, venueLiteHtml, clockIn, hoursBehindRomania, allPlaces, placesIndexHtml } from './places.js';
 
 /* ================= data loading ================= */
 const CACHE_KEY = 'flcal-cache-v1';
@@ -539,7 +539,7 @@ function route(keep) {
   if (h[0] === 'club' && LEAGUES[h[1]] && /^\d+$/.test(h[2] || '')) { clubView.tab = ['sezon', 'lot', 'stiri'].includes(h[3]) ? h[3] : 'rezumat'; openClub(h[1], h[2], keep); return; }
   // Pages (not overlays): the Florida page (no hash) and "Ligile" (#ligi/scoruri/2026-11-11).
   if (h[0] === 'ligi') {
-    LG.tab = ['scoruri', 'clasamente', 'echipe'].includes(h[1]) ? h[1] : 'scoruri';
+    LG.tab = ['scoruri', 'clasamente', 'echipe', 'orase'].includes(h[1]) ? h[1] : 'scoruri';
     if (/^\d{4}-\d{2}-\d{2}$/.test(h[2] || '')) LG.day = h[2];
     hideOv(); setView('ligi'); return;
   }
@@ -752,7 +752,12 @@ function renderLeagues() {
     el.innerHTML = head + (data?._err ? '<div class="empty">Scorurile nu au putut fi încărcate. Încearcă din nou mai târziu.</div>' : scoresHtml(day, data, LG.chosen, ctx));
     if (!data) loadScores(day).then(() => { if (LG.day === day) renderLeagues(); });
   } else if (LG.tab === 'clasamente') el.innerHTML = head + standingsHtml(DATA.raw?.standings, LG.chosen, ctx);
-  else el.innerHTML = head + teamsHtml(DATA.raw?.standings, LG.chosen, ctx);
+  else if (LG.tab === 'orase') {
+    el.innerHTML = head + placesIndexHtml(LG.chosen, ctx.col);
+    const wait = [!PLACES.data && loadPlaces(), !AMERICA.data && loadAmerica()].filter(Boolean);
+    // Redraw only when something arrived (a failed load would otherwise retry in a loop).
+    if (wait.length) Promise.all(wait).then(r => { if (r.some(Boolean) && LG.view === 'ligi' && LG.tab === 'orase') renderLeagues(); });
+  } else el.innerHTML = head + teamsHtml(DATA.raw?.standings, LG.chosen, ctx);
 }
 function setLgHash() { history.replaceState(history.state, '', location.pathname + location.search + `#ligi/${LG.tab}${LG.tab === 'scoruri' && LG.day && LG.day !== usKey(new Date()) ? '/' + LG.day : ''}`); }
 // "Azi în ligi" on the Florida page.
@@ -847,17 +852,18 @@ function searchIndex() {
   }
   for (const [name, o] of opp) {
     const g = o.next || o.last; if (!g) continue;
-    out.push({ kind: 'Meci', text: `${name} ${o.side.abbr} ${o.l}`, label: name, sub: o.next ? `următorul meci: ${tShort(g.d)}, ${g.teams.map(t => TEAMS[t].s).join(', ')}` : `ultimul meci: ${tShort(g.d)}, ${g.hs}–${g.as}`, hash: `#meci/${g.l}/${g.id}`, side: o.side, rank: 1 });
+    out.push({ kind: 'Meci', text: `${name} ${o.side.abbr} ${o.l}`, label: name, sub: o.next ? `următorul meci: ${tShort(g.d)}, ${g.teams.map(t => TEAMS[t].s).join(', ')}` : `ultimul meci: ${tShort(g.d)}, ${g.hs}–${g.as}`, hash: `#meci/${g.l}/${g.id}`, side: o.side, rank: 4 });
   }
   // Every other team of the five leagues, from the standings: its own page.
   for (const [l, groups] of Object.entries(DATA.raw?.standings || {})) for (const g of groups) for (const e of g.entries) {
     if (flKey(l, e.name) || !e.id) continue;
     out.push({ kind: 'Echipă', text: `${e.name} ${e.abbr} ${l}`, label: e.name, sub: `${l} · ${recordOf(e, l) || ''}`, hash: `#club/${l}/${e.id}`, side: e, rank: 1 });
   }
-  const P = PLACES.data;
-  if (P) {
-    for (const c of Object.values(P.cities)) out.push({ kind: 'Oraș', text: `${c.name} ${c.county} florida`, label: c.name, sub: `comitatul ${c.county}`, hash: '#oras/' + c.id, img: c.image?.small, rank: 2 });
-    for (const v of Object.values(P.venues)) out.push({ kind: 'Stadion', text: `${v.name} ${(v.espn || []).join(' ')} ${(v.names || []).map(n => n[0]).join(' ')} ${P.cities[v.city]?.name || ''}`, label: v.name, sub: `${v.teams.map(k => TEAMS[k].s).join(', ')} · ${P.cities[v.city]?.name || ''}`, hash: '#stadion/' + v.id, img: v.image?.small, rank: 3 });
+  // Cities and stadiums: Florida and the rest of America (america.json loads with the first search).
+  for (const c of allPlaces()) {
+    const where = c.fl ? `Florida, comitatul ${PLACES.data.cities[c.id].county}` : `${c.region}, ${c.country}`;
+    out.push({ kind: 'Oraș', text: `${c.name} ${c.region} ${c.country}`, label: c.name, sub: where, hash: '#oras/' + c.id, img: c.img, rank: 2 });
+    for (const v of c.venues) out.push({ kind: v.kind === 'arena' ? 'Arenă' : 'Stadion', text: `${v.name} ${v.alias.join(' ')} ${v.teams.map(t => t.name).join(' ')} ${c.name}`, label: v.name, sub: `${v.teams.map(t => t.name).join(', ')} · ${c.name}`, hash: '#stadion/' + v.id, img: v.img, rank: 3 });
   }
   return out;
 }
@@ -871,7 +877,7 @@ function runSearch() {
     const t = norm(x.text), lab = norm(x.label);
     if (!words.every(w => t.includes(w))) return null;
     return { ...x, score: (lab.startsWith(q) ? 0 : lab.split(' ').some(p => p.startsWith(words[0])) ? 1 : 2) * 10 + x.rank };
-  }).filter(Boolean).sort((a, b) => a.score - b.score || a.label.localeCompare(b.label)).slice(0, 8);
+  }).filter(Boolean).sort((a, b) => a.score - b.score || a.label.localeCompare(b.label)).slice(0, 10);
   qSel = qHits.length ? 0 : -1;
   box.innerHTML = qHits.length ? qHits.map((x, i) => `<button type="button" role="option" id="qo${i}" class="qopt${i === qSel ? ' sel' : ''}" aria-selected="${i === qSel}" data-qi="${i}">${x.side ? emb(x.side, 'sm') : x.img ? `<img src="${esc(x.img)}" alt="" loading="lazy">` : ''}<span><b>${esc(x.label)}</b><small>${esc(x.kind)} · ${esc(x.sub)}</small></span></button>`).join('')
     : `<div class="qnone">Nimic găsit pentru „${esc(raw)}”.</div>`;
@@ -886,7 +892,10 @@ function pickSearch(i) {
   go(x.hash);
 }
 $('q').addEventListener('input', runSearch);
-$('q').addEventListener('focus', runSearch);
+$('q').addEventListener('focus', () => {
+  runSearch();
+  for (const p of [!PLACES.data && loadPlaces(), !AMERICA.data && loadAmerica()]) p?.then?.(() => { if (document.activeElement === $('q')) runSearch(); });
+});
 $('q').addEventListener('keydown', e => {
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     if (!qHits.length) return;
@@ -1159,6 +1168,7 @@ function handle(e) {
   if ((el = q('[data-goview]'))) {
     e.preventDefault();
     if (el.dataset.lgonly) { LG.chosen = new Set([el.dataset.lgonly]); LG.tab = 'scoruri'; LG.day = null; }
+    if (el.dataset.lgto) LG.tab = el.dataset.lgto;
     if (el.dataset.goview === 'ligi') navView('#ligi' + (LG.tab !== 'scoruri' ? '/' + LG.tab : ''));
     else navView('');
     return;
