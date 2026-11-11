@@ -3,6 +3,7 @@ import { esc, $, emb, pickInk, theme, isDark, onSystemTheme } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
 import { tabsHtml, panelHtml, wpHover } from './game.js';
 import { registerSW, onInstallChange, install, installHtml, calendarHtml, downloadGame, canInstall } from './phone.js';
+import { N, setNotifyRender, refreshNotify, enableNotify, saveNotify, testNotify, disableNotify, notifyHtml } from './notify.js';
 import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, stripHtml, STRIP, cityHtml, venueHtml, placeWeatherHtml, climateHover, floridaClock, cityCard } from './places.js';
 
 /* ================= data loading ================= */
@@ -501,6 +502,11 @@ function route(keep) {
   const h = decodeURIComponent(location.hash.slice(1)).split('/');
   if (h[0] === 'meci' && BY_ID.has(h[2])) { const t = h[3] || 'rezumat'; if (openGameId !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
   if (h[0] === 'echipa' && TEAMS[h[1]]) { openTeam(h[1], keep); return; }
+  if (h[0] === 'notificari') {
+    const pre = (h[1] || '').split(',').filter(k => TEAMS[k]);
+    if (pre.length && !keep && N.status !== 'on') N.teams = pre;
+    openNotify(keep); return;
+  }
   if (h[0] === 'calendar') {
     // #calendar/heat,panthers preselects teams (from a team page); plain #calendar uses the saved choice.
     const pre = (h[1] || '').split(',').filter(k => TEAMS[k]);
@@ -561,6 +567,7 @@ function openTeam(k, keep) {
     ${tableHtml(DIVISION_OF[k])}
     <div class="btns"><button class="primary" type="button" data-only="${k}">Arată doar meciurile echipei</button>
       <button class="ghost" type="button" data-team-cal="${k}">Calendarul echipei</button>
+      <button class="ghost" type="button" data-team-ntf="${k}">Notificări</button>
       <button class="ghost" type="button" data-fav="${k}">${fav ? '★ Echipa mea (apasă ca să renunți)' : '☆ Setează ca echipa mea'}</button>
       <button class="ghost" type="button" data-share>Copiază linkul</button></div>
     </div>`, keep);
@@ -617,11 +624,21 @@ function openCalendar(keep) {
   openGameId = null; openPlaceId = null;
   show(calendarHtml(cal.teams, cal.alarm, k => emb(flSide(k), 'sm')), keep);
 }
+/* ----- notifications page ----- */
+let notifyOpen = false, notifyChecked = false;
+function openNotify(keep) {
+  openGameId = null; openPlaceId = null; notifyOpen = true;
+  show(notifyHtml(k => emb(flSide(k), 'sm')), keep);
+  if (!notifyChecked) { notifyChecked = true; refreshNotify(state.fav ? [state.fav] : Object.keys(TEAMS)); }
+}
+setNotifyRender(() => { if (notifyOpen && location.hash.startsWith('#notificari') && !$('ov').hidden) show(notifyHtml(k => emb(flSide(k), 'sm')), true); });
+
 function renderPhone() {
   // The header "Instalează" button appears only when the browser can install the app right away.
   $('hinstall').hidden = !canInstall();
   $('phone').innerHTML = `<div class="phcard"><h3>Aplicația pe telefon</h3>${installHtml()}</div>
-    <div class="phcard"><h3>Meciurile în calendarul tău</h3><p>Abonează-te o dată și meciurile echipelor alese apar singure în Google Calendar, pe iPhone sau în Outlook, cu ora ta și cu amintire.</p><button class="primary" type="button" data-team-cal="">Abonare la calendar</button></div>`;
+    <div class="phcard"><h3>Meciurile în calendarul tău</h3><p>Abonează-te o dată și meciurile echipelor alese apar singure în Google Calendar, pe iPhone sau în Outlook, cu ora ta și cu amintire.</p><button class="primary" type="button" data-team-cal="">Abonare la calendar</button></div>
+    <div class="phcard"><h3>Notificări</h3><p>Un anunț înainte de meciurile echipelor tale și rezultatul final, chiar cu aplicația închisă.</p><button class="primary" type="button" data-team-ntf="">Setează notificările</button></div>`;
 }
 onInstallChange(renderPhone);
 renderPhone();
@@ -787,6 +804,8 @@ function handle(e) {
   if ((el = q('#reload'))) { load(true); return; }
   if ((el = q('[data-share]'))) { share(el); return; }
   if ((el = q('[data-install]'))) { install(); return; }
+  if ((el = q('[data-team-ntf]'))) { const k = el.dataset.teamNtf; go('#notificari' + (k ? '/' + k : '')); return; }
+  if ((el = q('[data-ntf]'))) { ({ on: enableNotify, save: saveNotify, test: testNotify, off: disableNotify })[el.dataset.ntf]?.(); return; }
   if ((el = q('[data-team-cal]'))) { const k = el.dataset.teamCal; go('#calendar' + (k ? '/' + k : '')); return; }
   if ((el = q('[data-calall]'))) { cal.teams = el.dataset.calall === '1' ? Object.keys(TEAMS) : []; saveCal(); openCalendar(true); return; }
   if ((el = q('[data-copycal]'))) {
@@ -822,6 +841,17 @@ document.addEventListener('click', handle);
 // Calendar page: ticking a team or choosing a reminder rebuilds the links at once.
 document.addEventListener('change', e => {
   const t = e.target;
+  // Notifications page: choices change in place; "Salvează" sends them.
+  if (t.dataset?.ntfteam || t.id === 'ntflead' || t.id === 'ntffinal') {
+    if (t.dataset.ntfteam) { const k = t.dataset.ntfteam; N.teams = t.checked ? [...new Set([...N.teams, k])] : N.teams.filter(x => x !== k); }
+    if (t.id === 'ntflead') N.lead = +t.value;
+    if (t.id === 'ntffinal') N.final = t.checked;
+    N.msg = N.status === 'on' ? 'Apasă „Salvează alegerile” ca să se aplice.' : '';
+    show(notifyHtml(k => emb(flSide(k), 'sm')), true);
+    const again = t.id ? $(t.id) : document.querySelector(`[data-ntfteam="${t.dataset.ntfteam}"]`);
+    if (again) again.focus({ preventScroll: true });
+    return;
+  }
   if (t.dataset && t.dataset.calteam) {
     const k = t.dataset.calteam;
     cal.teams = t.checked ? [...new Set([...cal.teams, k])] : cal.teams.filter(x => x !== k);

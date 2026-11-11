@@ -175,4 +175,49 @@ assert.ok(feed.split('\r\n').every(l => new TextEncoder().encode(l).length <= 75
 assert.ok(ics.fold('x'.repeat(200)).split('\r\n ').length === 3);
 assert.deepEqual(ics.pick([G('a', '2026-11-15T00:00:00Z'), G('b', '2026-01-01T00:00:00Z'), { ...G('c', '2026-11-15T00:00:00Z'), home: { key: null }, away: { key: 'magic' } }], ['heat'], 45, Date.parse('2026-11-11')).map(g => g.id), ['a']);
 
+// Web Push: a message encrypted for a browser decrypts with that browser's keys; VAPID signature verifies.
+{
+  const crypto = await import('node:crypto');
+  const wp = await import('../netlify/lib/webpush.mjs');
+  const ua = crypto.createECDH('prime256v1'); ua.generateKeys();
+  const auth = crypto.randomBytes(16).toString('base64url');
+  const keys = { p256dh: ua.getPublicKey().toString('base64url'), auth };
+  const msg = JSON.stringify({ title: '🏀 Heat – Celtics într-o oră', body: 'ăîșț' });
+  const body = wp.encrypt(msg, keys);
+  assert.equal(body.readUInt32BE(16), 4096); assert.equal(body[20], 65);
+  assert.equal(wp.decrypt(body, ua, auth), msg);
+  const v = wp.generateVapidKeys();
+  const head = wp.vapidHeader('https://fcm.googleapis.com/fcm/send/abc', { ...v, subject: 'https://x.example' });
+  const claims = wp.verifyVapid(head, v.publicKey);
+  assert.equal(claims.aud, 'https://fcm.googleapis.com'); assert.equal(claims.sub, 'https://x.example');
+  assert.ok(head.endsWith('k=' + v.publicKey));
+  assert.equal(wp.validSubscription({ endpoint: 'https://fcm.googleapis.com/fcm/send/x', keys }), true);
+  assert.equal(wp.validSubscription({ endpoint: 'https://evil.example/x', keys }), false, 'only known push services');
+  assert.equal(wp.validSubscription({ endpoint: 'https://web.push.apple.com/x', keys: { p256dh: 'abc', auth } }), false);
+}
+
+// Which notifications are due.
+{
+  const nt = await import('../netlify/lib/notify.mjs');
+  const now = Date.parse('2026-11-14T23:30:00Z');
+  const game = (id, startMin, extra = {}) => ({ id, l: 'NBA', date: new Date(now + startMin * 6e4).toISOString(), tbd: false, state: 'pre', detail: '', venue: 'Kaseya Center', tv: 'NBA TV',
+    home: { name: 'Miami Heat', key: 'heat', score: null }, away: { name: 'Cleveland Cavaliers', key: null, score: null }, ...extra });
+  const sub = { id: 's', teams: ['heat'], lead: 60, final: true, created: now - 864e5, sent: {} };
+  const games = [game('a', 45), game('b', 90), game('c', 30, { tbd: true }), game('d', -150, { state: 'post', detail: 'Final/OT', home: { name: 'Miami Heat', key: 'heat', score: 120 }, away: { name: 'Cleveland Cavaliers', key: null, score: 118 } }),
+    game('e', 20, { home: { name: 'Orlando Magic', key: 'magic' } })];
+  const d = nt.due(sub, games, now, 'https://x.example');
+  assert.deepEqual(d.map(x => x.kind + x.game.id), ['pa', 'fd']);
+  assert.equal(d[0].message.title, '🏀 Heat – Cleveland Cavaliers în 45 de minute');
+  assert.ok(d[0].message.body.startsWith('Start la 02:15, ora României'));
+  assert.equal(d[1].message.title, 'Final: Heat 120–118 Cleveland Cavaliers');
+  assert.ok(d[1].message.body.startsWith('Victorie pentru Heat · după prelungiri'));
+  assert.equal(d[0].message.url, 'https://x.example/#meci/NBA/a');
+  const after = nt.markSent(sub, d, now);
+  assert.deepEqual(nt.due(after, games, now + 5 * 6e4, 'https://x.example'), [], 'nothing is sent twice');
+  assert.deepEqual(nt.due({ ...sub, created: now }, games, now, 'x').map(x => x.kind), ['p'], 'no old finals for a new subscriber');
+  assert.deepEqual(nt.due({ ...sub, lead: 0, final: false }, games, now, 'x'), []);
+  assert.equal(nt.inTime(60), 'într-o oră'); assert.equal(nt.inTime(10), 'în 10 minute'); assert.equal(nt.inTime(120), 'în 2 ore');
+  assert.deepEqual(Object.keys(nt.markSent({ sent: { old: { p: now - 5 * 864e5 } } }, [], now).sent), [], 'old entries forgotten');
+}
+
 console.log('all ESPN reader checks passed');

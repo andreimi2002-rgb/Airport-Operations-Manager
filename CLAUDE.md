@@ -13,6 +13,11 @@ istoricul git, pe `main` până la merge-ul etapei 1).
   parțiale în loc să crape. Vremea vine de la Open-Meteo (`netlify/lib/weather.mjs`), tot
   gratuit și fără cheie. La generarea `data/places.json` se folosesc, o singură dată, Wikipedia
   (coordonate), Wikimedia Commons (poze cu licență), arhiva Open-Meteo (clima) și OSRM (rute).
+- **Notificări (Web Push):** standardul gratuit al browserelor, fără serviciu plătit. Site-ul se
+  semnează cu propria pereche de chei VAPID, în variabilele de mediu Netlify `VAPID_PUBLIC_KEY`
+  și `VAPID_PRIVATE_KEY` (secretă, niciodată în repo; generare: `node tools/vapid-keys.mjs`).
+  Abonamentele stau în Netlify Blobs (`push-subs` în producție, `push-subs-test` pe preview).
+  Singura dependență npm e `@netlify/blobs`, pentru funcții; pagina rămâne fără build.
 - **Poze:** orașele și stadioanele au poze de pe Wikimedia Commons, cu autorul și licența
   afișate pe pagină. Se încarcă de pe serverul Wikimedia, nu se copiază în repo.
 - **Logo-uri:** cele oficiale, încărcate direct de pe serverul ESPN (`a.espncdn.com`), nu
@@ -42,7 +47,11 @@ istoricul git, pe `main` până la merge-ul etapei 1).
    Outlook) cu meciurile echipelor alese. Merge în `main` o singură dată, după etapele 2 și 3:
    branch-urile se unesc între ele (3 → 2 → 1), apoi PR #3 în `main`. Instalarea și abonarea
    „pe bune” se fac după merge, pe adresa finală (pe preview sunt legate de adresa preview-ului).
-3. **Notificări** înainte de meciurile echipei favorite.
+3. **Notificări** (în lucru, branch `stage-3-notificari`, pornit din `stage-2-telefon`):
+   anunț înainte de meciurile echipelor alese și rezultatul final. Funcția programată
+   (`push-cron`, la 15 minute) rulează doar în producție; pe preview merg abonarea și testul.
+   Preview-urile Netlify se fac doar pentru PR-uri spre `main`, deci PR-urile de etapă au baza
+   `main`; la final se face merge doar la ultimul (le conține pe toate), restul se închid.
 4. **Toate echipele** din cele 5 ligi, cu „Echipele mele” și filtru pe stat/oraș.
 
 ## Structura
@@ -58,6 +67,7 @@ js/ui.js                    funcții comune: esc, temă (auto/luminoasă/întune
 js/places.js                orașe și stadioane: pagini, vremea, banda cu vremea, graficul de climă
 js/phone.js                 service worker, instalarea aplicației, pagina de abonare la calendar
 js/ics.js                   fișiere .ics (iCalendar), folosit de pagină și de funcția de calendar; fără DOM
+js/notify.js                pagina de notificări: permisiune, abonare push, alegerile (#notificari)
 sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
 manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
@@ -67,6 +77,12 @@ netlify/functions/live.mjs       GET /api/live?l=NBA,NHL  scorurile de azi (cach
 netlify/functions/game.mjs       GET /api/game?l=NBA&id=…  detaliile unui meci
 netlify/functions/weather.mjs    GET /api/weather?lat=…&lon=…[&brief=1]  vremea, doar în Florida (cache 30 min)
 netlify/functions/calendar.mjs   GET /api/calendar.ics?e=heat,panthers[&a=60]  calendar de abonare (cache 1 h)
+netlify/functions/push.mjs       /api/push  salvează / citește / testează / șterge un abonament la notificări
+netlify/functions/push-cron.mjs  programată, la 15 minute, doar în producție: trimite notificările datorate
+netlify/lib/webpush.mjs     Web Push fără bibliotecă: semnătură VAPID (RFC 8292), criptare (RFC 8291)
+netlify/lib/notify.mjs      ce notificări sunt datorate și textul lor; fără rețea
+netlify/lib/subs.mjs        stocarea abonamentelor (Netlify Blobs; local, fișiere JSON)
+tools/vapid-keys.mjs        generează perechea de chei VAPID: node tools/vapid-keys.mjs
 data/snapshot.json          date de rezervă (format /api/schedule)
 data/places.json            orașe și stadioane, GENERAT: nu se editează de mână
 tools/places-src.json       sursa lui places.json: textele în română, fapte, surse, numele pozelor
@@ -101,7 +117,8 @@ puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, 
 (doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`.
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
-`#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`; filtrele în
+`#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
+filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 
 Cheile echipelor din Florida sunt în `js/teams.js` (`heat`, `magic`, `panthers`, `lightning`,

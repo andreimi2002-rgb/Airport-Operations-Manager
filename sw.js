@@ -5,11 +5,11 @@
 // - Schedule, live scores, weather, calendar feed: network only. The schedule has its own saved copy
 //   in the page (localStorage), which the page labels as saved data; live scores and weather must
 //   never be shown old as if they were current.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL = `shell-${VERSION}`, API = `api-${VERSION}`, IMG = `img-${VERSION}`;
 const FILES = [
   '/', '/index.html', '/css/app.css', '/favicon.svg', '/manifest.webmanifest', '/icons/icon-192.png',
-  '/js/app.js', '/js/teams.js', '/js/ui.js', '/js/ro.js', '/js/game.js', '/js/places.js', '/js/ics.js', '/js/phone.js',
+  '/js/app.js', '/js/teams.js', '/js/ui.js', '/js/ro.js', '/js/game.js', '/js/places.js', '/js/ics.js', '/js/phone.js', '/js/notify.js',
   '/data/places.json', '/data/snapshot.json'
 ];
 
@@ -48,6 +48,26 @@ async function cacheFirst(req) {
   }
   return r;
 }
+
+// Notifications (sent by netlify/functions/push-cron.mjs): show them, and open the game page on a tap.
+self.addEventListener('push', e => {
+  let m = {};
+  try { m = e.data ? e.data.json() : {}; } catch (x) { m = { title: 'Meciuri Florida', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(m.title || 'Meciuri Florida', {
+    body: m.body || '', tag: m.tag, renotify: !!m.tag, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png',
+    lang: 'ro', data: { url: m.url || '/' }
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = e.notification.data?.url || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    // An open window of the app: bring it forward and show the game there.
+    const w = list.find(c => new URL(c.url).origin === new URL(url, location.origin).origin);
+    if (w) return w.focus().then(c => c.navigate ? c.navigate(url) : c);
+    return self.clients.openWindow(url);
+  }));
+});
 
 self.addEventListener('fetch', e => {
   const req = e.request;
