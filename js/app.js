@@ -374,7 +374,13 @@ function card(g) {
     <div class="time">${time}${alt}</div>
     <div><div class="tags"><span class="tag lg">${g.l}</span>${where}${extra}${g.note ? `<span class="tag note">${esc(noteRo(g.note))}</span>` : ''}</div>
     <div class="match">${tn(g, g.H)}${mid}${tn(g, g.A)}</div>
-    <div class="vrow"><span class="venue">${g.v ? esc(g.v) + ' · ' : ''}${esc(g.city)}${g.tv ? ` · <span class="tv">${esc(g.tv)}</span>` : ''}</span><button class="more" type="button" data-game="${g.id}">Detalii ›</button></div></div></article>`;
+    <div class="vrow"><span class="venue">${venueLine(g)}${g.tv ? ` · <span class="tv">${esc(g.tv)}</span>` : ''}</span><button class="more" type="button" data-game="${g.id}">Detalii ›</button></div></div></article>`;
+}
+// "Stadium · City": links to the stadium and city pages for the Florida venues.
+function venueLine(g) {
+  const v = venueByName(g.v), c = v && cityOf(v);
+  if (!v) return `${g.v ? esc(g.v) + ' · ' : ''}${esc(g.city)}`;
+  return `<button class="linkish" type="button" data-venue="${v.id}">${esc(g.v)}</button> · ${c ? `<button class="linkish" type="button" data-city="${c.id}">${esc(c.name)}</button>, FL` : esc(g.city)}`;
 }
 function grouped(list, busy, showFull) {
   let html = '', cur = '';
@@ -585,13 +591,15 @@ function openVenue(id, keep) {
 /* ----- weather strip on the home page ----- */
 async function renderStrip() {
   if (!PLACES.data) return;
+  // The nine stadiums, north to south, as a row that scrolls sideways on a phone.
+  $('vstrip').innerHTML = Object.values(PLACES.data.venues).sort((a, b) => b.lat - a.lat).map(v => `<button type="button" class="vchip" data-venue="${v.id}">${v.image ? `<img src="${esc(v.image.small)}" alt="" loading="lazy" decoding="async">` : ''}<span><b>${esc(v.name)}</b><small>${v.teams.map(k => esc(TEAMS[k].s)).join(', ')} · ${esc(cityOf(v)?.name || '')}</small></span></button>`).join('');
   $('wxstrip').innerHTML = stripHtml(null);
   try {
     const list = await getWeather(STRIP.map(id => PLACES.data.cities[id]), true);
     $('wxstrip').innerHTML = stripHtml(list);
   } catch (e) { $('wxstrip').innerHTML = stripHtml(null).replace(/…/g, 'vremea nu e disponibilă'); }
 }
-loadPlaces()?.then(d => { if (!d) return; renderStrip(); if (GAMES.length) { renderMap(); if (!$('ov').hidden) route(true); } });
+loadPlaces()?.then(d => { if (!d) return; renderStrip(); if (GAMES.length) { render(); if (!$('ov').hidden) route(true); } });
 setInterval(() => { if (!document.hidden && PLACES.data) renderStrip(); }, 30 * 60e3);
 
 function sideInfo(g, side) {

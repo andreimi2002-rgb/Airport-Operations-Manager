@@ -403,6 +403,15 @@ svg.wx .drop{stroke:var(--wx-rain);fill:none} svg.wx .fogl{stroke:var(--wx-cloud
 .wxtile .tt{grid-area:tt;font-family:var(--display);font-weight:700;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
 .wxtile .cc{grid-area:cc;font-size:12.5px}
 .wxtile .dd{grid-area:dd;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.vstrip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.vstrip:empty{display:none}
+.vchip{flex:0 0 200px;scroll-snap-align:start;display:flex;flex-direction:column;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:0;overflow:hidden;cursor:pointer}
+.vchip:hover{border-color:var(--accent)}
+.vchip img{width:100%;aspect-ratio:16/8;object-fit:cover;display:block;background:var(--soft)}
+.vchip span{display:flex;flex-direction:column;padding:6px 9px 8px;min-width:0}
+.vchip b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vchip small{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:680px){.vchip{flex-basis:160px}}
 .mcities,.mvenues{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .ccard,.mvenues button,.vcard{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px;cursor:pointer;width:100%}
 .ccard:hover,.mvenues button:hover,.vcard:hover{border-color:var(--accent)}
