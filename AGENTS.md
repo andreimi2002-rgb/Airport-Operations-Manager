@@ -47,7 +47,7 @@ calendar; notificări (Web Push, `push-cron` la 15 minute, doar în producție).
 gratuite, fiecare merge în `main` consumă. Mai multe etape merg pe un singur branch / PR cu
 baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la final.
 
-4. **Etapa 4** (în lucru, branch `stage-4-america`, un singur merge la final):
+4. **Etapa 4** (în producție, PR #6, 11 noiembrie 2026):
    - **Partea 1, în plus pentru Florida:** profil de echipă bogat (lot,
      lideri, grafic al sezonului, știri), căutare, tabloul de playoff, MLB automat
      (Marlins, Rays).
@@ -55,6 +55,9 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
      restul: scoruri pe zile din toate ligile, clasamente complete, pagină simplă de echipă,
      orașe și stadioane cu fapte, ora locală și vremea. Datele pe ligă și zi (nu pe echipă),
      ca să nu se înmulțească cererile la ESPN.
+5. **Etapa 5** (în lucru, branch `stage-5-navigare`): pagina de start mai ușor de parcurs, cu o
+   bară de secțiuni lipită sus (`#jump` în `index.html`, `setupJump` în `js/app.js`): un buton
+   duce direct la secțiune, fără să schimbe adresa. Playoff-ul MLS e mutat după Clasamente.
 
 ## Structura
 

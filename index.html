@@ -62,30 +62,39 @@
   <div class="lgview" id="lgview" hidden></div>
 
   <div class="flview" id="flview">
+  <nav class="jump" id="jump" aria-label="Secțiuni">
+    <button type="button" data-jump="hero">Urmează</button>
+    <button type="button" data-jump="todaylg">Azi în ligi</button>
+    <button type="button" data-jump="echipe">Echipe</button>
+    <button type="button" data-jump="orase">Orașe</button>
+    <button type="button" data-jump="deurmarit">De urmărit</button>
+    <button type="button" data-jump="program">Program</button>
+    <button type="button" data-jump="harta">Hartă</button>
+    <button type="button" data-jump="clasamente">Clasamente</button>
+    <button type="button" data-jump="playoffs">Playoff</button>
+    <button type="button" data-jump="telefon">Pe telefon</button>
+  </nav>
   <section class="hero" id="hero" aria-label="Urmează"><div class="skeleton" style="grid-column:1/-1;background-color:transparent"></div></section>
-
 
   <section class="todaylg" id="todaylg" aria-label="Azi în ligi" hidden></section>
 
-  <section aria-label="Echipe">
+  <section id="echipe" aria-label="Echipe">
     <h2 class="sec">Echipe</h2>
     <div class="teams" id="teams"></div>
   </section>
 
-  <section aria-label="Orașe, stadioane și vremea">
+  <section id="orase" aria-label="Orașe, stadioane și vremea">
     <h2 class="sec">Orașe, stadioane și vremea</h2>
     <div class="wxstrip" id="wxstrip" aria-label="Vremea acum în orașele echipelor"></div>
     <div class="vstrip" id="vstrip" aria-label="Stadioanele echipelor"></div>
   </section>
 
-  <section aria-label="De urmărit">
+  <section id="deurmarit" aria-label="De urmărit">
     <h2 class="sec">De urmărit</h2>
     <div class="hl" id="hl"></div>
   </section>
 
-  <section class="playoffs" id="playoffs" aria-label="Playoff" hidden></section>
-
-  <section aria-label="Calendar" style="display:flex;flex-direction:column;gap:12px">
+  <section id="program" aria-label="Calendar" style="display:flex;flex-direction:column;gap:12px">
     <div class="filters">
       <span id="chips" class="filters"></span>
       <select id="team" aria-label="Echipă"></select>
@@ -116,18 +125,20 @@
   </details>
   <details class="res" id="reswrap"><summary>Rezultate recente <span id="rescount"></span></summary><div id="results"></div></details>
 
-  <section aria-label="Harta">
+  <section id="harta" aria-label="Harta">
     <h2 class="sec">Unde se joacă</h2>
     <div class="mapwrap"><div id="map"></div><div class="mpanel" id="mpanel"></div></div>
   </section>
 
-  <section aria-label="Clasamente">
+  <section id="clasamente" aria-label="Clasamente">
     <h2 class="sec">Clasamente</h2>
     <div class="tables" id="tables"></div>
     <div class="fn">NHL: Î = înfrângeri în timp regulamentar, Pct = puncte. MLS: primele 9 din fiecare conferință merg în playoff.</div>
   </section>
 
-  <section aria-label="Pe telefon">
+  <section class="playoffs" id="playoffs" aria-label="Playoff" hidden></section>
+
+  <section id="telefon" aria-label="Pe telefon">
     <h2 class="sec">Pe telefon și în calendar</h2>
     <div class="phone" id="phone"></div>
   </section>

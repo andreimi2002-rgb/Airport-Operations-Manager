@@ -703,6 +703,38 @@ function navView(hash) {
   route();
   window.scrollTo({ top: 0 });
 }
+/* ---------- jump bar: the homepage sections, one tap away (the bar stays at the top) ---------- */
+(function setupJump() {
+  const bar = $('jump'); if (!bar) return;
+  const btns = [...bar.querySelectorAll('[data-jump]')], target = b => $(b.dataset.jump);
+  // A button only for sections that are shown (Azi în ligi, Playoff come and go).
+  const sync = () => { btns.forEach(b => { b.hidden = !target(b) || target(b).hidden; }); mark(); };
+  const mo = new MutationObserver(sync);
+  btns.forEach(b => target(b) && mo.observe(target(b), { attributes: true, attributeFilter: ['hidden'] }));
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('[data-jump]'); if (!b) return;
+    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target(b)?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+  });
+  // Light up the section being read; keep its button visible in the bar on a phone.
+  let cur = null, raf = 0;
+  function mark() {
+    raf = 0;
+    if ($('flview').hidden) return;
+    const line = bar.getBoundingClientRect().bottom + 24;
+    let on = null;
+    for (const b of btns) if (!b.hidden && target(b).getBoundingClientRect().top <= line) on = b;
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) on = btns.filter(b => !b.hidden).pop() || on;
+    on = on || btns.find(b => !b.hidden);
+    if (on === cur) return;
+    cur?.removeAttribute('aria-current'); cur = on; on?.setAttribute('aria-current', 'true');
+    if (on) bar.scrollTo({ left: on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2, behavior: 'auto' });
+  }
+  addEventListener('scroll', () => { raf ||= requestAnimationFrame(mark); }, { passive: true });
+  addEventListener('resize', () => { raf ||= requestAnimationFrame(mark); });
+  sync();
+})();
+
 async function loadScores(day) {
   const j = await getJSON('/api/scores?d=' + day.replace(/-/g, ''), 12000).catch(() => null);
   if (!j) { LG.scores.set(day, { _err: true }); return; }

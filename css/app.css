@@ -420,6 +420,14 @@ svg.wx .drop{stroke:var(--wx-rain);fill:none} svg.wx .fogl{stroke:var(--wx-cloud
 .viewtabs a small{font-family:var(--body);font-size:11.5px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted);margin-left:4px}
 .viewtabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
 .viewtabs a:hover{color:var(--ink)}
+/* jump bar: homepage sections, stuck to the top while scrolling (under the overlay, z-index 10) */
+.jump{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:-8px -16px -6px;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+.jump::-webkit-scrollbar{display:none}
+.jump button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 13px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.jump button:hover{border-color:var(--accent)}
+.jump button[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.jump button[hidden]{display:none}
+.flview>section,.flview>details{scroll-margin-top:62px}
 .lgview h2.sec small{font-family:var(--body);font-size:13px;text-transform:none;letter-spacing:0;color:var(--muted);font-weight:500;margin-left:6px}
 .lghead{display:flex;flex-direction:column;gap:10px}
 .lgtabs{margin:0}
