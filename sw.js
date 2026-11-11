@@ -5,11 +5,11 @@
 // - Schedule, live scores, weather, calendar feed: network only. The schedule has its own saved copy
 //   in the page (localStorage), which the page labels as saved data; live scores and weather must
 //   never be shown old as if they were current.
-const VERSION = 'v8';
+const VERSION = 'v9';
 const SHELL = `shell-${VERSION}`, API = `api-${VERSION}`, IMG = `img-${VERSION}`;
 const FILES = [
   '/', '/index.html', '/css/app.css', '/favicon.svg', '/manifest.webmanifest', '/icons/icon-192.png',
-  '/js/app.js', '/js/teams.js', '/js/ui.js', '/js/ro.js', '/js/game.js', '/js/places.js', '/js/ics.js', '/js/phone.js', '/js/notify.js', '/js/teamx.js', '/js/bracket.js', '/js/leagues.js', '/js/mine.js', '/js/clubinfo.js', '/js/guide.js',
+  '/js/app.js', '/js/teams.js', '/js/ui.js', '/js/ro.js', '/js/game.js', '/js/places.js', '/js/ics.js', '/js/phone.js', '/js/notify.js', '/js/teamx.js', '/js/bracket.js', '/js/leagues.js', '/js/mine.js', '/js/clubinfo.js', '/js/guide.js', '/js/core.js', '/js/home.js', '/js/pages.js', '/js/views.js', '/js/search.js', '/js/health.js',
   '/data/places.json', '/data/snapshot.json'
 ];
 

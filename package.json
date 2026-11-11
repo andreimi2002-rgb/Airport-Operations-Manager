@@ -4,7 +4,8 @@
   "type": "module",
   "description": "Site static + funcții Netlify. Singura dependență e pentru funcții: stocarea abonamentelor la notificări.",
   "scripts": {
-    "test": "node tools/test.mjs"
+    "test": "node tools/test.mjs && node tools/test-functions.mjs",
+    "smoke": "node tools/smoke.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^11.1.9"
