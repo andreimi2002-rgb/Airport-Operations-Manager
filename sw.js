@@ -5,7 +5,7 @@
 // - Schedule, live scores, weather, calendar feed: network only. The schedule has its own saved copy
 //   in the page (localStorage), which the page labels as saved data; live scores and weather must
 //   never be shown old as if they were current.
-const VERSION = 'v3';
+const VERSION = 'v5';
 const SHELL = `shell-${VERSION}`, API = `api-${VERSION}`, IMG = `img-${VERSION}`;
 const FILES = [
   '/', '/index.html', '/css/app.css', '/favicon.svg', '/manifest.webmanifest', '/icons/icon-192.png',
@@ -25,10 +25,11 @@ self.addEventListener('activate', e => {
 const timeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('timeout')), ms))]);
 async function networkFirst(req, cacheName, ms, fallback) {
   const cache = await caches.open(cacheName);
+  // The download goes on after the timeout: a slow network still refreshes the saved copy for next time.
+  const net = fetch(req).then(r => { if (r.ok) cache.put(req, r.clone()); return r; });
+  net.catch(() => {});
   try {
-    const r = await timeout(fetch(req), ms);
-    if (r.ok) cache.put(req, r.clone());
-    return r;
+    return await timeout(net, ms);
   } catch (e) {
     const hit = await cache.match(req, { ignoreSearch: cacheName === SHELL && req.mode === 'navigate' });
     if (hit) return hit;

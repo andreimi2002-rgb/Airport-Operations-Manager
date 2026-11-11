@@ -36,6 +36,9 @@ istoricul git, pe `main` până la merge-ul etapei 1).
   publicarea în producție (merge în `main`) consumă credit. Lucrăm local, verificăm cu
   serverul local și capturi de ecran, iar la final facem push și deschidem PR-ul.
 - Trebuie să meargă bine pe telefon și pe desktop, în temă luminoasă și întunecată.
+- **Versiunea aplicației:** la orice schimbare a fișierelor site-ului, crește `VERSION` în `sw.js`
+  (`tools/test.mjs` verifică față de `main`). Doar așa aplicația instalată vede versiunea nouă:
+  la revenirea în aplicație caută una nouă și, când e gata, se reîncarcă singură (`js/phone.js`).
 
 ## Plan pe etape
 
@@ -47,7 +50,7 @@ calendar; notificări (Web Push, `push-cron` la 15 minute, doar în producție).
 gratuite, fiecare merge în `main` consumă. Mai multe etape merg pe un singur branch / PR cu
 baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la final.
 
-4. **Etapa 4** (în lucru, branch `stage-4-america`, un singur merge la final):
+4. **Etapa 4** (în producție, PR #6, 11 noiembrie 2026):
    - **Partea 1, în plus pentru Florida:** profil de echipă bogat (lot,
      lideri, grafic al sezonului, știri), căutare, tabloul de playoff, MLB automat
      (Marlins, Rays).
@@ -55,6 +58,11 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
      restul: scoruri pe zile din toate ligile, clasamente complete, pagină simplă de echipă,
      orașe și stadioane cu fapte, ora locală și vremea. Datele pe ligă și zi (nu pe echipă),
      ca să nu se înmulțească cererile la ESPN.
+5. **Etapa 5** (în lucru, branch `stage-5-navigare`): pagina de start mai ușor de parcurs, cu o
+   bară de secțiuni lipită sus (`#jump` în `index.html`, `setupJump` în `js/app.js`): un buton
+   duce direct la secțiune, fără să schimbe adresa. Playoff-ul MLS e mutat după Clasamente. Fila
+   „Orașe și stadioane” din Ligile (toată America, `allPlaces` în `js/places.js`); căutarea
+   găsește orașele și stadioanele din toată America.
 
 ## Structura
 
@@ -72,7 +80,7 @@ js/ics.js                   fișiere .ics (iCalendar), folosit de pagină și de
 js/notify.js                pagina de notificări: permisiune, abonare push, alegerile (#notificari)
 js/teamx.js                 filele profilului de echipă: Sezon (grafic, lideri), Lot, Știri
 js/bracket.js               tabloul de playoff: serii din meciurile de playoff; fără DOM
-js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele; banda „Azi în ligi”
+js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele, orașele și stadioanele; banda „Azi în ligi”
 sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
 manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
@@ -130,7 +138,7 @@ puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, 
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
 `#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei),
-`#ligi[/scoruri|clasamente|echipe][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
+`#ligi[/scoruri|clasamente|echipe|orase][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
 filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 
