@@ -481,8 +481,18 @@ export async function teamExtras(l, id) {
   const ev = teamJ?.team?.nextEvent?.[0];
   const year = ev?.season?.year || new Date().getFullYear();
   let leaders = [];
-  try { leaders = normalizeLeaders(await getJSON(`${CORE_API}${CORE_PATH[l]}/seasons/${year}/types/2/teams/${id}/leaders`, 8000), l, roster); } catch (e) { /* leaders are optional */ }
-  return { l, id: String(id), season: year, roster, leaders, news: normalizeNews(newsJ) };
+  let coach = null;
+  const [leadersJ, coachesJ] = await Promise.all([
+    getJSON(`${CORE_API}${CORE_PATH[l]}/seasons/${year}/types/2/teams/${id}/leaders`, 8000).catch(() => null),
+    getJSON(`${CORE_API}${CORE_PATH[l]}/seasons/${year}/teams/${id}/coaches`, 8000).catch(() => null)
+  ]);
+  try { if (leadersJ) leaders = normalizeLeaders(leadersJ, l, roster); } catch (e) { /* leaders are optional */ }
+  // The head coach: the first coach of the season (ESPN lists only the head coach there; none for MLS).
+  try {
+    const ref = coachesJ?.items?.[0]?.$ref;
+    if (ref) { const p = await getJSON(ref.replace(/^http:/, 'https:'), 6000); const n = [p.firstName, p.lastName].filter(Boolean).join(' '); if (n) coach = n; }
+  } catch (e) { /* the coach is optional */ }
+  return { l, id: String(id), season: year, roster, leaders, coach, news: normalizeNews(newsJ) };
 }
 
 export function json(body, { browser = 60, cdn = 300, swr = 86400, status = 200 } = {}) {

@@ -1,6 +1,6 @@
 // The phone side: offline support (service worker), installing the app, the calendar subscription page
 // and the "add this game to my calendar" download.
-import { TEAMS } from './teams.js';
+import { TEAMS, parseClub } from './teams.js';
 import { esc } from './ui.js';
 import { calendar } from './ics.js';
 
@@ -57,8 +57,8 @@ export function installHtml() {
 /* ================= calendar subscription ================= */
 export const ALARMS = [[0, 'fără amintire'], [15, 'cu 15 minute înainte'], [30, 'cu 30 de minute înainte'], [60, 'cu o oră înainte'], [120, 'cu 2 ore înainte'], [180, 'cu 3 ore înainte']];
 export function feedUrl(teams, alarm) {
-  const all = Object.keys(TEAMS);
-  const list = all.filter(k => teams.includes(k));
+  // Florida teams in their usual order, then the followed teams from elsewhere ('NBA-2').
+  const list = [...Object.keys(TEAMS).filter(k => teams.includes(k)), ...teams.filter(k => parseClub(k))];
   return `${location.origin}/api/calendar.ics?e=${list.join(',')}${alarm ? `&a=${alarm}` : ''}`;
 }
 export function calendarLinks(url, name) {
@@ -69,10 +69,12 @@ export function calendarLinks(url, name) {
     outlook: `https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`
   };
 }
-// The page content; `sel` = chosen team keys, `alarm` = minutes, `emb(k)` draws a team emblem.
-export function calendarHtml(sel, alarm, emb) {
+// The page content; `sel` = chosen teams (Florida keys, 'NBA-2'), `alarm` = minutes, `emb(id)` draws a
+// team emblem, `clubs` = the followed teams from outside Florida: [{ id, l, name }].
+export function calendarHtml(sel, alarm, emb, clubs = []) {
   const url = sel.length ? feedUrl(sel, alarm) : '';
-  const name = sel.length === Object.keys(TEAMS).length ? 'Meciuri Florida' : 'Meciuri: ' + sel.map(k => TEAMS[k].s).join(', ');
+  const nameOf = k => TEAMS[k]?.s || clubs.find(c => c.id === k)?.name || k;
+  const name = sel.length === Object.keys(TEAMS).length && sel.every(k => TEAMS[k]) ? 'Meciuri Florida' : 'Meciuri: ' + sel.map(nameOf).join(', ');
   const L = url ? calendarLinks(url, name) : null;
   const byL = {};
   for (const k in TEAMS) (byL[TEAMS[k].l] ||= []).push(k);
@@ -81,7 +83,7 @@ export function calendarHtml(sel, alarm, emb) {
     <div class="pbody">
     <p class="lead">Meciurile echipelor alese apar singure în calendarul tău (Google, iPhone, Outlook), la ora ta, și se actualizează când se schimbă ora sau se termină un meci.</p>
     <section><h3>1. Alege echipele</h3>
-      <div class="calteams">${Object.entries(byL).map(([l, ks]) => `<div class="calgrp"><b>${l}</b>${ks.map(k => `<label class="calteam"><input type="checkbox" data-calteam="${k}" ${sel.includes(k) ? 'checked' : ''}>${emb(k)}<span>${esc(TEAMS[k].espn)}</span></label>`).join('')}</div>`).join('')}</div>
+      <div class="calteams">${Object.entries(byL).map(([l, ks]) => `<div class="calgrp"><b>${l}</b>${ks.map(k => `<label class="calteam"><input type="checkbox" data-calteam="${k}" ${sel.includes(k) ? 'checked' : ''}>${emb(k)}<span>${esc(TEAMS[k].espn)}</span></label>`).join('')}</div>`).join('')}${clubs.length ? `<div class="calgrp"><b>Din alte orașe</b>${clubs.map(c => `<label class="calteam"><input type="checkbox" data-calteam="${esc(c.id)}" ${sel.includes(c.id) ? 'checked' : ''}>${emb(c.id)}<span>${esc(c.name)} <small>${esc(c.l)}</small></span></label>`).join('')}</div>` : ''}</div>
       <div class="btns"><button class="ghost" type="button" data-calall="1">Toate</button><button class="ghost" type="button" data-calall="0">Niciuna</button></div>
     </section>
     <section><h3>2. Amintire</h3>

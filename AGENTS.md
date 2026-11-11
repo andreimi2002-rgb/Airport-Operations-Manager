@@ -58,11 +58,29 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
      restul: scoruri pe zile din toate ligile, clasamente complete, pagină simplă de echipă,
      orașe și stadioane cu fapte, ora locală și vremea. Datele pe ligă și zi (nu pe echipă),
      ca să nu se înmulțească cererile la ESPN.
-5. **Etapa 5** (în lucru, branch `stage-5-navigare`): pagina de start mai ușor de parcurs, cu o
+5. **Etapa 5** (în producție, PR #7): pagina de start mai ușor de parcurs, cu o
    bară de secțiuni lipită sus (`#jump` în `index.html`, `setupJump` în `js/app.js`): un buton
    duce direct la secțiune, fără să schimbe adresa. Playoff-ul MLS e mutat după Clasamente. Fila
    „Orașe și stadioane” din Ligile (toată America, `allPlaces` în `js/places.js`); căutarea
    găsește orașele și stadioanele din toată America.
+6. **Etapa 6** (în lucru, branch `stage-6-echipe`): profil complet pentru toate echipele și
+   „Echipele mele”. Profilul oricărei echipe are textul „Despre” (Wikipedia, în română când
+   există), antrenorul (ESPN), palmaresul, numele vechi, legendele, poza, forma și clasamentul
+   conferinței (`data/clubs.json`, `js/clubinfo.js`). „Echipele mele” (`js/mine.js`) e secțiunea
+   de echipe de pe pagina de start: implicit cele 11 din Florida, se scot cu × și se adaugă
+   oricare echipă; calendarul (.ics) și notificările primesc orice echipă ca `NBA-2`.
+7. **Etapa 7: American Sports Hub.** Proiectul se redenumește (titlu, antet, aplicația instalată,
+   calendar, notificări, documentație) și primește identitate vizuală proprie (logo, iconițe, culori,
+   titluri): un produs sportiv american, nu un calendar. Pagina de start pornește de la „Echipele
+   mele” (implicit Florida). **Adresa rămâne** `florida-sp-calendar.netlify.app` (decizia
+   utilizatorului): aplicația instalată, calendarul și notificările sunt legate de ea.
+8. **Etapa 8: zilnic.** Rezumatul de dimineață (notificare la 8:00, ora României, cu rezultatele
+   din noaptea trecută ale echipelor tale); „Cum vezi meciul din România” pe ligă (listă scrisă de
+   mână, cu data verificării); explicații pentru începători (draft, salary cap, Wild Card,
+   prelungiri NHL), pornind de la glosarul enciclopediei.
+9. **Etapa 9: tehnic.** `app.js` împărțit pe module; verificare automată a surselor (ESPN,
+   Open-Meteo) cu mesaj clar pe pagină; teste pentru funcțiile Netlify și fluxurile principale.
+   Mai târziu, doar dacă site-ul devine public: varianta în engleză.
 
 ## Structura
 
@@ -80,6 +98,8 @@ js/ics.js                   fișiere .ics (iCalendar), folosit de pagină și de
 js/notify.js                pagina de notificări: permisiune, abonare push, alegerile (#notificari)
 js/teamx.js                 filele profilului de echipă: Sezon (grafic, lideri), Lot, Știri
 js/bracket.js               tabloul de playoff: serii din meciurile de playoff; fără DOM
+js/mine.js                  „Echipele mele”: lista din browser (implicit Florida), `NBA-2` pentru restul
+js/clubinfo.js              faptele din data/clubs.json pe pagina echipei: Despre, palmares, nume vechi, legende
 js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele, orașele și stadioanele; banda „Azi în ligi”
 sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
 manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
@@ -99,6 +119,7 @@ netlify/functions/push-cron.mjs  programată, la 15 minute, doar în producție:
 netlify/lib/webpush.mjs     Web Push fără bibliotecă: semnătură VAPID (RFC 8292), criptare (RFC 8291)
 netlify/lib/notify.mjs      ce notificări sunt datorate și textul lor; fără rețea
 netlify/lib/subs.mjs        stocarea abonamentelor (Netlify Blobs; local, fișiere JSON)
+netlify/lib/clubs.mjs       meciurile echipelor urmărite din afara Floridei, pentru calendar și notificări
 tools/vapid-keys.mjs        generează perechea de chei VAPID: node tools/vapid-keys.mjs
 data/snapshot.json          date de rezervă (format /api/schedule)
 data/places.json            orașe și stadioane, GENERAT: nu se editează de mână
@@ -106,6 +127,9 @@ data/america.json           stadioanele și orașele echipelor din afara Floride
                             tools/build-america.mjs: stadionul din meciurile de acasă (nu „franchise
                             venue” de la ESPN, adesea istoric), poze ESPN, oraș geocodat Open-Meteo
 tools/places-src.json       sursa lui places.json: textele în română, fapte, surse, numele pozelor
+data/clubs.json             profilul tuturor echipelor (Despre, titluri, nume vechi, legende, poză), GENERAT de
+                            tools/build-clubs.mjs (Wikipedia, Wikidata, enciclopedia; titlurile NHL din
+                            caseta Wikipedia). Wikimedia limitează cererile: scriptul merge una câte una, ~20 min
 tools/build-places.mjs      generează places.json (coordonate, poze, climă, rute): node tools/build-places.mjs
 tools/test.mjs              teste offline pentru cititoare și traduceri: node tools/test.mjs
 tools/mock-espn.mjs         ESPN simulat din date vechi; regenerează snapshot.json
@@ -137,7 +161,7 @@ puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, 
 (doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`.
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
-`#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei),
+`#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei), `#calendar/heat,NBA-2`, `#notificari/NBA-2`,
 `#ligi[/scoruri|clasamente|echipe|orase][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
 filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.

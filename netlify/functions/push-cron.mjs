@@ -4,6 +4,7 @@ import { sendPush } from '../lib/webpush.mjs';
 import { subsStore, vapid, env } from '../lib/subs.mjs';
 import { due, markSent } from '../lib/notify.mjs';
 import { buildSchedule } from './schedule.mjs';
+import { clubGames, mergeGames } from '../lib/clubs.mjs';
 
 async function getJSON(url) {
   const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
@@ -11,12 +12,13 @@ async function getJSON(url) {
   return r.json();
 }
 
-// The season from /api/schedule (cached on the CDN), with fresh scores from /api/live for games
-// started in the last hours, so a final whistle is noticed within one run.
-export async function currentGames(site, now = Date.now()) {
+// The season from /api/schedule (cached on the CDN), plus the games of the followed teams outside
+// Florida (clubs, 'NBA-2'), with fresh scores from /api/live for games started in the last hours,
+// so a final whistle is noticed within one run.
+export async function currentGames(site, now = Date.now(), clubs = []) {
   let data;
   try { data = await getJSON(site + '/api/schedule'); } catch (e) { data = await buildSchedule(); }
-  const games = data.games || [];
+  const games = clubs.length ? mergeGames(data.games || [], await clubGames(site, clubs)) : (data.games || []);
   const recent = games.filter(g => g.state !== 'post' && Math.abs(new Date(g.date).getTime() - now) < 6 * 36e5);
   const leagues = [...new Set(recent.map(g => g.l))];
   if (leagues.length) {
@@ -40,7 +42,7 @@ export default async () => {
   if (!subs.length) return new Response('no subscribers');
   const site = env('URL') || 'https://florida-sp-calendar.netlify.app';
   const now = Date.now();
-  const games = await currentGames(site, now);
+  const games = await currentGames(site, now, subs.flatMap(s => s.teams || []));
   let sent = 0, removed = 0;
   for (const sub of subs) {
     const items = due(sub, games, now, sub.site || site);

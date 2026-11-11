@@ -1,11 +1,13 @@
-import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, METROS, norm } from './teams.js';
+import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, METROS, norm, parseClub } from './teams.js';
+import { MINE, mineIds, isMine, mineFL, mineClubs, clubId, toggleMine, refreshMine, resetMine } from './mine.js';
 import { esc, $, emb, pickInk, theme, isDark, onSystemTheme } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
 import { tabsHtml, panelHtml, wpHover } from './game.js';
 import { registerSW, onInstallChange, install, installHtml, calendarHtml, downloadGame, canInstall } from './phone.js';
 import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
-import { lgHeadHtml, scoresHtml, standingsHtml, teamsHtml, todayStripHtml } from './leagues.js';
-import { teamTabsHtml, seasonChartHtml, seasonHover, leadersHtml, rosterHtml, newsHtml } from './teamx.js';
+import { lgHeadHtml, scoresHtml, standingsHtml, teamsHtml, todayStripHtml, groupTableHtml as groupTbl } from './leagues.js';
+import { CLUBS, loadClubs, clubInfo, aboutHtml, infoFactsHtml } from './clubinfo.js';
+import { teamTabsHtml, seasonChartHtml, seasonHover, leadersHtml, rosterHtml, newsHtml, roNum } from './teamx.js';
 import { N, setNotifyRender, refreshNotify, enableNotify, saveNotify, testNotify, disableNotify, notifyHtml } from './notify.js';
 import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, stripHtml, STRIP, cityHtml, venueHtml, placeWeatherHtml, climateHover, floridaClock, cityCard, roofWord, AMERICA, loadAmerica, getVenue, getCity, venueOfClub, cityLiteHtml, venueLiteHtml, clockIn, hoursBehindRomania, allPlaces, placesIndexHtml } from './places.js';
 
@@ -171,10 +173,9 @@ function ago(ts) {
 const flSide = k => { const i = TEAMINFO[k] || {}; return { name: TEAMS[k].espn, abbr: i.abbr || TEAMS[k].ab, logo: i.logo, logoDark: i.logoDark, color: i.color, alt: i.alt, key: k }; };
 
 /* ================= state ================= */
-const state = { tz: 'ro', leagues: new Set(['NBA', 'NHL', 'NFL', 'MLS', 'MLB']), team: '', home: false, awake: false, day: null, view: 'month', week: null, month: null, metro: 'mia', fav: '', horizon: 30, agendaDays: 7 };
+const state = { tz: 'ro', leagues: new Set(['NBA', 'NHL', 'NFL', 'MLS', 'MLB']), team: '', home: false, awake: false, day: null, view: 'month', week: null, month: null, metro: 'mia', horizon: 30, agendaDays: 7 };
 {
   const s = store.get('flgames-tz'); if (s === 'fl' || s === 'ro') state.tz = s;
-  const f = store.get('flgames-fav'); if (f && TEAMS[f]) state.fav = f;
   const v = store.get('flgames-view'); if (v === 'week' || v === 'month') state.view = v;
   const t = store.get('flgames-theme'); if (t === 'light' || t === 'dark') theme.pref = t;
 }
@@ -276,11 +277,54 @@ function renderStatic() {
   for (const k in TEAMS) (byL[TEAMS[k].l] ||= []).push(k);
   for (const l in byL) opts += `<optgroup label="${l}">` + byL[l].map(k => `<option value="${k}">${TEAMS[k].espn}</option>`).join('') + '</optgroup>';
   $('team').innerHTML = opts;
-  $('teams').innerHTML = Object.keys(TEAMS).map(k => {
-    const T = TEAMS[k], st = teamStats(k);
-    return `<button class="tbtn${state.fav === k ? ' fav' : ''}" type="button" data-team="${k}">${emb(flSide(k))}<span><b>${esc(T.s)}${state.fav === k ? ' ★' : ''}</b><small>${T.l} · ${st.rec}</small></span></button>`;
-  }).join('');
+  renderMine();
   $('tables').innerHTML = Object.keys(DIVISIONS).map(tableHtml).join('');
+}
+
+/* ================= "Echipele mele": the teams on the home page ================= */
+// By default the Florida teams; × takes one out, "Adaugă o echipă" opens a list of every team.
+const minePick = { open: false, q: '' };
+function mineCardHtml(x) {
+  const out = `<button class="mx" type="button" data-mine-toggle="${esc(x.id)}" aria-label="Scoate din echipele mele" title="Scoate din echipele mele">×</button>`;
+  if (TEAMS[x.id]) {
+    const T = TEAMS[x.id], st = teamStats(x.id);
+    return `<div class="mcard"><button class="tbtn" type="button" data-team="${x.id}">${emb(flSide(x.id))}<span><b>${esc(T.s)}</b><small>${T.l} · ${st.rec}</small></span></button>${out}</div>`;
+  }
+  const s = clubSide(x.id), e = entryById(x.l, x.eid);
+  return `<div class="mcard"><button class="tbtn" type="button" data-club="${x.l}|${esc(x.eid)}">${emb(s)}<span><b>${esc(s.name)}</b><small>${x.l}${e ? ' · ' + recordOf(e, x.l) : ''}</small></span></button>${out}</div>`;
+}
+// Every team of the five leagues, for the "add" list: Florida teams by key, the rest as 'NBA-2'.
+function allTeamsList() {
+  const out = [];
+  for (const l of Object.keys(LEAGUES)) {
+    const seen = new Set();
+    for (const k of Object.keys(TEAMS).filter(k => TEAMS[k].l === l)) { out.push({ id: k, l, name: TEAMS[k].espn, side: flSide(k) }); seen.add(norm(TEAMS[k].espn)); }
+    const entries = (DATA.raw?.standings?.[l] || []).flatMap(g => g.entries).filter(e => e.id && !seen.has(norm(e.name)) && !flKey(l, e.name));
+    for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) out.push({ id: clubId(l, e.id), l, name: e.name, side: e });
+  }
+  return out;
+}
+function minePickHtml() {
+  const q = norm(minePick.q), list = allTeamsList().filter(t => !q || norm(t.name + ' ' + t.l).includes(q));
+  const byL = {};
+  for (const t of list) (byL[t.l] ||= []).push(t);
+  return `<div class="minepick"><div class="mphead"><input id="minefilter" type="search" autocomplete="off" placeholder="Caută echipa (ex. Celtics, Yankees)" aria-label="Caută echipa" value="${esc(minePick.q)}">
+      <button class="ghost" type="button" data-mine-close>Gata</button></div>
+    <div class="mplist">${Object.entries(byL).map(([l, ts]) => `<div class="mpgrp"><b><span class="ldot" style="--c:${col(l)}"></span>${l}</b>${ts.map(t => { const on = isMine(t.id); return `<button class="mpteam${on ? ' on' : ''}" type="button" data-mine-toggle="${esc(t.id)}" aria-pressed="${on}">${emb(t.side, 'sm')}<span class="nm">${esc(t.name)}</span><i>${on ? '★' : '+'}</i></button>`; }).join('')}</div>`).join('') || `<div class="empty">Nicio echipă pentru „${esc(minePick.q)}”.</div>`}</div>
+    ${MINE.custom ? '<button class="link" type="button" data-mine-reset>Înapoi la echipele din Florida</button>' : ''}</div>`;
+}
+function renderMine() {
+  const el = $('teams'); if (!el) return;
+  el.innerHTML = `<div class="teams">${MINE.list.map(mineCardHtml).join('')}
+      <button class="tbtn add" type="button" data-mine-add aria-expanded="${minePick.open}"><span class="plus" aria-hidden="true">+</span><span><b>Adaugă o echipă</b><small>din oricare ligă</small></span></button></div>
+    ${MINE.list.length ? '' : '<div class="fn">Nu urmărești nicio echipă. Adaugă una sau revino la echipele din Florida.</div>'}
+    ${minePick.open ? minePickHtml() : ''}`;
+}
+function renderMinePickList() {
+  // Typing in the filter: redraw only the list, so the field keeps the focus.
+  const box = document.querySelector('#teams .minepick'); if (!box) return;
+  const tmp = document.createElement('div'); tmp.innerHTML = minePickHtml();
+  box.querySelector('.mplist').replaceWith(tmp.querySelector('.mplist'));
 }
 function tableHtml(k) {
   const D = DIVISIONS[k], rows = divisionRows(k);
@@ -296,7 +340,8 @@ function tableHtml(k) {
 /* ================= render: hero & highlights ================= */
 function renderHero() {
   const now = Date.now(), ups = GAMES.filter(g => !played(g) && !g.tbd && (isLive(g) || g.end > now));
-  const mine = state.fav ? ups.filter(g => g.teams.includes(state.fav)) : [];
+  // A list of teams the viewer chose (not the default Florida eleven): their games come first.
+  const favs = MINE.custom ? mineFL() : [], mine = favs.length ? ups.filter(g => g.teams.some(k => favs.includes(k))) : [];
   const live = ups.filter(isLive);
   const g = mine[0] || live[0] || ups[0];
   if (!g) { $('hero').innerHTML = '<div><div class="k">Urmează</div><div class="m">Niciun meci programat în datele curente.</div></div>'; return; }
@@ -304,7 +349,7 @@ function renderHero() {
   const soon = ups.filter(x => x !== g && x.d.getTime() - now < 864e5).slice(0, 6);
   const big = on ? `${g.hs ?? 0}–${g.as ?? 0}` : g.d.getTime() <= now ? 'Urmează să înceapă' : 'în ' + countdown(g.d.getTime() - now);
   $('hero').innerHTML = `<div data-gid="${esc(g.id)}">
-      <div class="k">${mine[0] === g ? 'Echipa ta · ' + esc(TEAMS[state.fav].s) : on ? 'În desfășurare' : 'Următorul meci'} · ${g.l}</div>
+      <div class="k">${mine[0] === g ? 'Echipa ta · ' + esc(TEAMS[g.teams.find(k => favs.includes(k))].s) : on ? 'În desfășurare' : 'Următorul meci'} · ${g.l}</div>
       <div class="duo">${emb(g.H, '', true)}<span class="at">vs</span>${emb(g.A, '', true)}</div>
       <div class="cd">${big}</div>
       <div class="m">${esc(g.h)} – ${esc(g.a)}${on && g.detail ? ` <span class="tag live">LIVE · ${esc(detailRo(g.detail, g.l))}</span>` : ''}</div>
@@ -518,13 +563,13 @@ function route(keep) {
   if (h[0] === 'meci' && gameById(h[2])) { const t = h[3] || 'rezumat'; if (openGameId !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
   if (h[0] === 'echipa' && TEAMS[h[1]]) { teamView.tab = ['sezon', 'lot', 'stiri'].includes(h[2]) ? h[2] : 'rezumat'; openTeam(h[1], keep); return; }
   if (h[0] === 'notificari') {
-    const pre = (h[1] || '').split(',').filter(k => TEAMS[k]);
+    const pre = (h[1] || '').split(',').filter(k => TEAMS[k] || parseClub(k));
     if (pre.length && !keep && N.status !== 'on') N.teams = pre;
     openNotify(keep); return;
   }
   if (h[0] === 'calendar') {
     // #calendar/heat,panthers preselects teams (from a team page); plain #calendar uses the saved choice.
-    const pre = (h[1] || '').split(',').filter(k => TEAMS[k]);
+    const pre = (h[1] || '').split(',').filter(k => TEAMS[k] || parseClub(k));
     if (pre.length && !keep) cal.teams = pre;
     openCalendar(keep); return;
   }
@@ -568,11 +613,14 @@ function openTeam(k, keep) {
   openGameId = null; openPlaceId = null;
   teamView.k = k;
   loadTeamX(k);
+  if (!CLUBS.data) loadClubs()?.then(d => { if (d && teamView.k === k && location.hash.startsWith('#echipa/' + k)) openTeam(k, true); });
+  // Wikipedia text, legends, former names; the titles and the start year stay the hand-written ones.
+  const fi = clubInfo(T.l, TEAMINFO[k]?.id), fiShort = fi && { ...fi, titles: null, founded: null };
   const st = teamStats(k), now = Date.now(), side = flSide(k);
   const mine = GAMES.filter(g => g.teams.includes(k));
   const last = lastGames(k).reverse(), next = mine.filter(g => !played(g) && (isLive(g) || g.end > now)).slice(0, 5);
   const opp = g => (g.H.key === k ? 'vs ' : 'la ') + esc(g.H.key === k ? g.a : g.h);
-  const isMLS = T.l === 'MLS', fav = state.fav === k;
+  const isMLS = T.l === 'MLS', fav = isMine(k);
   const bandBg = side.color || T.col[0], bandFg = pickInk(bandBg, side.alt || T.col[1]);
   show(`<div class="band" style="background:${bandBg};color:${bandFg}"><div class="id">${emb(side, 'xl', true)}<div><div class="lgn">${T.l} · ${esc(T.city)}</div><h2 id="prof-name">${esc(T.espn)}</h2></div></div>
       <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
@@ -588,6 +636,7 @@ function openTeam(k, keep) {
       ${st.streak ? `<div class="stat"><div class="v" style="font-size:17px">${esc(st.streak)}</div><div class="l">Serie curentă</div></div>` : ''}
     </div>
     <div><h3>Forma, ultimele ${last.length} meciuri</h3><div class="form">${formChips(k)}<span>cel mai recent în dreapta</span></div></div>
+    ${aboutHtml(fi)}
     <dl class="facts">
       <dt>Rivali</dt><dd>${esc(T.rivals)}</dd>
       <dt>Arenă</dt><dd>${(() => { const v = venueOfTeam(k), c = v && cityOf(v); return v ? `<button class="linkish" type="button" data-venue="${v.id}">${esc(v.name)}</button>${c ? `, <button class="linkish" type="button" data-city="${c.id}">${esc(c.name)}</button>` : ''}` : esc(T.arena); })()}</dd>
@@ -595,6 +644,7 @@ function openTeam(k, keep) {
       <dt>În ligă din</dt><dd>${T.since}</dd>
       <dt>Palmares</dt><dd>${esc(T.titles)}</dd>
       <dt>De știut</dt><dd>${esc(T.fact)}</dd>
+      ${infoFactsHtml(fiShort, TEAMX.get(k)?.coach)}
     </dl>
     <div><h3>Următoarele meciuri</h3><div class="rows">${next.length ? next.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}${g.note ? ` <span style="color:var(--muted);font-size:12.5px">· ${esc(noteRo(g.note))}</span>` : ''}</span><span class="r">${isLive(g) ? 'LIVE' : g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`).join('') : '<div class="row"><span></span><span>Niciun meci programat.</span><span></span></div>'}</div></div>
     <div><h3>Ultimele rezultate</h3><div class="rows">${last.map(g => { const o = outcome(g, k); const a = g.H.key === k ? g.hs : g.as, b = g.H.key === k ? g.as : g.hs; return `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}</span><span class="r ${o}">${OUTL[o]} ${a}–${b}</span></button>`; }).join('') || '<div class="row"><span></span><span>Niciun meci jucat încă.</span><span></span></div>'}</div></div>
@@ -602,7 +652,7 @@ function openTeam(k, keep) {
     <div class="btns"><button class="primary" type="button" data-only="${k}">Arată doar meciurile echipei</button>
       <button class="ghost" type="button" data-team-cal="${k}">Calendarul echipei</button>
       <button class="ghost" type="button" data-team-ntf="${k}">Notificări</button>
-      <button class="ghost" type="button" data-fav="${k}">${fav ? '★ Echipa mea (apasă ca să renunți)' : '☆ Setează ca echipa mea'}</button>
+      <button class="ghost${fav ? ' on' : ''}" type="button" data-follow="${k}" aria-pressed="${fav}">${fav ? '★ În echipele mele (apasă ca s-o scoți)' : '☆ Adaugă la echipele mele'}</button>
       <button class="ghost" type="button" data-share>Copiază linkul</button></div>
     </div>`, keep);
 }
@@ -630,7 +680,7 @@ async function loadTeamX(k) {
     const x = await getJSON(`/api/team?l=${TEAMS[k].l}&id=${info.id}`, 12000);
     TEAMX.set(k, x);
   } catch (e) { TEAMX.set(k, { roster: [], leaders: [], news: [] }); }
-  if (teamView.k === k && $('tpanel') && teamView.tab !== 'rezumat' && location.hash.startsWith('#echipa/' + k)) openTeam(k, true);
+  if (teamView.k === k && $('tpanel') && location.hash.startsWith('#echipa/' + k)) openTeam(k, true);
 }
 function setTeamTab(t) {
   const k = teamView.k; if (!TEAMS[k]) return;
@@ -783,6 +833,22 @@ function entryById(l, id) {
   for (const g of DATA.raw?.standings?.[l] || []) { const e = g.entries.find(x => String(x.id) === String(id)); if (e) return { ...e, conf: confShort(g.name, l) }; }
   return null;
 }
+// A team outside Florida ('NBA-2') as an emblem side: from the standings, else as saved in "Echipele mele".
+function clubSide(cid) {
+  const c = parseClub(cid), e = c && entryById(c.l, c.id), m = MINE.list.find(x => x.id === cid) || {};
+  return { id: cid, l: c?.l, name: e?.name || m.name || cid, abbr: e?.abbr || m.abbr, logo: e?.logo || m.logo, logoDark: e?.logoDark || m.logoDark, color: e?.color || m.color, alt: e?.alt || m.alt };
+}
+// The teams from outside Florida on the calendar / notifications pages: the followed ones and any chosen.
+function pickerClubs(sel) { return [...new Set([...mineClubs().map(x => x.id), ...sel.filter(k => parseClub(k))])].map(clubSide); }
+function teamEmb(id) { return emb(TEAMS[id] ? flSide(id) : clubSide(id), 'sm'); }
+// V / I / E for the team with ESPN id id in a finished game.
+function outcomeOf(g, id) { const home = g.H.id === String(id), a = home ? g.hs : g.as, b = home ? g.as : g.hs; return a > b ? 'V' : a < b ? 'I' : 'E'; }
+// The conference (or league) table of a team, with the team marked.
+function groupTableHtml(l, id) {
+  const g = (DATA.raw?.standings?.[l] || []).find(x => x.entries.some(e => String(e.id) === String(id)));
+  return g ? `<section><h3>Clasament</h3>${groupTbl(g, l, lgCtx(), id)}</section>` : '';
+}
+
 async function loadClub(l, id) {
   const key = l + '|' + id;
   if (CLUB.has(key) || DATA.mode === 'snapshot') return;
@@ -801,12 +867,16 @@ function openClub(l, id, keep) {
   if (clubView.key !== key) clubView.tab = 'rezumat';
   clubView.key = key; openGameId = null; openPlaceId = null; teamView.k = '';
   loadClub(l, id);
-  if (!AMERICA.data) loadAmerica()?.then(d => { if (d && clubView.key === key && location.hash.startsWith(`#club/${l}/${id}`)) openClub(l, id, true); });
+  const again = d => { if (d && clubView.key === key && location.hash.startsWith(`#club/${l}/${id}`)) openClub(l, id, true); };
+  if (!AMERICA.data) loadAmerica()?.then(again);
+  if (!CLUBS.data) loadClubs()?.then(again);
   const home = venueOfClub(l, id), homeCity = home && cityOf(home);
   const c = CLUB.get(key), now = Date.now();
   const name = e?.name || c?.games?.[0] && [c.games[0].H, c.games[0].A].find(s => s.id === String(id))?.name || 'Echipă';
   const side = { name, abbr: e?.abbr, logo: e?.logo, logoDark: e?.logoDark, color: e?.color, alt: e?.alt };
   const bg = e?.color || '#38474b', fg = pickInk(bg, e?.alt || '#ffffff');
+  const info = clubInfo(l, id), cid = clubId(l, id), following = isMine(cid);
+  if (e) refreshMine(cid, side);
   const mine = c?.games || [];
   const opp = g => { const home = g.H.id === String(id); return (home ? 'vs ' : 'la ') + esc(home ? g.a : g.h); };
   const res = g => { const home = g.H.id === String(id), a = home ? g.hs : g.as, b = home ? g.as : g.hs; const o = a > b ? 'V' : a < b ? 'I' : 'E'; return `<span class="r ${o}">${OUTL[o]} ${a}–${b}</span>`; };
@@ -822,11 +892,13 @@ function openClub(l, id, keep) {
         ${e?.away ? `<div class="stat"><div class="v">${esc(e.away.replace(/-/g, '–'))}</div><div class="l">În deplasare</div></div>` : ''}
         ${e?.streak ? `<div class="stat"><div class="v" style="font-size:17px">${esc(streakRo(e.streak))}</div><div class="l">Serie curentă</div></div>` : ''}
       </div>
-      ${home ? `<dl class="facts"><dt>${home.kind === 'arena' ? 'Arenă' : 'Stadion'}</dt><dd><button class="linkish" type="button" data-venue="${esc(home.id)}">${esc(home.name)}</button>${homeCity ? `, <button class="linkish" type="button" data-city="${esc(homeCity.id)}">${esc(homeCity.name)}</button> (${esc(homeCity.state)})` : ''}</dd>${homeCity ? `<dt>Ora acum</dt><dd>${clockIn(homeCity.tz)}, cu ${hoursBehindRomania(new Date(), homeCity.tz)} ore în urma României</dd>` : ''}</dl>` : ''}
+      ${last.length ? `<div><h3>Forma, ultimele ${last.length} meciuri</h3><div class="form">${last.slice().reverse().map(g => { const o = outcomeOf(g, id); return `<i class="${o}" title="${OUT[o]}">${OUTL[o]}</i>`; }).join('')}<span>cel mai recent în dreapta</span></div></div>` : ''}
+      ${aboutHtml(info)}
+      <dl class="facts">${home ? `<dt>${home.kind === 'arena' ? 'Arenă' : 'Stadion'}</dt><dd><button class="linkish" type="button" data-venue="${esc(home.id)}">${esc(home.name)}</button>${homeCity ? `, <button class="linkish" type="button" data-city="${esc(homeCity.id)}">${esc(homeCity.name)}</button> (${esc(homeCity.state)})` : ''}</dd>${home.capacity ? `<dt>Capacitate</dt><dd>aprox. ${Number(home.capacity).toLocaleString('ro-RO')} de locuri</dd>` : ''}${homeCity ? `<dt>Ora acum</dt><dd>${clockIn(homeCity.tz)}, cu ${hoursBehindRomania(new Date(), homeCity.tz)} ore în urma României</dd>` : ''}` : ''}${infoFactsHtml(info, c?.x?.coach)}</dl>
       ${vsFL.length ? `<section><h3>Cu echipele din Florida</h3><div class="rows">${vsFL.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${esc(g.h)} – ${esc(g.a)}</span><span class="r">${g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`).join('')}</div></section>` : ''}
       ${c ? `<section><h3>Următoarele meciuri</h3><div class="rows">${next.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}</span><span class="r">${g.state === 'in' ? 'LIVE' : g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`).join('') || '<div class="row"><span></span><span>Niciun meci programat.</span><span></span></div>'}</div></section>
       <section><h3>Ultimele rezultate</h3><div class="rows">${last.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}</span>${res(g)}</button>`).join('') || '<div class="row"><span></span><span>Niciun meci jucat încă.</span><span></span></div>'}</div></section>` : '<div class="skeleton" style="height:160px"></div>'}
-      <div class="fn">Echipă din afara Floridei: pagina are datele de la ESPN, fără textele în română de la echipele din Florida.</div>`;
+      ${groupTableHtml(l, id)}`;
   } else if (!c) body = '<div class="skeleton" style="height:180px"></div>';
   else if (clubView.tab === 'sezon') {
     const rows = mine.filter(g => g.state === 'post' && g.hs != null).map(g => { const home = g.H.id === String(id); return { id: g.id, d: g.d, opp: home ? g.a : g.h, home, mine: home ? g.hs : g.as, their: home ? g.as : g.hs }; });
@@ -835,7 +907,9 @@ function openClub(l, id, keep) {
   show(`<div class="band" style="background:${bg};color:${fg}"><div class="id">${emb(side, 'xl', true)}<div><div class="lgn">${l}${e?.conf ? ' · ' + esc(e.conf) : ''}</div><h2 id="prof-name">${esc(name)}</h2></div></div>
       <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
     <div class="ttabs">${teamTabsHtml(clubView.tab)}</div>
-    <div class="pbody">${body}<div class="btns"><button class="ghost" type="button" data-share>Copiază linkul</button></div></div>`, keep);
+    <div class="pbody">${body}<div class="btns"><button class="${following ? 'ghost on' : 'primary'}" type="button" data-follow="${cid}" aria-pressed="${following}">${following ? '★ În echipele mele (apasă ca s-o scoți)' : '☆ Adaugă la echipele mele'}</button>
+      <button class="ghost" type="button" data-team-cal="${cid}">Calendarul echipei</button><button class="ghost" type="button" data-team-ntf="${cid}">Notificări</button>
+      <button class="ghost" type="button" data-share>Copiază linkul</button></div></div>`, keep);
 }
 
 /* ================= search ================= */
@@ -892,6 +966,7 @@ function pickSearch(i) {
   go(x.hash);
 }
 $('q').addEventListener('input', runSearch);
+document.addEventListener('input', e => { if (e.target.id === 'minefilter') { minePick.q = e.target.value; renderMinePickList(); } });
 $('q').addEventListener('focus', () => {
   runSearch();
   for (const p of [!PLACES.data && loadPlaces(), !AMERICA.data && loadAmerica()]) p?.then?.(() => { if (document.activeElement === $('q')) runSearch(); });
@@ -955,22 +1030,22 @@ function openVenue(id, keep) {
 /* ================= phone: install, calendar subscription ================= */
 const cal = { teams: [], alarm: 60 };
 {
-  try { const s = JSON.parse(store.get('flgames-cal') || 'null'); if (s) { cal.teams = (s.teams || []).filter(k => TEAMS[k]); cal.alarm = +s.alarm || 0; } } catch (e) { /* ignore */ }
-  if (!cal.teams.length) cal.teams = state.fav ? [state.fav] : Object.keys(TEAMS);
+  try { const s = JSON.parse(store.get('flgames-cal') || 'null'); if (s) { cal.teams = (s.teams || []).filter(k => TEAMS[k] || parseClub(k)); cal.alarm = +s.alarm || 0; } } catch (e) { /* ignore */ }
+  if (!cal.teams.length) cal.teams = MINE.list.length ? mineIds() : Object.keys(TEAMS);
 }
 const saveCal = () => store.set('flgames-cal', JSON.stringify(cal));
 function openCalendar(keep) {
   openGameId = null; openPlaceId = null;
-  show(calendarHtml(cal.teams, cal.alarm, k => emb(flSide(k), 'sm')), keep);
+  show(calendarHtml(cal.teams, cal.alarm, teamEmb, pickerClubs(cal.teams)), keep);
 }
 /* ----- notifications page ----- */
 let notifyOpen = false, notifyChecked = false;
 function openNotify(keep) {
   openGameId = null; openPlaceId = null; notifyOpen = true;
-  show(notifyHtml(k => emb(flSide(k), 'sm')), keep);
-  if (!notifyChecked) { notifyChecked = true; refreshNotify(state.fav ? [state.fav] : Object.keys(TEAMS)); }
+  show(notifyHtml(teamEmb, pickerClubs(N.teams)), keep);
+  if (!notifyChecked) { notifyChecked = true; refreshNotify(MINE.list.length ? mineIds() : Object.keys(TEAMS)); }
 }
-setNotifyRender(() => { if (notifyOpen && location.hash.startsWith('#notificari') && !$('ov').hidden) show(notifyHtml(k => emb(flSide(k), 'sm')), true); });
+setNotifyRender(() => { if (notifyOpen && location.hash.startsWith('#notificari') && !$('ov').hidden) show(notifyHtml(teamEmb, pickerClubs(N.teams)), true); });
 
 function renderPhone() {
   // The header "Instalează" button appears only when the browser can install the app right away.
@@ -1147,7 +1222,7 @@ function handle(e) {
   if ((el = q('[data-team-ntf]'))) { const k = el.dataset.teamNtf; go('#notificari' + (k ? '/' + k : '')); return; }
   if ((el = q('[data-ntf]'))) { ({ on: enableNotify, save: saveNotify, test: testNotify, off: disableNotify })[el.dataset.ntf]?.(); return; }
   if ((el = q('[data-team-cal]'))) { const k = el.dataset.teamCal; go('#calendar' + (k ? '/' + k : '')); return; }
-  if ((el = q('[data-calall]'))) { cal.teams = el.dataset.calall === '1' ? Object.keys(TEAMS) : []; saveCal(); openCalendar(true); return; }
+  if ((el = q('[data-calall]'))) { cal.teams = el.dataset.calall === '1' ? [...Object.keys(TEAMS), ...pickerClubs(cal.teams).map(c => c.id)] : []; saveCal(); openCalendar(true); return; }
   if ((el = q('[data-copycal]'))) {
     const inp = $('calurl');
     navigator.clipboard?.writeText(inp.value).then(() => { el.textContent = 'Link copiat ✓'; }, () => { inp.select(); el.textContent = 'Selectat: apasă Ctrl+C'; });
@@ -1180,7 +1255,25 @@ function handle(e) {
   if ((el = q('[data-qi]'))) { pickSearch(+el.dataset.qi); return; }
   if ((el = q('[data-pl]'))) { poLeague = el.dataset.pl; renderPlayoffs(); return; }
   if ((el = q('[data-side]'))) { gameView.side = el.dataset.side; const g = gameById(openGameId); if (g) refreshGame(g); return; }
-  if ((el = q('[data-fav]'))) { const k = el.dataset.fav; state.fav = state.fav === k ? '' : k; state.fav ? store.set('flgames-fav', state.fav) : store.del('flgames-fav'); renderStatic(); render(); openTeam(k, true); return; }
+  if ((el = q('[data-mine-toggle]'))) {
+    const id = el.dataset.mineToggle, inPick = !!el.closest('.minepick');
+    toggleMine(id, parseClub(id) ? clubSide(id) : {});
+    renderMine(); renderHero();
+    // Keep the place: the same button in the list, or the "add" card after a team was taken out.
+    (inPick ? document.querySelector(`.minepick [data-mine-toggle="${CSS.escape(id)}"]`) : document.querySelector('[data-mine-add]'))?.focus({ preventScroll: true });
+    return;
+  }
+  if ((el = q('[data-mine-add]'))) { minePick.open = !minePick.open; renderMine(); if (minePick.open) $('minefilter')?.focus({ preventScroll: true }); return; }
+  if ((el = q('[data-mine-close]'))) { minePick.open = false; minePick.q = ''; renderMine(); document.querySelector('[data-mine-add]')?.focus({ preventScroll: true }); return; }
+  if ((el = q('[data-mine-reset]'))) { resetMine(); renderMine(); renderHero(); return; }
+  if ((el = q('[data-follow]'))) {
+    // Follow / stop following: a Florida team, or any team ('NBA-2'), with its name and logo.
+    const id = el.dataset.follow, c = parseClub(id);
+    toggleMine(id, c ? clubSide(id) : {});
+    renderStatic(); render();
+    if (c) openClub(c.l, c.id, true); else openTeam(id, true);
+    return;
+  }
   if ((el = q('[data-only]'))) { resetFilters(); state.team = el.dataset.only; state.day = null; closeOv(); render(); $('cal').scrollIntoView({ block: 'start' }); return; }
   if ((el = q('[data-game]'))) { const g = gameById(el.dataset.game); if (g) { gameView.tab = 'rezumat'; gameView.side = ''; go(gameHash(g)); } return; }
   if ((el = q('[data-team]'))) { go('#echipa/' + el.dataset.team); return; }
@@ -1210,7 +1303,7 @@ document.addEventListener('change', e => {
     if (t.id === 'ntflead') N.lead = +t.value;
     if (t.id === 'ntffinal') N.final = t.checked;
     N.msg = N.status === 'on' ? 'Apasă „Salvează alegerile” ca să se aplice.' : '';
-    show(notifyHtml(k => emb(flSide(k), 'sm')), true);
+    show(notifyHtml(teamEmb, pickerClubs(N.teams)), true);
     const again = t.id ? $(t.id) : document.querySelector(`[data-ntfteam="${t.dataset.ntfteam}"]`);
     if (again) again.focus({ preventScroll: true });
     return;

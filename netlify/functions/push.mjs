@@ -5,7 +5,7 @@
 //   POST { action: 'test', subscription }     send a test notification now
 //   POST { action: 'delete', subscription }   stop
 // The notifications themselves are sent by push-cron.mjs, every 15 minutes, on the published site.
-import { TEAMS } from '../../js/teams.js';
+import { validTeamId } from '../../js/teams.js';
 import { sendPush, validSubscription } from '../lib/webpush.mjs';
 import { subsStore, subId, vapid } from '../lib/subs.mjs';
 import { LEADS, inTime } from '../lib/notify.mjs';
@@ -29,7 +29,7 @@ export default async (req, context) => {
   if (body.action === 'delete') { await store.del(id); return json({ ok: true }); }
   if (body.action === 'save') {
     const p = body.prefs || {};
-    const teams = (Array.isArray(p.teams) ? p.teams : []).filter(k => TEAMS[k]);
+    const teams = [...new Set((Array.isArray(p.teams) ? p.teams : []).filter(validTeamId))].slice(0, 40);
     const lead = LEADS.includes(+p.lead) ? +p.lead : 60;
     if (!teams.length) return json({ error: 'Alege cel puțin o echipă.' }, 400);
     const rec = {

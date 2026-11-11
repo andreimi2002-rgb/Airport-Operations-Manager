@@ -1,7 +1,7 @@
 // iCalendar (.ics) for the games: the subscription feed (/api/calendar.ics) and the
 // "add this game" download on a game page. Pure functions, no DOM: used in Node and in the browser.
 // Times are written in UTC (…Z), so every calendar app shows them in the viewer's own time zone.
-import { LEAGUES, TEAMS } from './teams.js';
+import { LEAGUES, TEAMS, sideIn } from './teams.js';
 
 const SPORT = { NBA: '🏀', NHL: '🏒', NFL: '🏈', MLS: '⚽', MLB: '⚾' };
 
@@ -73,8 +73,8 @@ export function calendar(games, { name = 'Meciuri Florida', site = '', alarm = 0
   return lines.map(fold).join('\r\n') + '\r\n';
 }
 
-// Which games a subscription keeps: those of the chosen Florida teams, from `pastDays` ago on.
+// Which games a subscription keeps: those of the chosen teams (Florida keys or 'NBA-2'), from `pastDays` ago on.
 export function pick(games, teams, pastDays = 45, now = Date.now()) {
   const want = new Set(teams);
-  return games.filter(g => (want.has(g.home.key) || want.has(g.away.key)) && new Date(g.date).getTime() > now - pastDays * 864e5);
+  return games.filter(g => (sideIn(want, g.l, g.home) || sideIn(want, g.l, g.away)) && new Date(g.date).getTime() > now - pastDays * 864e5);
 }

@@ -44,14 +44,16 @@ export function orderEntries(entries, l) {
       : (b.pct ?? 0) - (a.pct ?? 0) || (b.w ?? 0) - (a.w ?? 0));
 }
 const groupName = (n, l) => ({ 'Eastern Conference': 'Conferința de Est', 'Western Conference': 'Conferința de Vest', 'American Football Conference': 'AFC', 'National Football Conference': 'NFC', 'American League': 'American League', 'National League': 'National League' }[n] || n);
+// One conference / league table. `me`: the ESPN id of a team to mark (on its own page).
+export function groupTableHtml(g, l, ctx, me = null) {
+  const cols = recCols(l), rows = orderEntries(g.entries, l);
+  return `<div class="tbl"><h4>${esc(groupName(g.name, l))}</h4><div class="scroll"><table class="box st"><thead><tr><th scope="col">Echipă</th>${cols.map(c => `<th scope="col">${c[0]}</th>`).join('')}<th scope="col">Serie</th></tr></thead><tbody>${rows.map((e, i) => {
+    const k = ctx.flKey(l, e.name), mine = me != null && String(e.id) === String(me);
+    return `<tr class="${[k ? 'fl' : '', mine ? 'me' : ''].join(' ').trim()}"><th scope="row"><button class="tname" type="button" ${k ? `data-team="${k}"` : `data-club="${l}|${esc(e.id)}"`}><span class="rk">${i + 1}</span>${ctx.emb({ ...e, key: k }, 'sm')}<span class="pn">${esc(e.name)}</span></button></th>${cols.map(c => `<td>${c[1](e) ?? '–'}</td>`).join('')}<td>${esc((e.streak || '').replace(/^W/, 'V').replace(/^L/, 'Î').replace(/^T/, 'E'))}</td></tr>`;
+  }).join('')}</tbody></table></div></div>`;
+}
 export function standingsHtml(standings, chosen, ctx) {
-  const out = L_ORDER.filter(l => chosen.has(l) && standings?.[l]?.length).map(l => `<section class="lgblock"><h3><span class="ldot" style="--c:${ctx.col(l)}"></span>${L_NAME[l]}</h3><div class="stgrid">${standings[l].map(g => {
-    const cols = recCols(l), rows = orderEntries(g.entries, l);
-    return `<div class="tbl"><h4>${esc(groupName(g.name, l))}</h4><div class="scroll"><table class="box st"><thead><tr><th scope="col">Echipă</th>${cols.map(c => `<th scope="col">${c[0]}</th>`).join('')}<th scope="col">Serie</th></tr></thead><tbody>${rows.map((e, i) => {
-      const k = ctx.flKey(l, e.name);
-      return `<tr class="${k ? 'fl' : ''}"><th scope="row"><button class="tname" type="button" ${k ? `data-team="${k}"` : `data-club="${l}|${esc(e.id)}"`}><span class="rk">${i + 1}</span>${ctx.emb({ ...e, key: k }, 'sm')}<span class="pn">${esc(e.name)}</span></button></th>${cols.map(c => `<td>${c[1](e) ?? '–'}</td>`).join('')}<td>${esc((e.streak || '').replace(/^W/, 'V').replace(/^L/, 'Î').replace(/^T/, 'E'))}</td></tr>`;
-    }).join('')}</tbody></table></div></div>`;
-  }).join('')}</div></section>`);
+  const out = L_ORDER.filter(l => chosen.has(l) && standings?.[l]?.length).map(l => `<section class="lgblock"><h3><span class="ldot" style="--c:${ctx.col(l)}"></span>${L_NAME[l]}</h3><div class="stgrid">${standings[l].map(g => groupTableHtml(g, l, ctx)).join('')}</div></section>`);
   return (out.join('') || '<div class="empty">Clasamentele nu sunt disponibile acum.</div>')
     + '<div class="fn">NHL: Îp = înfrângeri în prelungiri, Pct = puncte. MLS: E = egaluri. Serie: V = victorii la rând, Î = înfrângeri, E = egaluri. Apasă pe o echipă pentru pagina ei.</div>';
 }
