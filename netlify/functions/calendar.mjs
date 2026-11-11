@@ -27,12 +27,12 @@ export default async req => {
     const [data, more] = await Promise.all([fl.length ? schedule(u.origin) : { games: [] }, clubGames(u.origin, clubs)]);
     const games = pick(mergeGames(data.games || [], more), teams);
     const allFL = fl.length === Object.keys(TEAMS).length && !clubs.length;
-    const name = allFL ? 'Meciuri Florida' : 'Meciuri: ' + [...fl.map(k => TEAMS[k].s), ...clubs.map(s => clubName(s, more) || s)].join(', ');
+    const name = allFL ? 'American Sports Hub: Florida' : 'American Sports Hub: ' + [...fl.map(k => TEAMS[k].s), ...clubs.map(s => clubName(s, more) || s)].join(', ');
     const body = calendar(games, { name, site: u.origin, alarm });
     return new Response(body, {
       headers: {
         'content-type': 'text/calendar; charset=utf-8',
-        'content-disposition': 'inline; filename="meciuri-florida.ics"',
+        'content-disposition': 'inline; filename="american-sports-hub.ics"',
         'cache-control': 'public, max-age=900',
         'netlify-cdn-cache-control': 'public, durable, s-maxage=3600, stale-while-revalidate=86400'
       }

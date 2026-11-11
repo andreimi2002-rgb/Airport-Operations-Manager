@@ -49,7 +49,7 @@ export async function install() {
 const SHARE = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px"><path d="M12 3v12M7.5 7.5L12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
 export function installHtml() {
   if (isStandalone()) return '<p class="ok">Folosești aplicația instalată. Merge și fără internet, cu datele salvate la ultima deschidere.</p>';
-  if (deferred) return '<p>Pune Meciuri Florida pe ecranul principal: se deschide ca o aplicație, fără bara browserului, și merge și fără internet.</p><button class="primary" type="button" data-install>Instalează aplicația</button>';
+  if (deferred) return '<p>Pune American Sports Hub pe ecranul principal: se deschide ca o aplicație, fără bara browserului, și merge și fără internet.</p><button class="primary" type="button" data-install>Instalează aplicația</button>';
   if (isIOS()) return `<p>Pe iPhone, din Safari: apasă <b>Partajează</b> ${SHARE}, apoi <b>Adaugă pe ecranul principal</b>. Aplicația se deschide fără bara browserului și merge și fără internet.</p>`;
   return '<p>Din meniul browserului alege <b>Instalează aplicația</b> sau <b>Adaugă pe ecranul principal</b> (Chrome, Edge, Samsung Internet). Pe iPhone: Safari → Partajează → Adaugă pe ecranul principal.</p>';
 }
@@ -74,7 +74,7 @@ export function calendarLinks(url, name) {
 export function calendarHtml(sel, alarm, emb, clubs = []) {
   const url = sel.length ? feedUrl(sel, alarm) : '';
   const nameOf = k => TEAMS[k]?.s || clubs.find(c => c.id === k)?.name || k;
-  const name = sel.length === Object.keys(TEAMS).length && sel.every(k => TEAMS[k]) ? 'Meciuri Florida' : 'Meciuri: ' + sel.map(nameOf).join(', ');
+  const name = sel.length === Object.keys(TEAMS).length && sel.every(k => TEAMS[k]) ? 'American Sports Hub: Florida' : 'American Sports Hub: ' + sel.map(nameOf).join(', ');
   const L = url ? calendarLinks(url, name) : null;
   const byL = {};
   for (const k in TEAMS) (byL[TEAMS[k].l] ||= []).push(k);

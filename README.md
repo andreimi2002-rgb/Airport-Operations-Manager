@@ -1,7 +1,8 @@
-# Meciuri Florida
+# American Sports Hub
 
-Calendar al meciurilor echipelor din Florida (Heat, Magic, Panthers, Lightning, Dolphins,
-Buccaneers, Jaguars, Inter Miami, Orlando City), cu ora României, scor live, rezultate,
+Sportul american pe românește: echipele tale din NBA, NHL, NFL, MLS și MLB (implicit cele din
+Florida: Heat, Magic, Panthers, Lightning, Dolphins, Buccaneers, Jaguars, Inter Miami, Orlando City,
+Marlins, Rays), cu ora României, scor live, rezultate,
 clasamente, profiluri de echipă și pagini de meci.
 
 - Site static (HTML, CSS, module JavaScript) plus trei funcții Netlify care citesc datele

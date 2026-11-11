@@ -61,10 +61,10 @@ export function gameEvent(g, { site = '', alarm = 0, stamp = new Date() } = {}) 
 }
 
 // A whole calendar. `name` is what calendar apps show for the subscription.
-export function calendar(games, { name = 'Meciuri Florida', site = '', alarm = 0, stamp = new Date() } = {}) {
+export function calendar(games, { name = 'American Sports Hub', site = '', alarm = 0, stamp = new Date() } = {}) {
   const lines = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Meciuri Florida//RO', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-    `X-WR-CALNAME:${text(name)}`, 'X-WR-CALDESC:Meciurile echipelor din Florida (date ESPN)',
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//American Sports Hub//RO', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    `X-WR-CALNAME:${text(name)}`, 'X-WR-CALDESC:Meciurile echipelor tale, de la American Sports Hub (date ESPN)',
     // Ask subscribing apps to check again every few hours (Apple honours it; Google refreshes on its own schedule).
     'REFRESH-INTERVAL;VALUE=DURATION:PT4H', 'X-PUBLISHED-TTL:PT4H'
   ];

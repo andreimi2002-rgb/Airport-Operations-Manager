@@ -210,7 +210,7 @@ function applyTheme() {
   const r = document.documentElement;
   if (theme.pref === 'auto') delete r.dataset.theme; else r.dataset.theme = theme.pref;
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = isDark() ? '#0c1a1d' : '#f3f6f6';
+  if (meta) meta.content = isDark() ? '#060d1a' : '#0e1f3d'; // the brand bar
   document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', b.dataset.themeSet === theme.pref));
 }
 function setTheme(t) {

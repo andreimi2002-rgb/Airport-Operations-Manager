@@ -1,7 +1,7 @@
-# Meciuri Florida
+# American Sports Hub
 
-Calendar web al meciurilor echipelor profesioniste din Florida (NBA, NHL, NFL, MLS; MLB în
-sezon), cu ora României, rezultate, clasamente, profiluri de echipă și pagini de meci.
+Sportul american pe românește (fost „Meciuri Florida”): echipele tale din NBA, NHL, NFL, MLS și
+MLB, implicit cele din Florida, cu ora României, rezultate, clasamente, profiluri de echipă și pagini de meci.
 Proiect pentru uz personal. Repo-ul a fost înainte jocul Airport Operations Manager (rămas în
 istoricul git, pe `main` până la merge-ul etapei 1).
 
@@ -36,6 +36,12 @@ istoricul git, pe `main` până la merge-ul etapei 1).
   publicarea în producție (merge în `main`) consumă credit. Lucrăm local, verificăm cu
   serverul local și capturi de ecran, iar la final facem push și deschidem PR-ul.
 - Trebuie să meargă bine pe telefon și pe desktop, în temă luminoasă și întunecată.
+- **Identitate (varianta „Arena”, etapa 7):** bleumarin `#0E1F3D`, roșu `#C8102E` (noaptea `#FF5A6E`),
+  steaua albă pe roșu (`favicon.svg`, bara de sus) și în cercul roșu (`icons/icon.svg`; PNG-urile se
+  fac din el). Titluri: Saira Condensed înclinat, majuscule; text: Figtree. Butoanele apăsate sunt
+  bleumarin, roșul e pentru logo, accente și acțiunea principală. Identificatorii interni rămân
+  vechi: `UID …@meciuri-florida` în calendar (altfel abonamentele ar dubla meciurile), cheile
+  `flgames-*` din browser, numele stocărilor de notificări.
 - **Versiunea aplicației:** la orice schimbare a fișierelor site-ului, crește `VERSION` în `sw.js`
   (`tools/test.mjs` verifică față de `main`). Doar așa aplicația instalată vede versiunea nouă:
   la revenirea în aplicație caută una nouă și, când e gata, se reîncarcă singură (`js/phone.js`).
@@ -69,7 +75,7 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
    conferinței (`data/clubs.json`, `js/clubinfo.js`). „Echipele mele” (`js/mine.js`) e secțiunea
    de echipe de pe pagina de start: implicit cele 11 din Florida, se scot cu × și se adaugă
    oricare echipă; calendarul (.ics) și notificările primesc orice echipă ca `NBA-2`.
-7. **Etapa 7: American Sports Hub.** Proiectul se redenumește (titlu, antet, aplicația instalată,
+7. **Etapa 7: American Sports Hub** (în lucru, același branch și PR ca etapa 6). Proiectul se redenumește (titlu, antet, aplicația instalată,
    calendar, notificări, documentație) și primește identitate vizuală proprie (logo, iconițe, culori,
    titluri): un produs sportiv american, nu un calendar. Pagina de start pornește de la „Echipele
    mele” (implicit Florida). **Adresa rămâne** `florida-sp-calendar.netlify.app` (decizia

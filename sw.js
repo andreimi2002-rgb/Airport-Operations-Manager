@@ -5,7 +5,7 @@
 // - Schedule, live scores, weather, calendar feed: network only. The schedule has its own saved copy
 //   in the page (localStorage), which the page labels as saved data; live scores and weather must
 //   never be shown old as if they were current.
-const VERSION = 'v6';
+const VERSION = 'v7';
 const SHELL = `shell-${VERSION}`, API = `api-${VERSION}`, IMG = `img-${VERSION}`;
 const FILES = [
   '/', '/index.html', '/css/app.css', '/favicon.svg', '/manifest.webmanifest', '/icons/icon-192.png',
@@ -53,8 +53,8 @@ async function cacheFirst(req) {
 // Notifications (sent by netlify/functions/push-cron.mjs): show them, and open the game page on a tap.
 self.addEventListener('push', e => {
   let m = {};
-  try { m = e.data ? e.data.json() : {}; } catch (x) { m = { title: 'Meciuri Florida', body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(m.title || 'Meciuri Florida', {
+  try { m = e.data ? e.data.json() : {}; } catch (x) { m = { title: 'American Sports Hub', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(m.title || 'American Sports Hub', {
     body: m.body || '', tag: m.tag, renotify: !!m.tag, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png',
     lang: 'ro', data: { url: m.url || '/' }
   }));
