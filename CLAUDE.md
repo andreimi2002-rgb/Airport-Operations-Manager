@@ -80,15 +80,20 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
    titluri): un produs sportiv american, nu un calendar. Pagina de start pornește de la „Echipele
    mele” (implicit Florida). **Adresa rămâne** `florida-sp-calendar.netlify.app` (decizia
    utilizatorului): aplicația instalată, calendarul și notificările sunt legate de ea.
-8. **Etapa 8: zilnic** (în lucru, branch `stage-8-zilnic`). Rezumatul de dimineață: o notificare
+8. **Etapa 8: zilnic** (în producție, PR #9). Rezumatul de dimineață: o notificare
    la 8:00, ora României (prima rulare `push-cron` după 8:00, până la 12:00, o dată pe zi,
    `morningDay`), cu rezultatele din ultimele 24 de ore ale echipelor tale (✓/✗) și meciul următor;
    bifa „Rezumatul de dimineață” (implicit pornită, `morning`). Fila „Ghid” din Ligile
    (`#ligi/ghid`, `js/guide.js`): „Cum vezi meciurile din România” pe ligă (listă scrisă de mână,
    `WATCH_CHECKED` = data verificării; de reverificat în fiecare toamnă) și explicații pentru
    începători, pornind de la glosarul enciclopediei. Pagina de meci are rândul „Unde îl vezi”.
-9. **Etapa 9: tehnic.** `app.js` împărțit pe module; verificare automată a surselor (ESPN,
-   Open-Meteo) cu mesaj clar pe pagină; teste pentru funcțiile Netlify și fluxurile principale.
+9. **Etapa 9: tehnic** (în lucru, branch `stage-9-tehnic`). `app.js` împărțit pe module (`core`,
+   `home`, `pages`, `views`, `search`; vezi Structura). Verificarea surselor: `/api/health` întreabă
+   ESPN și Open-Meteo și se uită și la formatul răspunsului (ESPN poate schimba formatul fără anunț);
+   pagina arată rândul „Surse” în subsol și o frază roșie în linia de stare când o sursă are probleme
+   (`js/health.js`). Teste: `npm test` rulează `tools/test.mjs` (cititoare, traduceri, notificări) și
+   `tools/test-functions.mjs` (funcțiile Netlify cu ESPN și Open-Meteo simulate, inclusiv căderi și
+   format schimbat); după un deploy, `node tools/smoke.mjs <adresa>` verifică site-ul publicat.
    Mai târziu, doar dacă site-ul devine public: varianta în engleză.
 
 ## Structura
@@ -97,7 +102,13 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
 index.html                  pagina
 css/app.css                 stiluri (tokeni de culoare la început, temă luminoasă și întunecată)
 js/teams.js                 configurație comună pagină + funcții: ligi, echipe, divizii, orașe
-js/app.js                   încărcare date, randare, filtre în adresă, ferestre (meci/echipă), scor live
+js/app.js                   pornirea: tema, evenimentele paginii, încărcarea datelor (live, salvate, rezervă), scor live
+js/core.js                  datele și starea comune: meciuri, clasamente, filtre în adresă, date și ore, stocare
+js/home.js                  pagina de start: stare, Echipele mele, următorul meci, calendar, agendă, hartă, playoff
+js/pages.js                 ferestrele și adresele (#…): echipă, club, oraș, stadion, calendar, notificări, meci
+js/views.js                 Florida | Ligile, pagina „Ligile” cu scorurile zilei, bara de secțiuni
+js/search.js                căutarea: echipe, adversari, orașe, stadioane
+js/health.js                starea surselor (/api/health): rândul „Surse” și fraza din linia de stare
 js/game.js                  pagina de meci: filele Rezumat, Jucători, Statistici, Faze, Absenți; graficul de șanse
 js/ro.js                    traducerea textelor ESPN (stare meci, note, statistici, accidentări); fără DOM
 js/ui.js                    funcții comune: esc, temă (auto/luminoasă/întunecată), embleme cu logo
@@ -124,10 +135,12 @@ netlify/functions/team.mjs       GET /api/team?l=NBA&id=14  lot, liderii sezonul
 netlify/functions/playoffs.mjs   GET /api/playoffs?l=MLS  meciurile de playoff ale ligii, pentru tablou (cache 1 h)
 netlify/functions/scores.mjs     GET /api/scores?d=20261111  toate meciurile unei zile (SUA), din toate ligile
 netlify/functions/teamgames.mjs  GET /api/teamgames?l=NBA&id=2  sezonul oricărei echipe (pagina simplă de echipă)
+netlify/functions/health.mjs     GET /api/health  ESPN și Open-Meteo răspund, în formatul așteptat? (cache 5 min)
 netlify/functions/push.mjs       /api/push  salvează / citește / testează / șterge un abonament la notificări
 netlify/functions/push-cron.mjs  programată, la 15 minute, doar în producție: trimite notificările datorate
 netlify/lib/webpush.mjs     Web Push fără bibliotecă: semnătură VAPID (RFC 8292), criptare (RFC 8291)
 netlify/lib/notify.mjs      ce notificări sunt datorate și textul lor; fără rețea
+netlify/lib/health.mjs      verificarea surselor: o întrebare tipică fiecăreia și forma răspunsului
 netlify/lib/subs.mjs        stocarea abonamentelor (Netlify Blobs; local, fișiere JSON)
 netlify/lib/clubs.mjs       meciurile echipelor urmărite din afara Floridei, pentru calendar și notificări
 tools/vapid-keys.mjs        generează perechea de chei VAPID: node tools/vapid-keys.mjs
@@ -141,7 +154,9 @@ data/clubs.json             profilul tuturor echipelor (Despre, titluri, nume ve
                             tools/build-clubs.mjs (Wikipedia, Wikidata, enciclopedia; titlurile NHL din
                             caseta Wikipedia). Wikimedia limitează cererile: scriptul merge una câte una, ~20 min
 tools/build-places.mjs      generează places.json (coordonate, poze, climă, rute): node tools/build-places.mjs
-tools/test.mjs              teste offline pentru cititoare și traduceri: node tools/test.mjs
+tools/test.mjs              teste offline pentru cititoare, traduceri, notificări: npm test (rulează ambele)
+tools/test-functions.mjs    teste offline pentru funcțiile Netlify, cu ESPN și Open-Meteo simulate
+tools/smoke.mjs             după deploy: node tools/smoke.mjs <adresa> verifică paginile și datele publicate
 tools/mock-espn.mjs         ESPN simulat din date vechi; regenerează snapshot.json
 ```
 

@@ -765,3 +765,10 @@ svg.cl .hit{fill:transparent;cursor:pointer}
 .terms dt{font-weight:700;margin-bottom:3px}
 .terms dd{margin:0;font-size:14px;line-height:1.5;color:var(--muted)}
 @media (max-width:420px){.wgrid,.terms{grid-template-columns:1fr}}
+/* ---- the state of the sources: footer line, warning in the status line ---- */
+.sources .src{display:inline-flex;align-items:center;gap:5px;margin-right:6px;font-weight:600}
+.sources .src i{width:8px;height:8px;border-radius:50%;background:var(--good)}
+.sources .src.bad{color:var(--bad)}
+.sources .src.bad i{background:var(--bad)}
+.sources .when{color:var(--muted)}
+.status .srcwarn{color:var(--bad);font-weight:600}
