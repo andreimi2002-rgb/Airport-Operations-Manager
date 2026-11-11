@@ -1,6 +1,6 @@
 // /api/push — notifications before the games of the chosen teams.
 //   GET                          -> { publicKey } (null when notifications are not set up on this site)
-//   POST { action: 'save', subscription, prefs: { teams, lead, final } }   save or update
+//   POST { action: 'save', subscription, prefs: { teams, lead, final, morning } }   save or update
 //   POST { action: 'get', subscription }      the saved settings of this browser, or null
 //   POST { action: 'test', subscription }     send a test notification now
 //   POST { action: 'delete', subscription }   stop
@@ -25,7 +25,7 @@ export default async (req, context) => {
   const id = subId(sub.endpoint);
   const old = await store.get(id);
 
-  if (body.action === 'get') return json({ prefs: old ? { teams: old.teams, lead: old.lead, final: old.final } : null });
+  if (body.action === 'get') return json({ prefs: old ? { teams: old.teams, lead: old.lead, final: old.final, morning: old.morning !== false } : null });
   if (body.action === 'delete') { await store.del(id); return json({ ok: true }); }
   if (body.action === 'save') {
     const p = body.prefs || {};
@@ -34,18 +34,19 @@ export default async (req, context) => {
     if (!teams.length) return json({ error: 'Alege cel puțin o echipă.' }, 400);
     const rec = {
       id, endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
-      teams, lead, final: !!p.final, site: new URL(req.url).origin,
+      teams, lead, final: !!p.final, morning: p.morning !== false, morningDay: old?.morningDay, site: new URL(req.url).origin,
       created: old?.created || Date.now(), updated: Date.now(), sent: old?.sent || {}, lastTest: old?.lastTest || 0
     };
     await store.set(id, rec);
-    return json({ ok: true, prefs: { teams, lead, final: rec.final } });
+    return json({ ok: true, prefs: { teams, lead, final: rec.final, morning: rec.morning } });
   }
   if (body.action === 'test') {
     if (!old) return json({ error: 'Salvează întâi setările.' }, 400);
     if (Date.now() - (old.lastTest || 0) < 20e3) return json({ error: 'Așteaptă câteva secunde între teste.' }, 429);
     const r = await sendPush(old, {
       title: 'Notificările merg ✓',
-      body: old.lead ? `Vei primi o notificare ${inTime(old.lead).replace(/^în /, 'cu ').replace(/^într-o oră$/, 'cu o oră')} înainte de meciurile echipelor alese.` : 'Vei primi rezultatul final al meciurilor echipelor alese.',
+      body: [old.lead ? `Vei primi o notificare ${inTime(old.lead).replace(/^în /, 'cu ').replace(/^într-o oră$/, 'cu o oră')} înainte de meciurile echipelor alese.` : 'Vei primi rezultatul final al meciurilor echipelor alese.',
+        old.morning !== false ? 'Și, la 8:00, rezultatele de azi-noapte.' : ''].filter(Boolean).join(' '),
       url: old.site, tag: 'test'
     }, v, { ttl: 300 }).catch(e => ({ ok: false, status: 0, error: String(e.message || e) }));
     if (r.gone) { await store.del(id); return json({ error: 'Abonamentul nu mai e valid; activează din nou.' }, 410); }

@@ -4,7 +4,7 @@
 //   ctx.flKey(l, name) (Florida team key or null), ctx.col(l) (league colour)
 import { esc } from './ui.js';
 
-export const LG_TABS = [['scoruri', 'Scoruri'], ['clasamente', 'Clasamente'], ['echipe', 'Echipe'], ['orase', 'Orașe și stadioane']];
+export const LG_TABS = [['scoruri', 'Scoruri'], ['clasamente', 'Clasamente'], ['echipe', 'Echipe'], ['orase', 'Orașe și stadioane'], ['ghid', 'Ghid']];
 const L_ORDER = ['NBA', 'NHL', 'NFL', 'MLS', 'MLB'];
 const L_NAME = { NBA: 'NBA, baschet', NHL: 'NHL, hochei', NFL: 'NFL, fotbal american', MLS: 'MLS, fotbal', MLB: 'MLB, baseball' };
 

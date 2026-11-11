@@ -4,7 +4,7 @@ import { TEAMS } from './teams.js';
 import { esc } from './ui.js';
 import { isStandalone } from './phone.js';
 
-export const N = { status: 'unknown', teams: [], lead: 60, final: true, msg: '', busy: false, key: null };
+export const N = { status: 'unknown', teams: [], lead: 60, final: true, morning: true, msg: '', busy: false, key: null };
 let onChange = () => {};
 export const setNotifyRender = fn => { onChange = fn; };
 const LEADS = [[15, 'cu 15 minute înainte'], [30, 'cu 30 de minute înainte'], [60, 'cu o oră înainte'], [120, 'cu 2 ore înainte'], [180, 'cu 3 ore înainte'], [0, 'fără anunț înainte']];
@@ -36,7 +36,7 @@ async function run(fn, ok) {
   try { await fn(); if (ok) N.msg = ok; } catch (e) { N.msg = String(e.message || e); }
   N.busy = false; onChange();
 }
-const prefs = () => ({ teams: N.teams, lead: N.lead, final: N.final });
+const prefs = () => ({ teams: N.teams, lead: N.lead, final: N.final, morning: N.morning });
 // Turning on must start from a tap: browsers only show the permission question after one.
 export const enableNotify = () => run(async () => {
   const p = await Notification.requestPermission();
@@ -83,7 +83,7 @@ export function notifyHtml(emb, clubs = []) {
   return `<div class="band plain"><div><div class="lgn" style="color:var(--accent)">Pe telefon</div><h2 id="prof-name" style="font-size:24px">Notificări</h2></div>
       <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
     <div class="pbody">
-    <p class="lead">Un anunț înainte de meciurile echipelor tale și, dacă vrei, rezultatul final, chiar și cu aplicația închisă.</p>
+    <p class="lead">Un anunț înainte de meciurile echipelor tale, rezultatul final și, dimineața, ce s-a întâmplat azi-noapte, chiar și cu aplicația închisă.</p>
     <p class="nstat ${kind}" role="status">${esc(text)}</p>
     ${can ? `<section><h3>Echipele</h3>
       <div class="calteams">${Object.entries(byL).map(([l, ks]) => `<div class="calgrp"><b>${l}</b>${ks.map(k => `<label class="calteam"><input type="checkbox" data-ntfteam="${k}" ${N.teams.includes(k) ? 'checked' : ''}>${emb(k)}<span>${esc(TEAMS[k].espn)}</span></label>`).join('')}</div>`).join('')}${clubs.length ? `<div class="calgrp"><b>Din alte orașe</b>${clubs.map(c => `<label class="calteam"><input type="checkbox" data-ntfteam="${esc(c.id)}" ${N.teams.includes(c.id) ? 'checked' : ''}>${emb(c.id)}<span>${esc(c.name)} <small>${esc(c.l)}</small></span></label>`).join('')}</div>` : ''}</div>
@@ -91,6 +91,7 @@ export function notifyHtml(emb, clubs = []) {
     <section><h3>Când</h3>
       <select id="ntflead" aria-label="Cu cât timp înainte de meci">${LEADS.map(([m, t]) => `<option value="${m}" ${m === N.lead ? 'selected' : ''}>${t}</option>`).join('')}</select>
       <label class="check" style="margin-top:8px"><input type="checkbox" id="ntffinal" ${N.final ? 'checked' : ''}> Și rezultatul final, când se termină meciul</label>
+      <label class="check" style="margin-top:8px"><input type="checkbox" id="ntfmorning" ${N.morning ? 'checked' : ''}> Rezumatul de dimineață, la 8:00: rezultatele de azi-noapte și meciul următor</label>
     </section>
     <div class="btns">${on
       ? `<button class="primary" type="button" data-ntf="save" ${N.busy ? 'disabled' : ''}>Salvează alegerile</button><button class="ghost" type="button" data-ntf="test" ${N.busy ? 'disabled' : ''}>Trimite o notificare de test</button><button class="ghost" type="button" data-ntf="off" ${N.busy ? 'disabled' : ''}>Oprește notificările</button>`
@@ -100,6 +101,7 @@ export function notifyHtml(emb, clubs = []) {
       <li>Anunțurile pleacă de pe server la fiecare 15 minute, deci pot veni cu câteva minute mai devreme sau mai târziu.</li>
       <li>Setările sunt pe fiecare dispozitiv în parte: pe telefon și pe calculator le pornești separat.</li>
       <li>Pentru meciurile fără oră anunțată nu vine anunț înainte; rezultatul final vine.</li>
+      <li>Rezumatul de dimineață vine doar în zilele în care echipele tale au jucat: ✓ înseamnă victorie, ✗ înfrângere.</li>
     </ul></section>
     </div>`;
 }
