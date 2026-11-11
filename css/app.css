@@ -284,6 +284,10 @@ footer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padd
 
 /* ---- header controls, theme ---- */
 .hctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hbtns{display:inline-flex;gap:6px}
+.hbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 11px;font-weight:600;font-size:13px;cursor:pointer}
+.hbtn:hover{border-color:var(--accent)}
+.hbtn[hidden]{display:none}
 .seg.theme button{display:inline-grid;place-items:center;min-width:36px;padding:7px 9px}
 body.noscroll{overflow:hidden}
 .prof{transition:transform .2s ease}
@@ -403,6 +407,28 @@ svg.wx .drop{stroke:var(--wx-rain);fill:none} svg.wx .fogl{stroke:var(--wx-cloud
 .wxtile .tt{grid-area:tt;font-family:var(--display);font-weight:700;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
 .wxtile .cc{grid-area:cc;font-size:12.5px}
 .wxtile .dd{grid-area:dd;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+/* ---- installed app: keep clear of the phone's notch and home bar ---- */
+.wrap{padding-top:max(20px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-bottom:max(48px,env(safe-area-inset-bottom))}
+.ov{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
+/* ---- phone section and calendar page ---- */
+.phone{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.phcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.phcard h3{margin:0;font-size:15px}
+.phcard p{margin:0;font-size:14px;line-height:1.5;color:var(--muted)}
+.phcard p.ok{color:var(--good);font-weight:600}
+.calteams{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.calgrp{display:flex;flex-direction:column;gap:4px}
+.calgrp>b{font-size:12px;color:var(--muted);letter-spacing:.05em}
+.calteam{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 10px;cursor:pointer;font-size:14px;font-weight:600}
+.calteam:has(input:checked){border-color:var(--accent);background:var(--soft)}
+.calteam input{accent-color:var(--accent);width:18px;height:18px;margin:0}
+.calteam .emb.sm{margin:0}
+.calbtns{display:flex;flex-wrap:wrap;gap:8px}
+.calbtns a{text-decoration:none;display:inline-flex;align-items:center}
+.calbtns a.ghost{color:var(--ink)}
+.calurl{display:flex;gap:6px;margin-top:8px}
+.calurl input{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 10px;font:13px ui-monospace,Consolas,monospace}
+#calalarm{max-width:100%}
 .progbody{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 details.res>summary{list-style-position:inside}
 .vstrip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity;scrollbar-width:thin}

@@ -2,7 +2,7 @@
 <html lang="ro">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Meciuri Florida</title>
 <meta name="description" content="Calendarul meciurilor echipelor din Florida: NBA, NHL, NFL și MLS, cu ora României.">
 <meta name="theme-color" content="#f3f6f6">
@@ -11,6 +11,11 @@
   try { var t = localStorage.getItem('flgames-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
 </script>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Meciuri FL">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://a.espncdn.com">
@@ -29,6 +34,10 @@
       <div class="seg" role="group" aria-label="Fus orar">
         <button id="tz-ro" type="button" aria-pressed="true">Ora României</button>
         <button id="tz-fl" type="button" aria-pressed="false">Ora Floridei</button>
+      </div>
+      <div class="hbtns">
+        <button class="hbtn" type="button" data-team-cal="" title="Meciurile în Google Calendar, pe iPhone sau în Outlook"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="15" r="1.8" fill="currentColor"/></svg>Calendar</button>
+        <button class="hbtn" type="button" id="hinstall" data-install hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Instalează</button>
       </div>
       <div class="seg theme" role="group" aria-label="Temă">
         <button type="button" data-theme-set="auto" aria-pressed="true" title="Temă automată, ca pe dispozitiv">Auto</button>
@@ -98,6 +107,11 @@
     <h2 class="sec">Clasamente</h2>
     <div class="tables" id="tables"></div>
     <div class="fn">NHL: Î = înfrângeri în timp regulamentar, Pct = puncte. MLS: primele 9 din fiecare conferință merg în playoff.</div>
+  </section>
+
+  <section aria-label="Pe telefon">
+    <h2 class="sec">Pe telefon și în calendar</h2>
+    <div class="phone" id="phone"></div>
   </section>
 
   <footer>

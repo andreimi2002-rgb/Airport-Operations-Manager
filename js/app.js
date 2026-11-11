@@ -2,6 +2,7 @@ import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, METROS, norm } from './teams.js
 import { esc, $, emb, pickInk, theme, isDark, onSystemTheme } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
 import { tabsHtml, panelHtml, wpHover } from './game.js';
+import { registerSW, onInstallChange, install, installHtml, calendarHtml, downloadGame, canInstall } from './phone.js';
 import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, stripHtml, STRIP, cityHtml, venueHtml, placeWeatherHtml, climateHover, floridaClock, cityCard } from './places.js';
 
 /* ================= data loading ================= */
@@ -231,6 +232,12 @@ function formChips(k) { return lastGames(k).map(g => { const o = outcome(g, k); 
 /* ================= render: header & static ================= */
 function renderStatus() {
   const el = $('status');
+  if (!navigator.onLine && DATA.raw) {
+    // No internet: say so plainly, and how old the data on screen is.
+    el.className = 'status stale';
+    el.innerHTML = `<i></i>Ești offline · datele sunt din ${new Date(DATA.mode === 'live' ? DATA.loadedAt : DATA.raw.updated).toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}; scorurile și vremea revin când ai internet`;
+    return;
+  }
   if (DATA.mode === 'live') {
     el.className = 'status';
     el.innerHTML = `<i></i>Date live de la ESPN · actualizate ${ago(DATA.loadedAt)} <button type="button" id="reload">Reîncarcă</button>`;
@@ -494,6 +501,12 @@ function route(keep) {
   const h = decodeURIComponent(location.hash.slice(1)).split('/');
   if (h[0] === 'meci' && BY_ID.has(h[2])) { const t = h[3] || 'rezumat'; if (openGameId !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
   if (h[0] === 'echipa' && TEAMS[h[1]]) { openTeam(h[1], keep); return; }
+  if (h[0] === 'calendar') {
+    // #calendar/heat,panthers preselects teams (from a team page); plain #calendar uses the saved choice.
+    const pre = (h[1] || '').split(',').filter(k => TEAMS[k]);
+    if (pre.length && !keep) cal.teams = pre;
+    openCalendar(keep); return;
+  }
   if (h[0] === 'oras' || h[0] === 'stadion') {
     // Place pages need data/places.json; it is small and usually here already.
     if (!PLACES.data) { const p = loadPlaces(); if (p) { p.then(d => { if (d) route(keep); }); return; } }
@@ -547,6 +560,7 @@ function openTeam(k, keep) {
     <div><h3>Ultimele rezultate</h3><div class="rows">${last.map(g => { const o = outcome(g, k); const a = g.H.key === k ? g.hs : g.as, b = g.H.key === k ? g.as : g.hs; return `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}</span><span class="r ${o}">${OUTL[o]} ${a}–${b}</span></button>`; }).join('') || '<div class="row"><span></span><span>Niciun meci jucat încă.</span><span></span></div>'}</div></div>
     ${tableHtml(DIVISION_OF[k])}
     <div class="btns"><button class="primary" type="button" data-only="${k}">Arată doar meciurile echipei</button>
+      <button class="ghost" type="button" data-team-cal="${k}">Calendarul echipei</button>
       <button class="ghost" type="button" data-fav="${k}">${fav ? '★ Echipa mea (apasă ca să renunți)' : '☆ Setează ca echipa mea'}</button>
       <button class="ghost" type="button" data-share>Copiază linkul</button></div>
     </div>`, keep);
@@ -575,7 +589,7 @@ async function fillPlaceWeather(pt, venue, ownerId) {
     let next = null;
     if (venue) { const g = placeCtx.gamesAt([venue.id]).up[0]; if (g) next = { id: g.id, label: `${g.h} – ${g.a}, ${tShort(g.d)}` }; }
     $('pwx').innerHTML = placeWeatherHtml(w, venue, next);
-  } catch (e) { if ($('pwx')) $('pwx').innerHTML = '<div class="fn">Prognoza nu a putut fi încărcată. Încearcă din nou mai târziu.</div>'; }
+  } catch (e) { if ($('pwx')) $('pwx').innerHTML = `<div class="fn">${navigator.onLine ? 'Prognoza nu a putut fi încărcată. Încearcă din nou mai târziu.' : 'Ești offline: vremea apare când ai din nou internet. Clima pe luni de mai jos e salvată pe telefon.'}</div>`; }
 }
 let openPlaceId = null;
 function openCity(id, keep) {
@@ -591,6 +605,30 @@ function openVenue(id, keep) {
   show(venueHtml(v, placeCtx), keep);
   fillPlaceWeather(v, v, openPlaceId);
 }
+
+/* ================= phone: install, calendar subscription ================= */
+const cal = { teams: [], alarm: 60 };
+{
+  try { const s = JSON.parse(store.get('flgames-cal') || 'null'); if (s) { cal.teams = (s.teams || []).filter(k => TEAMS[k]); cal.alarm = +s.alarm || 0; } } catch (e) { /* ignore */ }
+  if (!cal.teams.length) cal.teams = state.fav ? [state.fav] : Object.keys(TEAMS);
+}
+const saveCal = () => store.set('flgames-cal', JSON.stringify(cal));
+function openCalendar(keep) {
+  openGameId = null; openPlaceId = null;
+  show(calendarHtml(cal.teams, cal.alarm, k => emb(flSide(k), 'sm')), keep);
+}
+function renderPhone() {
+  // The header "Instalează" button appears only when the browser can install the app right away.
+  $('hinstall').hidden = !canInstall();
+  $('phone').innerHTML = `<div class="phcard"><h3>Aplicația pe telefon</h3>${installHtml()}</div>
+    <div class="phcard"><h3>Meciurile în calendarul tău</h3><p>Abonează-te o dată și meciurile echipelor alese apar singure în Google Calendar, pe iPhone sau în Outlook, cu ora ta și cu amintire.</p><button class="primary" type="button" data-team-cal="">Abonare la calendar</button></div>`;
+}
+onInstallChange(renderPhone);
+renderPhone();
+registerSW();
+// Back online: fresh data at once instead of waiting for the next refresh.
+window.addEventListener('online', () => load());
+window.addEventListener('offline', () => renderStatus());
 
 /* ----- weather strip on the home page ----- */
 async function renderStrip() {
@@ -637,7 +675,7 @@ function openGame(id, keep) {
     </div>
     <div id="gtabs">${tabsHtml(g, s, gameView.tab)}</div>
     <div id="gdetail" role="tabpanel">${gameView.tab === 'rezumat' || !s ? summaryTop(g, ctx, k, other, done, on) : ''}${s ? panelHtml(g, s, viewFor()) : canFetch ? '<div class="skeleton" style="height:70px"></div>' : '<div class="fn">Detaliile meciului (statistici, jucători, faze) apar când sursa live răspunde.</div>'}</div>
-    <div class="btns">${g.teams.map(t => `<button class="ghost" type="button" data-team="${t}">Profil ${esc(TEAMS[t].s)}</button>`).join('')}<button class="ghost" type="button" data-day="${k}" data-jump="1">Toate meciurile zilei</button><button class="ghost" type="button" data-share>Copiază linkul</button></div>
+    <div class="btns">${g.teams.map(t => `<button class="ghost" type="button" data-team="${t}">Profil ${esc(TEAMS[t].s)}</button>`).join('')}<button class="ghost" type="button" data-day="${k}" data-jump="1">Toate meciurile zilei</button>${done ? '' : `<button class="ghost" type="button" data-ics-game="${g.id}">Adaugă în calendar</button>`}<button class="ghost" type="button" data-share>Copiază linkul</button></div>
     </div>`, keep);
   openPlaceId = null;
   if (canFetch && (!s || isLive(g))) loadGame(g);
@@ -748,6 +786,16 @@ function handle(e) {
   if (q('#prof-x') || e.target === $('ov')) { closeOv(); return; }
   if ((el = q('#reload'))) { load(true); return; }
   if ((el = q('[data-share]'))) { share(el); return; }
+  if ((el = q('[data-install]'))) { install(); return; }
+  if ((el = q('[data-team-cal]'))) { const k = el.dataset.teamCal; go('#calendar' + (k ? '/' + k : '')); return; }
+  if ((el = q('[data-calall]'))) { cal.teams = el.dataset.calall === '1' ? Object.keys(TEAMS) : []; saveCal(); openCalendar(true); return; }
+  if ((el = q('[data-copycal]'))) {
+    const inp = $('calurl');
+    navigator.clipboard?.writeText(inp.value).then(() => { el.textContent = 'Link copiat ✓'; }, () => { inp.select(); el.textContent = 'Selectat: apasă Ctrl+C'; });
+    setTimeout(() => { if (el.isConnected) el.textContent = 'Copiază linkul'; }, 2500);
+    return;
+  }
+  if ((el = q('[data-ics-game]'))) { const raw = (DATA.raw.games || []).find(x => x.id === el.dataset.icsGame); if (raw) downloadGame(raw); return; }
   if ((el = q('[data-tab]'))) { setTab(el.dataset.tab); return; }
   if ((el = q('[data-side]'))) { gameView.side = el.dataset.side; const g = BY_ID.get(openGameId); if (g) refreshGame(g); return; }
   if ((el = q('[data-fav]'))) { const k = el.dataset.fav; state.fav = state.fav === k ? '' : k; state.fav ? store.set('flgames-fav', state.fav) : store.del('flgames-fav'); renderStatic(); render(); openTeam(k, true); return; }
@@ -771,6 +819,18 @@ function handle(e) {
   }
 }
 document.addEventListener('click', handle);
+// Calendar page: ticking a team or choosing a reminder rebuilds the links at once.
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.calteam) {
+    const k = t.dataset.calteam;
+    cal.teams = t.checked ? [...new Set([...cal.teams, k])] : cal.teams.filter(x => x !== k);
+  } else if (t.id === 'calalarm') cal.alarm = +t.value;
+  else return;
+  saveCal(); openCalendar(true);
+  const again = t.id === 'calalarm' ? $('calalarm') : document.querySelector(`[data-calteam="${t.dataset.calteam}"]`);
+  if (again) again.focus({ preventScroll: true });
+});
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !$('ov').hidden) closeOv();
   if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('g[data-metro]')) { e.preventDefault(); handle(e); }

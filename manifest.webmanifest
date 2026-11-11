@@ -1,0 +1,20 @@
+{
+  "name": "Meciuri Florida",
+  "short_name": "Meciuri FL",
+  "description": "Calendarul meciurilor echipelor din Florida, cu ora României, scor live și vremea.",
+  "lang": "ro",
+  "start_url": "/?sursa=aplicatie",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f2a30",
+  "theme_color": "#0f2a30",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Abonare la calendar", "url": "/#calendar", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

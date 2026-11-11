@@ -37,8 +37,11 @@ istoricul git, pe `main` până la merge-ul etapei 1).
 1. **Site cu date live** (în lucru, PR #3): calendarul mutat de pe claude.ai, cu date ESPN
    live, logo-uri oficiale, scor live, pagini de meci complete, plus orașele, stadioanele și
    vremea pentru echipele din Florida.
-2. **Pe telefon:** PWA instalabilă, merge offline, abonare la calendar (link .ics pentru
-   Google Calendar/iPhone) cu meciurile echipelor alese.
+2. **Pe telefon** (în lucru, branch `stage-2-telefon`, PR cu baza `stage-1-calendar`): PWA
+   instalabilă, merge offline, abonare la calendar (link .ics pentru Google Calendar/iPhone/
+   Outlook) cu meciurile echipelor alese. Merge în `main` o singură dată, după etapele 2 și 3:
+   branch-urile se unesc între ele (3 → 2 → 1), apoi PR #3 în `main`. Instalarea și abonarea
+   „pe bune” se fac după merge, pe adresa finală (pe preview sunt legate de adresa preview-ului).
 3. **Notificări** înainte de meciurile echipei favorite.
 4. **Toate echipele** din cele 5 ligi, cu „Echipele mele” și filtru pe stat/oraș.
 
@@ -53,12 +56,17 @@ js/game.js                  pagina de meci: filele Rezumat, Jucători, Statistic
 js/ro.js                    traducerea textelor ESPN (stare meci, note, statistici, accidentări); fără DOM
 js/ui.js                    funcții comune: esc, temă (auto/luminoasă/întunecată), embleme cu logo
 js/places.js                orașe și stadioane: pagini, vremea, banda cu vremea, graficul de climă
+js/phone.js                 service worker, instalarea aplicației, pagina de abonare la calendar
+js/ics.js                   fișiere .ics (iCalendar), folosit de pagină și de funcția de calendar; fără DOM
+sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
+manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
 netlify/lib/weather.mjs     prognoza Open-Meteo, redusă la ce arată pagina
 netlify/functions/schedule.mjs   GET /api/schedule  meciurile sezonului + clasamente (cache 15 min)
 netlify/functions/live.mjs       GET /api/live?l=NBA,NHL  scorurile de azi (cache 30 s)
 netlify/functions/game.mjs       GET /api/game?l=NBA&id=…  detaliile unui meci
 netlify/functions/weather.mjs    GET /api/weather?lat=…&lon=…[&brief=1]  vremea, doar în Florida (cache 30 min)
+netlify/functions/calendar.mjs   GET /api/calendar.ics?e=heat,panthers[&a=60]  calendar de abonare (cache 1 h)
 data/snapshot.json          date de rezervă (format /api/schedule)
 data/places.json            orașe și stadioane, GENERAT: nu se editează de mână
 tools/places-src.json       sursa lui places.json: textele în română, fapte, surse, numele pozelor
@@ -93,7 +101,7 @@ puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, 
 (doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`.
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
-`#oras/miami`, `#stadion/hard-rock-stadium`; filtrele în
+`#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`; filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 
 Cheile echipelor din Florida sunt în `js/teams.js` (`heat`, `magic`, `panthers`, `lightning`,

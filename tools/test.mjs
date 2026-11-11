@@ -155,4 +155,24 @@ assert.equal(pl.nyHourKey(new Date('2026-07-04T23:30:00Z')), '2026-07-04T19:00')
 assert.equal(pl.hoursBehindRomania(new Date('2026-11-15T12:00:00Z')), 7);
 assert.equal(pl.hoursBehindRomania(new Date('2026-03-20T12:00:00Z')), 6, 'US clocks change three weeks before Europe');
 
+// Calendar feed (.ics).
+const ics = await import('../js/ics.js');
+const G = (id, date, extra = {}) => ({ id, l: 'NBA', date, tbd: false, state: 'pre', detail: '', venue: 'Kaseya Center', city: 'Miami', region: 'FL', note: 'NBA Cup - Group Play', tv: 'NBA TV',
+  home: { name: 'Miami Heat', key: 'heat', score: null }, away: { name: 'Boston Celtics, Inc; test', key: null, score: null }, ...extra });
+const feed = ics.calendar([G('1', '2026-11-15T01:00:00Z'), G('2', '2026-11-20T00:00:00Z', { tbd: true }), G('3', '2026-11-01T00:00:00Z', { state: 'post', home: { name: 'Miami Heat', key: 'heat', score: 114 }, away: { name: 'Boston Celtics', key: null, score: 108 } })],
+  { name: 'Meciuri: Heat', site: 'https://x.example', alarm: 60, stamp: new Date('2026-11-11T00:00:00Z') });
+assert.ok(feed.startsWith('BEGIN:VCALENDAR\r\n') && feed.endsWith('END:VCALENDAR\r\n'));
+const flat = feed.replace(/\r\n /g, '');   // undo line folding before looking for text
+assert.ok(flat.includes('Final: 114–108') && flat.includes('Detalii: https://x.example/#meci/NBA/1'));
+assert.equal(feed.match(/BEGIN:VEVENT/g).length, 3);
+assert.ok(feed.includes('DTSTART:20261115T010000Z') && feed.includes('DTEND:20261115T033000Z'), 'UTC start, end after the league duration');
+assert.ok(feed.includes('DTSTART;VALUE=DATE:20261119') && feed.includes('DTEND;VALUE=DATE:20261120'), 'no time yet: all-day event on the US date');
+assert.ok(flat.includes('Celtics\\, Inc\\; test'), 'commas and semicolons escaped');
+assert.ok(feed.includes('TRIGGER:-PT60M'));
+assert.equal(feed.match(/TRIGGER/g).length, 1, 'reminder only for a timed game still to come');
+
+assert.ok(feed.split('\r\n').every(l => new TextEncoder().encode(l).length <= 75), 'lines folded at 75 octets');
+assert.ok(ics.fold('x'.repeat(200)).split('\r\n ').length === 3);
+assert.deepEqual(ics.pick([G('a', '2026-11-15T00:00:00Z'), G('b', '2026-01-01T00:00:00Z'), { ...G('c', '2026-11-15T00:00:00Z'), home: { key: null }, away: { key: 'magic' } }], ['heat'], 45, Date.parse('2026-11-11')).map(g => g.id), ['a']);
+
 console.log('all ESPN reader checks passed');
