@@ -266,6 +266,39 @@ assert.equal((await import('../js/teamx.js')).roNum('27.7'), '27,7');
   assert.deepEqual(items.map(i => i.kind + i.game.id), ['p1']);
 }
 
+// The morning summary: once a day, from 8:00 Romanian time, the results of the last 24 hours.
+{
+  const nt = await import('../netlify/lib/notify.mjs');
+  const now = Date.parse('2026-11-15T06:15:00Z');   // 08:15 in Romania
+  const g = (id, min, extra) => ({ id, l: 'NBA', date: new Date(now + min * 6e4).toISOString(), tbd: false, state: 'post', detail: 'Final',
+    home: { name: 'Miami Heat', key: 'heat', score: 112 }, away: { name: 'Boston Celtics', key: null, id: '2', score: 104 }, ...extra });
+  const games = [g('a', -8 * 60), g('b', -30 * 60), g('c', 17 * 60, { state: 'pre', home: { name: 'Utah Jazz', key: null }, away: { name: 'Orlando Magic', key: 'magic' } }),
+    g('d', -6 * 60, { l: 'NHL', home: { name: 'Florida Panthers', key: 'panthers', score: 2 }, away: { name: 'Tampa Bay Lightning', key: 'lightning', score: 4 } })];
+  const sub = { teams: ['heat', 'magic', 'panthers'], lead: 0, final: false, sent: {} };
+  const d = nt.due(sub, games, now, 'https://x');
+  assert.deepEqual(d.map(x => x.kind), ['m']);
+  assert.equal(d[0].message.title, '☀️ Azi-noapte: 2 meciuri ale echipelor tale');
+  assert.equal(d[0].message.body, 'Heat 112–104 Boston Celtics ✓\nPanthers 2–4 Lightning ✗\nUrmează: Utah Jazz – Magic, 01:15');
+  const after = nt.markSent(sub, d, now);
+  assert.equal(after.morningDay, '2026-11-15');
+  assert.deepEqual(nt.due(after, games, now + 15 * 6e4, 'x'), [], 'once a day');
+  assert.deepEqual(nt.due(sub, games, Date.parse('2026-11-15T05:30:00Z'), 'x'), [], 'not before 8:00');
+  assert.deepEqual(nt.due({ ...sub, morning: false }, games, now, 'x'), [], 'switched off');
+  assert.equal(nt.due({ ...sub, teams: ['heat'] }, games, now, 'x')[0].message.title, '☀️ Azi-noapte: Heat 112–104 Boston Celtics ✓');
+  assert.deepEqual(nt.due({ ...sub, teams: ['NBA-2'] }, [g('a', -8 * 60)], now, 'x')[0].message.title, '☀️ Azi-noapte: Heat 112–104 Boston Celtics ✗');
+}
+
+// Ghid: every league has a way to watch it, the explanations follow the chosen leagues.
+{
+  const gd = await import('../js/guide.js');
+  for (const l of ['NBA', 'NHL', 'NFL', 'MLS', 'MLB']) assert.ok(gd.WATCH[l]?.opts.some(o => o.all), l + ' has a way to watch every game');
+  assert.equal(gd.watchLine('NBA'), 'ESPN pe Disney+, AntenaPlay, NBA League Pass (toate meciurile)');
+  assert.equal(gd.watchLine('NHL'), 'ESPN pe Disney+ (toate meciurile), AntenaPlay');
+  assert.equal(gd.watchLine('MLS'), 'Apple TV');
+  const html = gd.guideHtml(new Set(['NHL']), () => '#000');
+  assert.ok(html.includes('Punctele NHL') && html.includes('Wild Card') && !html.includes('Play-in'));
+}
+
 // Installed apps only pick up a new version when sw.js changes: if the site's files differ from
 // main, VERSION in sw.js must differ too. Skipped when git or origin/main is not available.
 {

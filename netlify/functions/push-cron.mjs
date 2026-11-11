@@ -49,7 +49,7 @@ export default async () => {
     if (!items.length) continue;
     const done = [];
     for (const it of items) {
-      const r = await sendPush(sub, it.message, v, { ttl: it.kind === 'p' ? 1800 : 6 * 3600 }).catch(() => ({ ok: false }));
+      const r = await sendPush(sub, it.message, v, { ttl: it.kind === 'p' ? 1800 : it.kind === 'm' ? 4 * 3600 : 6 * 3600 }).catch(() => ({ ok: false }));
       if (r.gone) { await store.del(sub.id); removed++; break; }
       if (r.ok) { done.push(it); sent++; }
     }

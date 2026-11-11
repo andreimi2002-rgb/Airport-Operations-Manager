@@ -69,21 +69,24 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
    duce direct la secțiune, fără să schimbe adresa. Playoff-ul MLS e mutat după Clasamente. Fila
    „Orașe și stadioane” din Ligile (toată America, `allPlaces` în `js/places.js`); căutarea
    găsește orașele și stadioanele din toată America.
-6. **Etapa 6** (în lucru, branch `stage-6-echipe`): profil complet pentru toate echipele și
+6. **Etapa 6** (în producție, PR #8): profil complet pentru toate echipele și
    „Echipele mele”. Profilul oricărei echipe are textul „Despre” (Wikipedia, în română când
    există), antrenorul (ESPN), palmaresul, numele vechi, legendele, poza, forma și clasamentul
    conferinței (`data/clubs.json`, `js/clubinfo.js`). „Echipele mele” (`js/mine.js`) e secțiunea
    de echipe de pe pagina de start: implicit cele 11 din Florida, se scot cu × și se adaugă
    oricare echipă; calendarul (.ics) și notificările primesc orice echipă ca `NBA-2`.
-7. **Etapa 7: American Sports Hub** (în lucru, același branch și PR ca etapa 6). Proiectul se redenumește (titlu, antet, aplicația instalată,
+7. **Etapa 7: American Sports Hub** (în producție, PR #8). Proiectul se redenumește (titlu, antet, aplicația instalată,
    calendar, notificări, documentație) și primește identitate vizuală proprie (logo, iconițe, culori,
    titluri): un produs sportiv american, nu un calendar. Pagina de start pornește de la „Echipele
    mele” (implicit Florida). **Adresa rămâne** `florida-sp-calendar.netlify.app` (decizia
    utilizatorului): aplicația instalată, calendarul și notificările sunt legate de ea.
-8. **Etapa 8: zilnic.** Rezumatul de dimineață (notificare la 8:00, ora României, cu rezultatele
-   din noaptea trecută ale echipelor tale); „Cum vezi meciul din România” pe ligă (listă scrisă de
-   mână, cu data verificării); explicații pentru începători (draft, salary cap, Wild Card,
-   prelungiri NHL), pornind de la glosarul enciclopediei.
+8. **Etapa 8: zilnic** (în lucru, branch `stage-8-zilnic`). Rezumatul de dimineață: o notificare
+   la 8:00, ora României (prima rulare `push-cron` după 8:00, până la 12:00, o dată pe zi,
+   `morningDay`), cu rezultatele din ultimele 24 de ore ale echipelor tale (✓/✗) și meciul următor;
+   bifa „Rezumatul de dimineață” (implicit pornită, `morning`). Fila „Ghid” din Ligile
+   (`#ligi/ghid`, `js/guide.js`): „Cum vezi meciurile din România” pe ligă (listă scrisă de mână,
+   `WATCH_CHECKED` = data verificării; de reverificat în fiecare toamnă) și explicații pentru
+   începători, pornind de la glosarul enciclopediei. Pagina de meci are rândul „Unde îl vezi”.
 9. **Etapa 9: tehnic.** `app.js` împărțit pe module; verificare automată a surselor (ESPN,
    Open-Meteo) cu mesaj clar pe pagină; teste pentru funcțiile Netlify și fluxurile principale.
    Mai târziu, doar dacă site-ul devine public: varianta în engleză.
@@ -106,6 +109,7 @@ js/teamx.js                 filele profilului de echipă: Sezon (grafic, lideri)
 js/bracket.js               tabloul de playoff: serii din meciurile de playoff; fără DOM
 js/mine.js                  „Echipele mele”: lista din browser (implicit Florida), `NBA-2` pentru restul
 js/clubinfo.js              faptele din data/clubs.json pe pagina echipei: Despre, palmares, nume vechi, legende
+js/guide.js                 fila „Ghid” din Ligile: unde vezi fiecare ligă din România (verificat de mână), explicații
 js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele, orașele și stadioanele; banda „Azi în ligi”
 sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
 manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
@@ -168,7 +172,7 @@ puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, 
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
 `#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei), `#calendar/heat,NBA-2`, `#notificari/NBA-2`,
-`#ligi[/scoruri|clasamente|echipe|orase][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
+`#ligi[/scoruri|clasamente|echipe|orase|ghid][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
 filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 

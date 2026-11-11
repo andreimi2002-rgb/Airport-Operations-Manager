@@ -7,6 +7,7 @@ import { registerSW, onInstallChange, install, installHtml, calendarHtml, downlo
 import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
 import { lgHeadHtml, scoresHtml, standingsHtml, teamsHtml, todayStripHtml, groupTableHtml as groupTbl } from './leagues.js';
 import { CLUBS, loadClubs, clubInfo, aboutHtml, infoFactsHtml } from './clubinfo.js';
+import { guideHtml, watchLine } from './guide.js';
 import { teamTabsHtml, seasonChartHtml, seasonHover, leadersHtml, rosterHtml, newsHtml, roNum } from './teamx.js';
 import { N, setNotifyRender, refreshNotify, enableNotify, saveNotify, testNotify, disableNotify, notifyHtml } from './notify.js';
 import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, stripHtml, STRIP, cityHtml, venueHtml, placeWeatherHtml, climateHover, floridaClock, cityCard, roofWord, AMERICA, loadAmerica, getVenue, getCity, venueOfClub, cityLiteHtml, venueLiteHtml, clockIn, hoursBehindRomania, allPlaces, placesIndexHtml } from './places.js';
@@ -584,7 +585,7 @@ function route(keep) {
   if (h[0] === 'club' && LEAGUES[h[1]] && /^\d+$/.test(h[2] || '')) { clubView.tab = ['sezon', 'lot', 'stiri'].includes(h[3]) ? h[3] : 'rezumat'; openClub(h[1], h[2], keep); return; }
   // Pages (not overlays): the Florida page (no hash) and "Ligile" (#ligi/scoruri/2026-11-11).
   if (h[0] === 'ligi') {
-    LG.tab = ['scoruri', 'clasamente', 'echipe', 'orase'].includes(h[1]) ? h[1] : 'scoruri';
+    LG.tab = ['scoruri', 'clasamente', 'echipe', 'orase', 'ghid'].includes(h[1]) ? h[1] : 'scoruri';
     if (/^\d{4}-\d{2}-\d{2}$/.test(h[2] || '')) LG.day = h[2];
     hideOv(); setView('ligi'); return;
   }
@@ -807,7 +808,8 @@ function renderLeagues() {
     const wait = [!PLACES.data && loadPlaces(), !AMERICA.data && loadAmerica()].filter(Boolean);
     // Redraw only when something arrived (a failed load would otherwise retry in a loop).
     if (wait.length) Promise.all(wait).then(r => { if (r.some(Boolean) && LG.view === 'ligi' && LG.tab === 'orase') renderLeagues(); });
-  } else el.innerHTML = head + teamsHtml(DATA.raw?.standings, LG.chosen, ctx);
+  } else if (LG.tab === 'ghid') el.innerHTML = head + guideHtml(LG.chosen, ctx.col);
+  else el.innerHTML = head + teamsHtml(DATA.raw?.standings, LG.chosen, ctx);
 }
 function setLgHash() { history.replaceState(history.state, '', location.pathname + location.search + `#ligi/${LG.tab}${LG.tab === 'scoruri' && LG.day && LG.day !== usKey(new Date()) ? '/' + LG.day : ''}`); }
 // "Azi în ligi" on the Florida page.
@@ -1134,6 +1136,7 @@ function summaryTop(g, ctx, k, other, done, on) {
       ${g.tbd ? '' : `<dt>Start</dt><dd>${fmtTime[state.tz].format(g.d)} ${TZNAME[state.tz]} · ${fmtTime[other].format(g.d)} ${TZNAME[other]} (${fmtShort[other].format(g.d).replace('.', '')})</dd>`}
       <dt>Unde</dt><dd>${(() => { const v = venueByName(g.v), c = v && cityOf(v); return v ? `<button class="linkish" type="button" data-venue="${v.id}">${esc(g.v)}</button>, ${c ? `<button class="linkish" type="button" data-city="${c.id}">${esc(c.name)}</button>, ${c.lite ? esc(c.state) : 'FL'}` : esc(g.city)}` : `${g.v ? esc(g.v) + ', ' : ''}${esc(g.city)}`; })()}</dd>
       ${g.tv ? `<dt>Transmisie SUA</dt><dd>${esc(g.tv)}</dd>` : ''}
+      ${watchLine(g.l) ? `<dt>Unde îl vezi</dt><dd>${esc(watchLine(g.l))} · <a class="linkish" href="#ligi/ghid" data-goview="ligi" data-lgto="ghid" data-lgguide="${g.l}">ghid ›</a></dd>` : ''}
       ${done || on || g.tbd ? '' : `<dt>Pentru România</dt><dd>${{ good: 'Oră bună, se poate urmări seara.', late: 'Târziu, începe în jurul miezului nopții.', night: 'Noapte albă, începe după ora 01:00.' }[g.aw]}</dd>`}
     </dl>
     ${ctx.length ? `<section><h3>Context</h3><ul class="notes">${ctx.map(c => `<li>${esc(c)}</li>`).join('')}</ul></section>` : ''}
@@ -1244,6 +1247,7 @@ function handle(e) {
     e.preventDefault();
     if (el.dataset.lgonly) { LG.chosen = new Set([el.dataset.lgonly]); LG.tab = 'scoruri'; LG.day = null; }
     if (el.dataset.lgto) LG.tab = el.dataset.lgto;
+    if (el.dataset.lgguide && LEAGUES[el.dataset.lgguide]) LG.chosen = new Set([el.dataset.lgguide]);
     if (el.dataset.goview === 'ligi') navView('#ligi' + (LG.tab !== 'scoruri' ? '/' + LG.tab : ''));
     else navView('');
     return;
@@ -1298,10 +1302,11 @@ document.addEventListener('click', handle);
 document.addEventListener('change', e => {
   const t = e.target;
   // Notifications page: choices change in place; "Salvează" sends them.
-  if (t.dataset?.ntfteam || t.id === 'ntflead' || t.id === 'ntffinal') {
+  if (t.dataset?.ntfteam || t.id === 'ntflead' || t.id === 'ntffinal' || t.id === 'ntfmorning') {
     if (t.dataset.ntfteam) { const k = t.dataset.ntfteam; N.teams = t.checked ? [...new Set([...N.teams, k])] : N.teams.filter(x => x !== k); }
     if (t.id === 'ntflead') N.lead = +t.value;
     if (t.id === 'ntffinal') N.final = t.checked;
+    if (t.id === 'ntfmorning') N.morning = t.checked;
     N.msg = N.status === 'on' ? 'Apasă „Salvează alegerile” ca să se aplice.' : '';
     show(notifyHtml(teamEmb, pickerClubs(N.teams)), true);
     const again = t.id ? $(t.id) : document.querySelector(`[data-ntfteam="${t.dataset.ntfteam}"]`);
