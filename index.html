@@ -1,117 +1,128 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ro">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b1017">
-<meta name="description" content="Run a real airport. Start with one runway at San Francisco International and grow.">
-<title>Airport Operations Manager</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meciuri Florida</title>
+<meta name="description" content="Calendarul meciurilor echipelor din Florida: NBA, NHL, NFL și MLS, cu ora României.">
+<meta name="theme-color" content="#f3f6f6">
+<script>
+  // Apply the chosen theme before the first paint, so the page never flashes in the wrong one.
+  try { var t = localStorage.getItem('flgames-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/theme.css">
-<link rel="stylesheet" href="css/main.css">
-<script type="module" src="js/main.js"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Meciuri FL">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://a.espncdn.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="topbar-inner">
-    <a class="brand" href="./">
-      <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 15.5v-1.7l-7.6-4.6V4.3a1.4 1.4 0 0 0-2.8 0v4.9L3 13.8v1.7l7.6-2.3v4.9l-2 1.5V21l3.4-1 3.4 1v-1.4l-2-1.5v-4.9z"/></svg></div>
-      <div><div class="brandname">Airport Operations Manager</div><div class="brandline">Run a real airport</div></div>
-    </a>
-    <div class="stage-pill"><span class="live-dot" aria-hidden="true"></span>Stage 1 · Airport map</div>
-  </div>
-</header>
-
-<div class="app">
-  <section class="panel status-view" id="statusView">
-    <h2 id="statusTitle">Loading airport…</h2>
-    <p id="statusText">Reading the airport data files.</p>
-  </section>
-
-  <main id="airportView" hidden>
-    <section class="hero" id="hero">
-      <img class="hero-img" id="heroImg" alt="" decoding="async">
-      <div class="hero-shade" aria-hidden="true"></div>
-      <div class="hero-grid">
-        <div class="hero-main">
-          <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Your airport</div>
-          <div class="hero-title">
-            <h1 class="airport-code" id="airportCode">—</h1>
-            <div class="hero-names">
-              <div class="airport-title" id="airportName">—</div>
-              <div class="airport-sub" id="airportLocation">—</div>
-            </div>
-          </div>
-          <div class="chips" id="airportChips"></div>
-        </div>
-        <div class="clock" aria-live="off">
-          <small>LOCAL TIME</small>
-          <div class="clock-time"><span id="localTime">—</span><span class="clock-sec" id="localSec"></span></div>
-          <div class="clock-date" id="localDate"></div>
-          <div class="clock-utc" id="utcTime"></div>
-        </div>
+<div class="wrap" id="page">
+  <header>
+    <div>
+      <h1>Meciuri Florida</h1>
+      <p class="sub">NBA, NHL, NFL, MLS, MLB · ora României sau a Floridei</p>
+      <div class="status" id="status" aria-live="polite">Se încarcă datele…</div>
+    </div>
+    <div class="hctl">
+      <div class="seg" role="group" aria-label="Fus orar">
+        <button id="tz-ro" type="button" aria-pressed="true">Ora României</button>
+        <button id="tz-fl" type="button" aria-pressed="false">Ora Floridei</button>
       </div>
-      <div class="hero-credit" id="heroCredit"></div>
-    </section>
-
-    <div class="section-head">
-      <div>
-        <h2>Airport overview</h2>
-        <div class="section-note">What is open today. Everything else unlocks with money and reputation.</div>
+      <div class="hbtns">
+        <button class="hbtn" type="button" data-team-cal="" title="Meciurile în Google Calendar, pe iPhone sau în Outlook"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="15" r="1.8" fill="currentColor"/></svg>Calendar</button>
+        <button class="hbtn icon" type="button" data-team-ntf="" title="Notificări înainte de meciuri" aria-label="Notificări"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.6 2H4.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        <button class="hbtn" type="button" id="hinstall" data-install hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Instalează</button>
+      </div>
+      <div class="seg theme" role="group" aria-label="Temă">
+        <button type="button" data-theme-set="auto" aria-pressed="true" title="Temă automată, ca pe dispozitiv">Auto</button>
+        <button type="button" data-theme-set="light" aria-pressed="false" title="Temă luminoasă" aria-label="Temă luminoasă"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></g></svg></button>
+        <button type="button" data-theme-set="dark" aria-pressed="false" title="Temă întunecată" aria-label="Temă întunecată"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z" fill="currentColor"/></svg></button>
       </div>
     </div>
-    <section class="kpis" id="kpis"></section>
+  </header>
 
-    <section class="panel map-panel" id="mapPanel">
-      <div class="panel-head">
-        <div>
-          <h3>Airport map</h3>
-          <div class="section-note">Drag to move, scroll or pinch to zoom. Tap a runway, terminal or gate.</div>
-        </div>
-        <div class="map-legend" aria-hidden="true">
-          <span><i class="lg open"></i>Open</span>
-          <span><i class="lg locked"></i>Locked</span>
-        </div>
+  <div id="banner" hidden></div>
+
+  <section class="hero" id="hero" aria-label="Urmează"><div class="skeleton" style="grid-column:1/-1;background-color:transparent"></div></section>
+
+  <section aria-label="Echipe">
+    <h2 class="sec">Echipe</h2>
+    <div class="teams" id="teams"></div>
+  </section>
+
+  <section aria-label="Orașe, stadioane și vremea">
+    <h2 class="sec">Orașe, stadioane și vremea</h2>
+    <div class="wxstrip" id="wxstrip" aria-label="Vremea acum în orașele echipelor"></div>
+    <div class="vstrip" id="vstrip" aria-label="Stadioanele echipelor"></div>
+  </section>
+
+  <section aria-label="De urmărit">
+    <h2 class="sec">De urmărit</h2>
+    <div class="hl" id="hl"></div>
+  </section>
+
+  <section aria-label="Calendar" style="display:flex;flex-direction:column;gap:12px">
+    <div class="filters">
+      <span id="chips" class="filters"></span>
+      <select id="team" aria-label="Echipă"></select>
+      <label class="check" for="homeonly"><input type="checkbox" id="homeonly"> Jucate în Florida</label>
+      <label class="check" for="awake"><input type="checkbox" id="awake"> Doar la ore bune în România</label>
+    </div>
+    <div class="calbar">
+      <div class="seg" role="group" aria-label="Vedere calendar">
+        <button id="v-month" type="button" data-view="month" aria-pressed="true">Lună</button>
+        <button id="v-week" type="button" data-view="week" aria-pressed="false">Săptămână</button>
       </div>
-      <div class="map-wrap" id="mapWrap">
-        <div class="map-canvas" id="mapCanvas"></div>
-        <div class="map-tools">
-          <button class="iconbtn" id="mapZoomIn" aria-label="Zoom in" title="Zoom in">+</button>
-          <button class="iconbtn" id="mapZoomOut" aria-label="Zoom out" title="Zoom out">−</button>
-          <button class="iconbtn" id="mapReset" aria-label="Show whole airport" title="Show whole airport">⤢</button>
-          <button class="iconbtn" id="mapFull" aria-label="Full screen" title="Full screen" aria-pressed="false">⛶</button>
-        </div>
-        <div class="map-info" id="mapInfo" aria-live="polite"></div>
-        <a class="map-attrib" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>
+      <div class="legend"><span><span class="box"></span>Zi plină: joacă cel puțin 4 echipe din Florida</span></div>
+    </div>
+    <div id="cal"></div>
+    <div class="legend"><span><b style="color:var(--good)">Oră bună</b> = start între 12:00 și 23:00 în România · <b style="color:var(--warn)">Târziu</b> = până la 01:00 · <b>Noapte</b> = după 01:00</span></div>
+  </section>
+
+  <details class="res prog" id="upwrap" open>
+    <summary>Următoarele meciuri <span id="upcount"></span></summary>
+    <div class="progbody">
+      <div class="bar">
+        <div class="count" id="count"></div>
+        <button class="link" id="clear" type="button" hidden>Arată toate zilele</button>
       </div>
-    </section>
+      <div id="agenda"></div>
+      <button class="link more-btn" id="more" type="button" hidden>Arată încă 7 zile</button>
+    </div>
+  </details>
+  <details class="res" id="reswrap"><summary>Rezultate recente <span id="rescount"></span></summary><div id="results"></div></details>
 
-    <section class="columns">
-      <div class="panel">
-        <div class="panel-head"><h3>Runways</h3><span class="eyebrow" id="runwayCount"></span></div>
-        <ul class="rows" id="runwayList"></ul>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><h3>Terminals</h3><span class="eyebrow" id="terminalCount"></span></div>
-        <ul class="rows" id="terminalList"></ul>
-      </div>
-    </section>
+  <section aria-label="Harta">
+    <h2 class="sec">Unde se joacă</h2>
+    <div class="mapwrap"><div id="map"></div><div class="mpanel" id="mpanel"></div></div>
+  </section>
 
-    <section class="panel">
-      <div class="panel-head"><h3>Routes from SFO</h3><span class="eyebrow" id="routeCount"></span></div>
-      <ul class="routes" id="routeList"></ul>
-    </section>
+  <section aria-label="Clasamente">
+    <h2 class="sec">Clasamente</h2>
+    <div class="tables" id="tables"></div>
+    <div class="fn">NHL: Î = înfrângeri în timp regulamentar, Pct = puncte. MLS: primele 9 din fiecare conferință merg în playoff.</div>
+  </section>
 
-    <section class="panel">
-      <div class="panel-head"><h3>Aircraft types</h3><span class="eyebrow" id="aircraftCount"></span></div>
-      <ul class="aircraft" id="aircraftList"></ul>
-    </section>
+  <section aria-label="Pe telefon">
+    <h2 class="sec">Pe telefon și în calendar</h2>
+    <div class="phone" id="phone"></div>
+  </section>
 
-    <footer class="footer">
-      Data: OurAirports (public domain), OpenStreetMap (ODbL), OpenFlights, Wikipedia. Airline names and codes only. Flights are generated by the game, not live.
-    </footer>
-  </main>
+  <footer>
+    <div><b>MLB:</b> Miami Marlins și Tampa Bay Rays sunt în extrasezon; sezonul începe la sfârșitul lui martie și le adăugăm atunci.</div>
+    <div>Date de la ESPN (program, scoruri, clasamente) și logo-uri ESPN, pentru uz personal. Orele se pot modifica, în special la NFL.</div>
+  </footer>
 </div>
+
+<div class="ov" id="ov" hidden><div class="prof" id="prof" role="dialog" aria-modal="true" aria-labelledby="prof-name"></div></div>
+
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -1,22 +1,22 @@
-# Airport Operations Manager
+# Meciuri Florida
 
-A realistic airport management game for the web, with real airports, routes and aircraft.
-You start at San Francisco International (SFO) with one runway and eight gates, and unlock the
-rest of the real airport as you grow.
+Calendar al meciurilor echipelor din Florida (Heat, Magic, Panthers, Lightning, Dolphins,
+Buccaneers, Jaguars, Inter Miami, Orlando City), cu ora României, scor live, rezultate,
+clasamente, profiluri de echipă și pagini de meci.
 
-- Static site (HTML, CSS, JavaScript modules), no build step and no backend.
-- All data is static JSON in `data/` from free sources (OurAirports, OpenFlights, Wikipedia).
-- Airline names and codes only, no logos or liveries.
+- Site static (HTML, CSS, module JavaScript) plus trei funcții Netlify care citesc datele
+  publice gratuite ale ESPN. Fără chei API, fără servicii plătite.
+- Pagini pentru orașele și stadioanele echipelor, cu vremea (Open-Meteo), clima pe luni și
+  poze de pe Wikimedia Commons (cu autor și licență).
+- Logo-urile oficiale se încarcă de pe serverul ESPN; proiect pentru uz personal.
+- Dacă sursa live nu răspunde, pagina arată ultimele date salvate.
 
-## Run locally
+## Rulare locală
 
 ```sh
-npx serve .
-# or
+npx netlify dev          # pagina + funcțiile /api/*
+# sau doar pagina, cu datele de rezervă:
 python -m http.server 8000
 ```
 
-Open the address it prints. Opening `index.html` directly from disk does not work, because the
-browser blocks loading the JSON files.
-
-See [CLAUDE.md](CLAUDE.md) for the rules, the stage plan and the data format.
+Teste pentru cititoarele de date: `node tools/test.mjs`.
