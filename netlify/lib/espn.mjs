@@ -365,6 +365,33 @@ export async function summary(l, id) {
   return normalizeSummary(await getJSON(`${SITE}${LEAGUES[l].path}/summary?event=${encodeURIComponent(id)}`), l);
 }
 
+/* ---------- scores: every game of one day, in every league (one request per league) ---------- */
+export async function scoresDay(ymd, leagues = Object.keys(LEAGUES)) {
+  const errors = [], out = {};
+  await Promise.all(leagues.map(async l => {
+    try {
+      const j = await getJSON(`${SITE}${LEAGUES[l].path}/scoreboard?dates=${ymd}&limit=300`, 8000);
+      out[l] = (j.events || []).map(ev => normalizeEvent(ev, l)).filter(Boolean)
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    } catch (e) { out[l] = []; errors.push(`${l}: ${e.message || e}`); }
+  }));
+  return { date: ymd, leagues: out, errors };
+}
+
+// A team's season games, for the page of any team (Florida teams already have theirs in /api/schedule).
+export async function teamGames(l, id) {
+  const qs = l === 'MLS' ? ['', 'fixture=true'] : l === 'NFL' ? ['', 'seasontype=3'] : [''];
+  const lists = await Promise.all(qs.map(q => teamSchedule(l, id, q).catch(() => ({ events: [], team: {} }))));
+  const seen = new Set(), games = [];
+  for (const { events } of lists) for (const ev of events) {
+    const g = normalizeEvent(ev, l);
+    if (g && !seen.has(g.id)) { seen.add(g.id); games.push(g); }
+  }
+  games.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const team = lists[0].team || {};
+  return { l, id: String(id), record: team.recordSummary || null, standing: team.standingSummary || null, games };
+}
+
 /* ---------- playoffs: every postseason game of a league, for the bracket ---------- */
 const isPlayoff = ev => /playoff|post-?season/i.test(ev.season?.slug || '') || ev.season?.type === 3;
 // "eastern-conference-playoffs---round-one" -> { conf: 'east', round: 'round one' }; NBA/NHL notes: "East 1st Round - Game 3".

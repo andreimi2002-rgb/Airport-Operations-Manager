@@ -72,6 +72,7 @@ js/ics.js                   fișiere .ics (iCalendar), folosit de pagină și de
 js/notify.js                pagina de notificări: permisiune, abonare push, alegerile (#notificari)
 js/teamx.js                 filele profilului de echipă: Sezon (grafic, lideri), Lot, Știri
 js/bracket.js               tabloul de playoff: serii din meciurile de playoff; fără DOM
+js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele; banda „Azi în ligi”
 sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
 manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
@@ -83,6 +84,8 @@ netlify/functions/weather.mjs    GET /api/weather?lat=…&lon=…[&brief=1]  vre
 netlify/functions/calendar.mjs   GET /api/calendar.ics?e=heat,panthers[&a=60]  calendar de abonare (cache 1 h)
 netlify/functions/team.mjs       GET /api/team?l=NBA&id=14  lot, liderii sezonului, știri ESPN (cache 3 h)
 netlify/functions/playoffs.mjs   GET /api/playoffs?l=MLS  meciurile de playoff ale ligii, pentru tablou (cache 1 h)
+netlify/functions/scores.mjs     GET /api/scores?d=20261111  toate meciurile unei zile (SUA), din toate ligile
+netlify/functions/teamgames.mjs  GET /api/teamgames?l=NBA&id=2  sezonul oricărei echipe (pagina simplă de echipă)
 netlify/functions/push.mjs       /api/push  salvează / citește / testează / șterge un abonament la notificări
 netlify/functions/push-cron.mjs  programată, la 15 minute, doar în producție: trimite notificările datorate
 netlify/lib/webpush.mjs     Web Push fără bibliotecă: semnătură VAPID (RFC 8292), criptare (RFC 8291)
@@ -91,6 +94,9 @@ netlify/lib/subs.mjs        stocarea abonamentelor (Netlify Blobs; local, fișie
 tools/vapid-keys.mjs        generează perechea de chei VAPID: node tools/vapid-keys.mjs
 data/snapshot.json          date de rezervă (format /api/schedule)
 data/places.json            orașe și stadioane, GENERAT: nu se editează de mână
+data/america.json           stadioanele și orașele echipelor din afara Floridei (fapte), GENERAT de
+                            tools/build-america.mjs: stadionul din meciurile de acasă (nu „franchise
+                            venue” de la ESPN, adesea istoric), poze ESPN, oraș geocodat Open-Meteo
 tools/places-src.json       sursa lui places.json: textele în română, fapte, surse, numele pozelor
 tools/build-places.mjs      generează places.json (coordonate, poze, climă, rute): node tools/build-places.mjs
 tools/test.mjs              teste offline pentru cititoare și traduceri: node tools/test.mjs
@@ -123,7 +129,8 @@ puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, 
 (doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`.
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
-`#echipa/heat[/sezon|lot|stiri]`, `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
+`#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei),
+`#ligi[/scoruri|clasamente|echipe][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
 filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 
@@ -168,3 +175,8 @@ nu se scriu de mână.
   echipei (Sezon, Lot, Știri; `/api/team`), căutare în antet, tabloul de playoff (`/api/playoffs`),
   MLB (Marlins, Rays, loanDepot park, Tropicana Field, St. Petersburg). Reparat: locul în
   clasamentul MLS (ESPN dă `rank`, nu `playoffSeed`), notele de playoff MLS, AL/NL la MLB.
+- Etapa 4, partea 2 (11 noiembrie): pagina „Ligile” (scoruri pe zi din toate ligile, clasamente
+  complete, toate cele 154 de echipe), pagină simplă pentru orice echipă (#club), banda „Azi în
+  ligi”, orice meci se deschide pe pagina de meci, stadioanele și orașele din toată America
+  (data/america.json), vremea la meciurile din deplasare ale echipelor din Florida. Funcția de
+  vreme acceptă acum SUA și Canada.

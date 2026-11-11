@@ -7,8 +7,8 @@ const CURRENT = 'temperature_2m,apparent_temperature,relative_humidity_2m,weathe
 const HOURLY = 'temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m';
 const DAILY = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset,uv_index_max,wind_speed_10m_max';
 
-// Florida and a margin around it: the function only serves places the page knows.
-export const inFlorida = (lat, lon) => lat >= 24 && lat <= 31.5 && lon >= -88 && lon <= -79.5;
+// The United States and Canada (where the teams play): the function serves nothing else.
+export const inArea = (lat, lon) => lat >= 18 && lat <= 62 && lon >= -170 && lon <= -50;
 
 const r = v => (v == null || !Number.isFinite(+v) ? null : Math.round(+v));
 const r1 = v => (v == null || !Number.isFinite(+v) ? null : Math.round(+v * 10) / 10);

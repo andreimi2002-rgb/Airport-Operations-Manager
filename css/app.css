@@ -412,6 +412,63 @@ svg.wx .drop{stroke:var(--wx-rain);fill:none} svg.wx .fogl{stroke:var(--wx-cloud
 .wxtile .tt{grid-area:tt;font-family:var(--display);font-weight:700;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
 .wxtile .cc{grid-area:cc;font-size:12.5px}
 .wxtile .dd{grid-area:dd;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+/* ---- views: Florida | Ligile ---- */
+.flview,.lgview{display:flex;flex-direction:column;gap:20px}
+.flview[hidden],.lgview[hidden]{display:none}
+.viewtabs{flex-basis:100%;display:flex;gap:4px;border-bottom:2px solid var(--line)}
+.viewtabs a{text-decoration:none;color:var(--muted);font-family:var(--display);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.03em;padding:6px 12px 7px;border-bottom:3px solid transparent;margin-bottom:-2px}
+.viewtabs a small{font-family:var(--body);font-size:11.5px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted);margin-left:4px}
+.viewtabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+.viewtabs a:hover{color:var(--ink)}
+.lgview h2.sec small{font-family:var(--body);font-size:13px;text-transform:none;letter-spacing:0;color:var(--muted);font-weight:500;margin-left:6px}
+.lghead{display:flex;flex-direction:column;gap:10px}
+.lgtabs{margin:0}
+.daynav{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.daynav>div{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center}
+.daynav b{font-family:var(--display);font-size:19px;text-transform:uppercase;letter-spacing:.02em}
+.daynav small{color:var(--muted);font-size:12px}
+.lgblock{display:flex;flex-direction:column;gap:8px}
+.lgblock>h3{margin:0;display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:18px;text-transform:uppercase;letter-spacing:.02em}
+.lgblock>h3 small{font-family:var(--body);font-size:12.5px;text-transform:none;letter-spacing:0;color:var(--muted);font-weight:500}
+.grows{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+.grow{display:grid;grid-template-columns:62px 1fr;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);border-left:4px solid var(--c);background:var(--surface);border-radius:10px;padding:8px 10px;cursor:pointer}
+.grow:hover{border-color:var(--accent);border-left-color:var(--c)}
+.grow.fl{background:var(--soft)}
+.grow.live{border-color:var(--bad);border-left-color:var(--c)}
+.grow .gt{display:flex;flex-direction:column;font-variant-numeric:tabular-nums;font-size:13px;line-height:1.25}
+.grow .gt b{font-family:var(--display);font-size:18px}
+.grow .gt small{color:var(--muted);font-size:11px}
+.grow .gt .lv{font-family:var(--body);font-size:11px;font-weight:800;color:var(--surface);background:var(--bad);border-radius:4px;padding:0 5px;align-self:flex-start}
+.gsides{display:flex;flex-direction:column;gap:3px;min-width:0}
+.gsd{display:flex;align-items:center;gap:8px;font-size:14px;min-width:0}
+.gsd .emb.sm{margin:0}
+.gsd .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gsd .nm i{font-style:normal;color:var(--accent)}
+.gsd b{font-family:var(--display);font-size:17px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.gsd.win b,.gsd.win .nm{color:var(--ink);font-weight:700}
+.gsd.fl .nm{font-weight:700}
+.stgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.stgrid .tbl h4{margin:0 0 6px;font-size:13px}
+table.st th[scope="row"]{min-width:150px;max-width:220px;width:60%;overflow:hidden}
+table.st .tname{display:flex;align-items:center;gap:7px;text-decoration:none;font-weight:600;min-width:0;width:100%}
+table.st .tname .pn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+table.st td{width:auto}
+table.st .tname .rk{color:var(--muted);font-size:11.5px;width:18px;flex:none;font-variant-numeric:tabular-nums}
+table.st .tname .emb.sm{margin:0}
+table.st tr.fl th,table.st tr.fl td{background:var(--soft);font-weight:700}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.tcard{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;cursor:pointer}
+.tcard:hover{border-color:var(--accent)}
+.tcard.fl{border-color:var(--accent);background:var(--soft)}
+.tcard span{display:flex;flex-direction:column;min-width:0}
+.tcard b{font-size:14px;line-height:1.2}
+.tcard small{color:var(--muted);font-size:12px}
+.todaylg{display:flex;flex-direction:column;gap:8px}
+.todaylg[hidden]{display:none}
+.tlchips{display:flex;flex-wrap:wrap;gap:6px}
+.tlchips .chip{text-decoration:none;color:var(--ink)}
+.tlchips .lv{color:var(--bad)}
+@media (max-width:420px){.viewtabs a{font-size:16px;padding:6px 8px 7px}.grows{grid-template-columns:1fr}.stgrid{grid-template-columns:1fr}}
 /* ---- playoff bracket ---- */
 .playoffs{display:flex;flex-direction:column;gap:10px}
 .playoffs[hidden]{display:none}

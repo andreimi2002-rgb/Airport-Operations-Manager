@@ -9,7 +9,7 @@ const VERSION = 'v3';
 const SHELL = `shell-${VERSION}`, API = `api-${VERSION}`, IMG = `img-${VERSION}`;
 const FILES = [
   '/', '/index.html', '/css/app.css', '/favicon.svg', '/manifest.webmanifest', '/icons/icon-192.png',
-  '/js/app.js', '/js/teams.js', '/js/ui.js', '/js/ro.js', '/js/game.js', '/js/places.js', '/js/ics.js', '/js/phone.js', '/js/notify.js', '/js/teamx.js', '/js/bracket.js',
+  '/js/app.js', '/js/teams.js', '/js/ui.js', '/js/ro.js', '/js/game.js', '/js/places.js', '/js/ics.js', '/js/phone.js', '/js/notify.js', '/js/teamx.js', '/js/bracket.js', '/js/leagues.js',
   '/data/places.json', '/data/snapshot.json'
 ];
 

@@ -148,7 +148,7 @@ const f = wx.normalizeForecast({ latitude: 25.96, longitude: -80.24,
   hourly: { time: ['2026-11-10T19:00', '2026-11-10T20:00'], temperature_2m: [26, 25.3], weather_code: [0, 95], precipitation_probability: [1, 70] } });
 assert.deepEqual([f.now.temp, f.now.wind, f.now.day, f.days[0].hi, f.hours.code[1], f.hours.pp[1], f.hours.gust.length], [26, 7, false, 30, 95, 70, 0]);
 assert.equal(wx.normalizeForecast({ current: {} }, true).hours, undefined);
-assert.equal(wx.inFlorida(25.78, -80.19), true); assert.equal(wx.inFlorida(40.7, -74), false);
+assert.equal(wx.inArea(25.78, -80.19), true); assert.equal(wx.inArea(53.55, -113.49), true, 'Edmonton'); assert.equal(wx.inArea(44.43, 26.1), false, 'Bucharest');
 const pl = await import('../js/places.js');
 assert.equal(pl.nyHourKey(new Date('2026-11-15T18:00:00Z')), '2026-11-15T13:00');
 assert.equal(pl.nyHourKey(new Date('2026-07-04T23:30:00Z')), '2026-07-04T19:00');
@@ -239,6 +239,13 @@ assert.equal(normalizeStandings({ children: [{ name: 'Eastern Conference', stand
   assert.equal(s.find(x => x !== mia).teams[1].name, 'De stabilit');
   assert.equal(b.roundRo(5, 'MLS'), 'MLS Cup');
   assert.equal(b.bracketLayout(s)[0].rounds[0].series.length, 2);
+}
+// Standings order on the "Ligile" page: seeds when everyone has one, otherwise points / win share.
+{
+  const lg = await import('../js/leagues.js');
+  const nhl = lg.orderEntries([{ name: 'A', pts: 20, w: 9 }, { name: 'B', pts: 24, w: 11 }, { name: 'C', pts: 24, w: 10 }], 'NHL').map(e => e.name);
+  assert.deepEqual(nhl, ['B', 'C', 'A']);
+  assert.deepEqual(lg.orderEntries([{ name: 'A', seed: 2, pct: 0.9 }, { name: 'B', seed: 1, pct: 0.5 }], 'NBA').map(e => e.name), ['B', 'A']);
 }
 assert.equal((await import('../js/teamx.js')).roNum('1,396'), '1.396');
 assert.equal((await import('../js/teamx.js')).roNum('.900'), '0,900');

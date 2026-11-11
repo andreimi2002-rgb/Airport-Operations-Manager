@@ -12,14 +12,31 @@ export function loadPlaces() {
     .catch(() => (PLACES.ready = null, null));
   return PLACES.ready;
 }
-const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-export function venueByName(name) {
-  const v = PLACES.data?.venues, n = norm(name);
-  if (!v || !n) return null;
-  return Object.values(v).find(x => (x.espn || [x.name]).some(e => norm(e) === n)) || null;
+// The rest of the US and Canada (data/america.json): facts only, loaded when first needed.
+export const AMERICA = { data: null, ready: null };
+export function loadAmerica() {
+  AMERICA.ready ||= fetch('data/america.json', { signal: AbortSignal.timeout(12000) })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(j => { for (const v of Object.values(j.venues)) v.lite = true; for (const c of Object.values(j.cities)) c.lite = true; return (AMERICA.data = j); })
+    .catch(() => (AMERICA.ready = null, null));
+  return AMERICA.ready;
 }
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+// A stadium by the name ESPN gives a game: Florida first, then the rest of America.
+export function venueByName(name) {
+  const n = norm(name);
+  if (!n) return null;
+  for (const src of [PLACES.data?.venues, AMERICA.data?.venues]) {
+    const hit = src && Object.values(src).find(x => (x.espn || [x.name]).some(e => norm(e) === n));
+    if (hit) return hit;
+  }
+  return null;
+}
+export const getVenue = id => PLACES.data?.venues?.[id] || AMERICA.data?.venues?.[id] || null;
+export const getCity = id => PLACES.data?.cities?.[id] || AMERICA.data?.cities?.[id] || null;
 export const venueOfTeam = k => Object.values(PLACES.data?.venues || {}).find(v => v.teams.includes(k)) || null;
-export const cityOf = v => PLACES.data?.cities?.[v.city] || null;
+export const venueOfClub = (l, id) => Object.values(AMERICA.data?.venues || {}).find(v => v.teams.some(t => t.l === l && t.id === String(id))) || null;
+export const cityOf = v => (v.lite ? AMERICA.data?.cities?.[v.city] : PLACES.data?.cities?.[v.city]) || null;
 
 /* ================= weather data ================= */
 const WCACHE = new Map();
@@ -82,13 +99,14 @@ export function nyHourKey(d) {
   const p = Object.fromEntries(fmtNY.formatToParts(d).map(x => [x.type, x.value]));
   return `${p.year}-${p.month}-${p.day}T${p.hour === '24' ? '00' : p.hour}:00`;
 }
-// Hours between Romania and Florida right now (7 most of the year, 6 for a few weeks when clocks change).
-export function hoursBehindRomania(d = new Date()) {
-  const off = tz => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(d).map(x => [x.type, +x.value])); return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute); };
-  return Math.round((off('Europe/Bucharest') - off('America/New_York')) / 36e5);
+// Hours between Romania and a US time zone right now (Florida: 7 most of the year, 6 for a few
+// weeks when clocks change; Los Angeles: 10).
+export function hoursBehindRomania(d = new Date(), tz = 'America/New_York') {
+  const off = z => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: z, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(d).map(x => [x.type, +x.value])); return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute); };
+  return Math.round((off('Europe/Bucharest') - off(tz)) / 36e5);
 }
-const fmtLocal = new Intl.DateTimeFormat('ro-RO', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false });
-export const floridaClock = () => fmtLocal.format(new Date());
+export const clockIn = (tz = 'America/New_York') => new Intl.DateTimeFormat('ro-RO', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+export const floridaClock = () => clockIn('America/New_York');
 const mins = m => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ' ' + String(m % 60).padStart(2, '0') + ' min' : ''}` : `${m} min`);
 const num = n => Number(n).toLocaleString('ro-RO');
 
@@ -277,6 +295,55 @@ export function venueHtml(v, ctx) {
     <div class="btns">${c ? `<button class="ghost" type="button" data-city="${esc(c.id)}">Despre ${esc(c.name)}</button>` : ''}<button class="ghost" type="button" data-share>Copiază linkul</button></div>
     </div>`;
 }
+/* ================= the rest of America: plain facts ================= */
+const TZ_RO = { 'America/New_York': 'ora Coastei de Est', 'America/Toronto': 'ora Coastei de Est', 'America/Detroit': 'ora Coastei de Est', 'America/Chicago': 'ora Centrală', 'America/Winnipeg': 'ora Centrală', 'America/Denver': 'ora Munților Stâncoși', 'America/Edmonton': 'ora Munților Stâncoși', 'America/Phoenix': 'ora Munților Stâncoși (fără ora de vară)', 'America/Los_Angeles': 'ora Pacificului', 'America/Vancouver': 'ora Pacificului', 'America/Indiana/Indianapolis': 'ora Coastei de Est', 'America/Boise': 'ora Munților Stâncoși' };
+const litePhoto = (v, alt) => v.photo ? `<figure class="hero-ph"><img src="${esc(v.photo)}" alt="${esc(alt)}" loading="eager" decoding="async"><figcaption>Foto: ESPN</figcaption></figure>`
+  : v.credit ? `<figure class="hero-ph"><img src="${esc(v.credit.url)}" alt="${esc(alt)}" loading="eager" decoding="async"><figcaption>Foto: ${esc(v.credit.author || '')}, <a href="${esc(v.credit.page)}" target="_blank" rel="noopener">${esc(v.credit.license || 'Wikimedia Commons')}</a></figcaption></figure>` : '';
+const clubBtn = (t, ctx) => `<button class="host" type="button" data-club="${esc(t.l)}|${esc(t.id)}">${ctx.clubEmb(t)}<span><b>${esc(t.name)}</b><small>${esc(t.l)}${ctx.clubRecord(t) ? ' · ' + esc(ctx.clubRecord(t)) : ''}</small></span></button>`;
+export function cityLiteHtml(c, ctx) {
+  const venues = c.venues.map(id => AMERICA.data.venues[id]).filter(Boolean);
+  const behind = hoursBehindRomania(new Date(), c.tz);
+  const img = c.image ? { photo: '', credit: c.image } : venues.find(v => v.photo) || { };
+  const games = ctx.gamesAt(c.venues);
+  return `<div class="band photo">${litePhoto(img, c.name)}<div class="bandtxt"><div class="lgn">Oraș · ${esc(c.state)} · ${esc(c.country)}</div><h2 id="prof-name">${esc(c.name)}</h2></div>
+      <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
+    <div class="pbody">
+    <div class="stats">
+      <div class="stat"><div class="v" id="flclock" data-tz="${esc(c.tz)}">${clockIn(c.tz)}</div><div class="l">Ora acum în ${esc(c.name)}, cu ${behind} ore în urma României</div></div>
+      ${c.pop ? `<div class="stat"><div class="v">${num(c.pop)}</div><div class="l">locuitori</div></div>` : ''}
+      <div class="stat"><div class="v" style="font-size:17px">${esc(TZ_RO[c.tz] || c.tz)}</div><div class="l">fusul orar</div></div>
+    </div>
+    <section><h3>Vremea acum</h3><div id="pwx"><div class="skeleton" style="height:120px"></div></div></section>
+    <section><h3>${venues.length === 1 ? 'Stadionul' : 'Stadioanele'}</h3><div class="vcards">${venues.map(v => `<button class="vcard" type="button" data-venue="${esc(v.id)}">${v.photo || v.credit ? `<img src="${esc(v.photo || v.credit.url)}" alt="" loading="lazy">` : ''}<span class="vb"><b>${esc(v.name)}</b><small>${v.teams.map(t => esc(t.name)).join(' · ')}</small><small>${v.capacity ? num(v.capacity) + ' locuri · ' : ''}${roofWord(v)}</small></span></button>`).join('')}</div></section>
+    <section><h3>Echipe</h3><div class="hosts">${venues.flatMap(v => v.teams).map(t => clubBtn(t, ctx)).join('')}</div></section>
+    ${games.up.length ? `<section><h3>Echipele din Florida joacă aici</h3><div class="rows">${games.up.slice(0, 6).map(ctx.row).join('')}</div></section>` : ''}
+    <div class="fn">Oraș din afara Floridei: pagina are faptele de bază (ora, vremea, echipele), fără textele în română de la orașele din Florida.</div>
+    <div class="btns"><button class="ghost" type="button" data-share>Copiază linkul</button></div>
+    </div>`;
+}
+export function venueLiteHtml(v, ctx) {
+  const c = cityOf(v), games = ctx.gamesAt([v.id]);
+  const now = new Date().getFullYear();
+  return `<div class="band photo">${litePhoto(v, v.name)}<div class="bandtxt"><div class="lgn">${v.kind === 'arena' ? 'Arenă' : 'Stadion'} · ${c ? `<button class="linkish" type="button" data-city="${esc(c.id)}">${esc(c.name)}</button>, ${esc(c.state)}` : ''}</div><h2 id="prof-name">${esc(v.name)}</h2></div>
+      <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
+    <div class="pbody">
+    <div class="stats">
+      ${v.capacity ? `<div class="stat"><div class="v">${num(v.capacity)}</div><div class="l">locuri</div></div>` : ''}
+      ${v.opened ? `<div class="stat"><div class="v">${esc(v.opened)}</div><div class="l">deschis${+v.opened < now ? ` (acum ${now - +v.opened} ani)` : ''}</div></div>` : ''}
+      <div class="stat"><div class="v roof-${v.roof}">${v.roof === 'closed' ? (v.kind === 'arena' ? 'În sală' : 'Acoperit') : v.roof === 'retractable' ? 'Retractabil' : 'Aer liber'}</div><div class="l">${esc(ROOF[v.roof] || '')}</div></div>
+      ${c ? `<div class="stat"><div class="v" id="flclock" data-tz="${esc(c.tz)}">${clockIn(c.tz)}</div><div class="l">ora acum, cu ${hoursBehindRomania(new Date(), c.tz)} ore în urma României</div></div>` : ''}
+    </div>
+    <section><h3>${v.teams.length === 1 ? 'Echipa gazdă' : 'Echipele gazdă'}</h3><div class="hosts">${v.teams.map(t => clubBtn(t, ctx)).join('')}</div></section>
+    <section><h3>${v.roof === 'closed' ? 'Vremea afară' : 'Vremea'}</h3><div id="pwx"><div class="skeleton" style="height:110px"></div></div></section>
+    ${games.up.length ? `<section><h3>Echipele din Florida joacă aici</h3><div class="rows">${games.up.slice(0, 6).map(ctx.row).join('')}</div></section>` : ''}
+    ${games.past.length ? `<section><h3>Ultimele meciuri ale echipelor din Florida aici</h3><div class="rows">${games.past.slice(0, 4).map(ctx.row).join('')}</div></section>` : ''}
+    ${v.names?.length ? `<section><h3>Nume anterioare</h3><ol class="tline">${v.names.slice().reverse().map(([n, a, b]) => `<li><span class="yr">${a ?? ''}${b ? '–' + b : ''}</span><span>${esc(n)}</span></li>`).join('')}</ol></section>` : ''}
+    <dl class="facts">${c ? `<dt>Oraș</dt><dd><button class="linkish" type="button" data-city="${esc(c.id)}">${esc(c.name)}</button>, ${esc(c.state)}, ${esc(c.country)}</dd>` : ''}${v.surface ? `<dt>Gazon</dt><dd>${esc(v.surface)}</dd>` : ''}<dt>Acoperiș</dt><dd>${esc(ROOF[v.roof] || '')}</dd><dt>Hartă</dt><dd><a href="https://www.openstreetmap.org/search?query=${encodeURIComponent(v.name + ', ' + (c?.name || ''))}" target="_blank" rel="noopener">OpenStreetMap</a></dd></dl>
+    <div class="fn">Date: ESPN, Open-Meteo${v.opened || v.capacity ? ', American Sports Encyclopedia' : ''}.</div>
+    <div class="btns">${c ? `<button class="ghost" type="button" data-city="${esc(c.id)}">Despre ${esc(c.name)}</button>` : ''}<button class="ghost" type="button" data-share>Copiază linkul</button></div>
+    </div>`;
+}
+
 // The weather block of a city or stadium page, filled in when the forecast arrives.
 export function placeWeatherHtml(w, v, next) {
   let html = nowHtml(w, v ? (v.roof === 'closed' ? 'Afară' : '') : '') + daysHtml(w);
