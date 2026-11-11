@@ -232,6 +232,17 @@ const CAT_RO = {
 };
 export const catRo = c => CAT_RO[String(c || '').toLowerCase().trim()] || c;
 
+// Leader values such as "Matches: 31, Goals: 26" -> "26 de goluri în 31 de meciuri".
+const VAL_WORD = { goals: ['gol', 'goluri'], assists: ['pasă decisivă', 'pase decisive'], matches: ['meci', 'meciuri'], games: ['meci', 'meciuri'], shots: ['șut', 'șuturi'], saves: ['paradă', 'parade'], appearances: ['meci', 'meciuri'] };
+const count = (n, [one, many]) => (n === 1 ? `1 ${one}` : `${n}${n % 100 >= 20 || n % 100 === 0 && n ? ' de' : ''} ${many}`);
+export function leaderValRo(v) {
+  const pairs = [...String(v || '').matchAll(/([A-Za-z]+):\s*(\d+)/g)].map(m => [m[1].toLowerCase(), +m[2]]);
+  if (!pairs.length || pairs.some(([k]) => !VAL_WORD[k])) return v;
+  const games = pairs.find(([k]) => k === 'matches' || k === 'games' || k === 'appearances'), rest = pairs.filter(p => p !== games);
+  const main = rest.map(([k, n]) => count(n, VAL_WORD[k])).join(', ');
+  return games && main ? `${main} în ${count(games[1], VAL_WORD[games[0]])}` : main || count(games[1], VAL_WORD[games[0]]);
+}
+
 // NBA "did not play" reasons, e.g. "COACH'S DECISION", "INJURY/ILLNESS - LEFT KNEE; SPRAIN".
 export function dnpRo(r) {
   const s = String(r || '');

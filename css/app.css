@@ -6,6 +6,8 @@
   --nba:#d9541e; --nhl:#2563c9; --nfl:#2e8b3d; --mls:#b8329a; --mlb:#8a8f98;
   /* game page: home team / away team (validated pair, see the dataviz palette check) */
   --wp-h:#00899c; --wp-a:#c95d1c;
+  /* weather: climate bars (validated pair) and icon colours */
+  --wx-hot:#d0652a; --wx-rain:#2f78c4; --wx-sun:#e8a317; --wx-cloud:#9aa9ad; --wx-cloud-d:#6c7c80; --wx-bolt:#f2b705;
   --display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -17,6 +19,7 @@
     --good:#58cf8b; --warn:#f0b24a; --bad:#ff8080;
     --nba:#ff8a55; --nhl:#6ea3ff; --nfl:#5fce70; --mls:#ee7bd3; --mlb:#9aa1ab;
     --wp-h:#1ea3ad; --wp-a:#d9773a;
+    --wx-hot:#d9773a; --wx-rain:#4a8dd6; --wx-sun:#f2b83a; --wx-cloud:#a9b8bc; --wx-cloud-d:#7d8f94; --wx-bolt:#ffd23f;
   }
 }
 :root[data-theme="dark"]{
@@ -26,6 +29,7 @@
   --good:#58cf8b; --warn:#f0b24a; --bad:#ff8080;
   --nba:#ff8a55; --nhl:#6ea3ff; --nfl:#5fce70; --mls:#ee7bd3; --mlb:#9aa1ab;
   --wp-h:#1ea3ad; --wp-a:#d9773a;
+  --wx-hot:#d9773a; --wx-rain:#4a8dd6; --wx-sun:#f2b83a; --wx-cloud:#a9b8bc; --wx-cloud-d:#7d8f94; --wx-bolt:#ffd23f;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -383,4 +387,118 @@ svg.wp [hidden]{display:none}
 @keyframes flash{0%,30%{background-color:color-mix(in srgb,var(--warn) 30%,transparent)}100%{background-color:transparent}}
 .duel .mid.flash{border-radius:8px}
 @media (prefers-reduced-motion:reduce){.flash{animation:none}.prof{transition:none}}
+/* ---- cities, stadiums, weather ---- */
+.linkish{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
+.linkish:hover{color:var(--accent)}
+svg.wx{flex:none;display:block}
+svg.wx .sun{fill:var(--wx-sun)} svg.wx .sun-r{stroke:var(--wx-sun)} svg.wx .moon{fill:var(--wx-cloud)}
+svg.wx .cloud{fill:var(--wx-cloud)} svg.wx .cloud.lite{opacity:.85} svg.wx .cloud.dark{fill:var(--wx-cloud-d)}
+svg.wx .drop{stroke:var(--wx-rain);fill:none} svg.wx .fogl{stroke:var(--wx-cloud);fill:none} svg.wx .bolt{fill:var(--wx-bolt);stroke:var(--wx-cloud-d);stroke-width:.6}
+.wxstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+@media (max-width:680px){.wxstrip{grid-template-columns:1fr 1fr}}
+.wxtile{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"nm nm" "ic tt" "cc cc" "dd dd";gap:0 8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;cursor:pointer}
+.wxtile:hover{border-color:var(--accent)}
+.wxtile .nm{grid-area:nm;font-weight:700;font-size:13px}
+.wxtile svg{grid-area:ic}
+.wxtile .tt{grid-area:tt;font-family:var(--display);font-weight:700;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.wxtile .cc{grid-area:cc;font-size:12.5px}
+.wxtile .dd{grid-area:dd;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mcities,.mvenues{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.ccard,.mvenues button,.vcard{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px;cursor:pointer;width:100%}
+.ccard:hover,.mvenues button:hover,.vcard:hover{border-color:var(--accent)}
+.ccard img,.mvenues img{width:64px;height:48px;object-fit:cover;border-radius:6px;flex:none;background:var(--soft)}
+.ccard span,.mvenues span{display:flex;flex-direction:column;min-width:0}
+.ccard b,.mvenues b{font-size:14px}
+.ccard small,.mvenues small{color:var(--muted);font-size:12px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.vcard{flex-direction:column;align-items:stretch;padding:0;overflow:hidden;background:var(--surface)}
+.vcard img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--soft)}
+.vcard .vb{display:flex;flex-direction:column;gap:2px;padding:8px 10px 10px}
+.vcard small{color:var(--muted);font-size:12.5px;display:flex;align-items:center;flex-wrap:wrap}
+.vcard .emb.sm{vertical-align:0}
+/* photo header of city and stadium pages */
+.band.photo{position:relative;padding:0;display:block;color:#fff;background:#0c1a1d;min-height:150px}
+.hero-ph{margin:0;position:relative}
+.hero-ph img{display:block;width:100%;aspect-ratio:16/8;object-fit:cover;max-height:300px}
+.hero-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,.05) 55%,rgba(0,0,0,.25))}
+.hero-ph figcaption{position:absolute;z-index:1;right:8px;top:8px;font-size:10.5px;background:rgba(0,0,0,.5);color:#fff;padding:1px 6px;border-radius:4px;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-ph figcaption a{color:#fff}
+.band.photo .bandtxt{position:absolute;z-index:1;left:16px;right:60px;bottom:12px;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.band.photo .lgn{opacity:.95}
+.band.photo .lgn .linkish{text-decoration-color:rgba(255,255,255,.7);color:#fff;text-transform:uppercase;letter-spacing:.05em}
+.band.photo .x{position:absolute;z-index:2;left:12px;top:10px;background:rgba(0,0,0,.45);color:#fff;border-color:rgba(255,255,255,.4)}
+.lead{font-size:16px;margin:0;line-height:1.5}
+.pbody section p{margin:0 0 8px;line-height:1.55}
+.pbody section p.tip{background:var(--soft);border-left:4px solid var(--accent);padding:8px 10px;border-radius:6px;font-size:14px}
+.roof-closed,.roof-open,.roof-canopy{font-size:20px}
+.hosts{display:flex;flex-direction:column;gap:6px}
+.host{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;cursor:pointer}
+.host:hover{border-color:var(--accent)}
+.host span{display:flex;flex-direction:column}
+.host small{color:var(--muted);font-size:12.5px}
+ol.tline{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:6px}
+ol.tline li{position:relative;display:grid;grid-template-columns:96px 1fr;gap:8px;font-size:14px}
+ol.tline li::before{content:"";position:absolute;left:-20px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--muted)}
+ol.tline li.cur::before{background:var(--accent);border-color:var(--accent)}
+ol.tline li.cur{font-weight:700}
+ol.tline .yr{color:var(--muted);font-variant-numeric:tabular-nums;font-weight:500}
+details.srcs summary,details.cltable summary{cursor:pointer;font-size:13px;color:var(--muted);font-weight:600}
+details.srcs ul{margin:6px 0 0;padding-left:18px;font-size:13px}
+details.srcs a{color:var(--accent)}
+details.cltable .scroll{margin-top:6px}
+/* weather now + 7 days */
+.wxnow{display:grid;grid-template-columns:auto auto 1fr;gap:4px 14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.wxnow .t{font-family:var(--display);font-size:40px;font-weight:700;line-height:1}
+.wxnow .c{font-size:13.5px}
+.wxnow dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px}
+.wxnow dt{color:var(--muted)} .wxnow dd{margin:0;font-variant-numeric:tabular-nums}
+.wxnow small{grid-column:1/-1;color:var(--muted);font-size:12px}
+@media (max-width:520px){.wxnow{grid-template-columns:auto 1fr}.wxnow dl{grid-column:1/-1}}
+.wxdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:8px}
+.wxd{display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 2px;font-size:12px;font-variant-numeric:tabular-nums;min-width:0}
+.wxd>b{font-size:12px}
+.wxd .rng{position:relative;width:70%;height:4px;background:var(--soft);border-radius:4px}
+.wxd .rng i{position:absolute;top:0;bottom:0;background:var(--wx-hot);border-radius:4px}
+.wxd .hl b{font-weight:700}
+.wxd .hl{color:var(--muted)} .wxd .hl b{color:var(--ink)}
+.wxd small{color:var(--muted);font-size:11px} .wxd small.wet,.gwxhours small.wet{color:var(--wx-rain);font-weight:700}
+/* weather on the game page */
+.gwx h3 small{font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);margin-left:4px}
+.gwx h3 .linkish{color:var(--muted)}
+.gwx p{margin:0;font-size:14px;line-height:1.5}
+.gwxrow{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.gwxtop{display:grid;grid-template-columns:auto auto 1fr;gap:4px 14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px 12px 0 0;padding:12px}
+.gwxtop .t{font-family:var(--display);font-size:36px;font-weight:700;line-height:1}
+.gwxtop .c{font-size:13px}
+.gwxtop dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px}
+.gwxtop dt{color:var(--muted)} .gwxtop dd{margin:0}
+@media (max-width:520px){.gwxtop{grid-template-columns:auto 1fr}.gwxtop dl{grid-column:1/-1}}
+.gwxhours{display:flex;gap:0;background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:6px 4px;overflow-x:auto}
+.gwxhours>div{flex:1 0 54px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;font-variant-numeric:tabular-nums}
+.gwxhours small{color:var(--muted);font-size:11px}
+ul.wxnotes{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:14px}
+ul.wxnotes li{padding:6px 10px;border-radius:8px;background:var(--soft);border-left:4px solid var(--muted)}
+ul.wxnotes li.warn{border-left-color:var(--bad);font-weight:600}
+ul.wxnotes li.rain{border-left-color:var(--wx-rain)}
+ul.wxnotes li.hot{border-left-color:var(--wx-hot)}
+ul.wxnotes li.wind{border-left-color:var(--warn)}
+ul.wxnotes li.ok{border-left-color:var(--good)}
+/* climate charts */
+.clim{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 10px 4px}
+.clh{font-size:12px;font-weight:600;color:var(--muted);margin:2px 0 2px 4px}
+svg.cl{display:block;width:100%;height:auto;touch-action:pan-y}
+svg.cl .gl{stroke:var(--line);stroke-width:1}
+svg.cl .ax{font:500 11px var(--body);fill:var(--muted)}
+svg.cl .mo{font:600 11px var(--body);fill:var(--muted)}
+svg.cl .mo.on{fill:var(--ink);font-weight:800}
+svg.cl .tb{fill:var(--wx-hot);opacity:.85}
+svg.cl .rb{fill:var(--wx-rain);opacity:.85}
+svg.cl .tb.on,svg.cl .rb.on{opacity:1;stroke:var(--ink);stroke-width:2}
+svg.cl .hov{opacity:1}
+svg.cl .hurr{fill:var(--soft)}
+svg.cl .hit{fill:transparent;cursor:pointer}
+.cltip{position:absolute;top:30px;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:8px;padding:6px 9px;font-size:12.5px;display:flex;flex-direction:column;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:2}
+.cltip[hidden]{display:none}
+/* The charts scale down with the screen; their labels must not. */
+@media (max-width:520px){svg.cl .ax,svg.cl .mo{font-size:19px}svg.wp .lab,svg.wp .perl{font-size:20px}svg.cl.months{height:auto}}
 @media (max-width:420px){table.box th[scope="row"]{min-width:112px;max-width:132px}.hctl{width:100%;justify-content:space-between}.duel .mid{font-size:26px}.tabs button{padding:9px 9px 8px}}

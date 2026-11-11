@@ -25,6 +25,12 @@ assert.equal(g.away.logo, 'https://a.espncdn.com/i/teamlogos/nfl/500/mia.png');
 assert.equal(g.home.score, 21); assert.equal(g.away.score, 17);
 assert.equal(g.state, 'post'); assert.equal(g.note, 'Etapa 10'); assert.equal(g.region, 'IN'); assert.equal(g.tv, 'CBS');
 assert.equal(normalizeEvent({ id: 1 }, 'NBA'), null);
+// Soccer venues have no state: a Florida team at home counts as Florida, an away game does not.
+const soccer = (homeId, neutral) => normalizeEvent({ id: '9', date: '2026-11-21T23:00Z', competitions: [{ neutralSite: neutral, venue: { fullName: 'Nu Stadium', address: { country: 'USA' } },
+  competitors: [{ homeAway: 'home', team: { id: homeId, displayName: 'H' } }, { homeAway: 'away', team: { id: '2', displayName: 'A' } }], status: { type: { state: 'pre' } } }] }, 'MLS', { 'MLS:20232': 'intermiami' });
+assert.equal(soccer('20232', false).region, 'FL');
+assert.equal(soccer('20232', true).region, 'USA');
+assert.equal(soccer('183', false).region, 'USA');
 
 const st = normalizeStandings({
   children: [{
@@ -129,5 +135,24 @@ assert.equal(ro.nflPlayRo('Bucky Irving 2 Yd Rush (Chase McLaughlin Kick)'), 'Bu
 assert.equal(ro.bodyRo('Ankle', 'Sprain', 'Right'), 'gleznă (partea dreaptă), entorsă');
 assert.equal(ro.statNum('7-13', 'ratio'), 7 / 13); assert.equal(ro.statNum('31:15', 'clock'), 1875); assert.equal(ro.statNum('0.9', 'pct'), 90);
 assert.equal(ro.boxCols('NHL', 'forwards'), ro.boxCols('NHL', 'defenses'));
+assert.equal(ro.leaderValRo('Matches: 31, Goals: 26'), '26 de goluri în 31 de meciuri');
+assert.equal(ro.leaderValRo('Matches: 14, Goals: 6'), '6 goluri în 14 meciuri');
+assert.equal(ro.leaderValRo('Matches: 30, Assists: 1'), '1 pasă decisivă în 30 de meciuri');
+assert.equal(ro.leaderValRo('21.4'), '21.4');
+
+// Weather: Open-Meteo answer -> page format; the Florida check of the weather function.
+const wx = await import('../netlify/lib/weather.mjs');
+const f = wx.normalizeForecast({ latitude: 25.96, longitude: -80.24,
+  current: { time: '2026-11-10T19:00', temperature_2m: 26.04, apparent_temperature: 30.5, relative_humidity_2m: 83, weather_code: 0, wind_speed_10m: 7.2, wind_gusts_10m: 16, precipitation: 0, is_day: 0 },
+  daily: { time: ['2026-11-10'], weather_code: [3], temperature_2m_max: [30], temperature_2m_min: [22.5], precipitation_probability_max: [6], precipitation_sum: [0], sunrise: ['2026-11-10T06:35'], sunset: ['2026-11-10T17:33'], uv_index_max: [5.9], wind_speed_10m_max: [14] },
+  hourly: { time: ['2026-11-10T19:00', '2026-11-10T20:00'], temperature_2m: [26, 25.3], weather_code: [0, 95], precipitation_probability: [1, 70] } });
+assert.deepEqual([f.now.temp, f.now.wind, f.now.day, f.days[0].hi, f.hours.code[1], f.hours.pp[1], f.hours.gust.length], [26, 7, false, 30, 95, 70, 0]);
+assert.equal(wx.normalizeForecast({ current: {} }, true).hours, undefined);
+assert.equal(wx.inFlorida(25.78, -80.19), true); assert.equal(wx.inFlorida(40.7, -74), false);
+const pl = await import('../js/places.js');
+assert.equal(pl.nyHourKey(new Date('2026-11-15T18:00:00Z')), '2026-11-15T13:00');
+assert.equal(pl.nyHourKey(new Date('2026-07-04T23:30:00Z')), '2026-07-04T19:00');
+assert.equal(pl.hoursBehindRomania(new Date('2026-11-15T12:00:00Z')), 7);
+assert.equal(pl.hoursBehindRomania(new Date('2026-03-20T12:00:00Z')), 6, 'US clocks change three weeks before Europe');
 
 console.log('all ESPN reader checks passed');

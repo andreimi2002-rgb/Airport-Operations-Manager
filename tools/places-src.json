@@ -1,0 +1,287 @@
+{
+  "_about": "Sursa paginilor de oraș și stadion. Textele sunt scrise aici, în română; tools/build-places.mjs adaugă coordonatele (Wikipedia), datele pozelor (Wikimedia Commons), clima pe luni (Open-Meteo, 2016–2025) și distanțele cu mașina (OSRM) și scrie data/places.json. Faptele de bază pentru 7 stadioane și 5 orașe vin din proiectul usa-places-explorer (American Sports Encyclopedia).",
+  "cities": {
+    "miami": {
+      "name": "Miami", "metro": "mia", "wiki": "Miami", "county": "Miami-Dade", "pop": 442241, "founded": "1896",
+      "airport": { "code": "MIA", "name": "Aeroportul Internațional Miami" },
+      "image": "File:Downtown Miami skyline 20100305.jpg",
+      "summary": "Cel mai mare centru al Floridei de Sud și poarta Americii spre America Latină. Aici joacă Heat și Inter Miami; Dolphins sunt puțin mai la nord, în Miami Gardens.",
+      "about": [
+        "Miami e singurul mare oraș american fondat de o femeie: Julia Tuttle a convins compania de cale ferată a lui Henry Flagler să ducă linia până aici, iar orașul a fost înființat în 1896. A crescut atât de repede încât i s-a spus „Magic City”.",
+        "Orașul are puțin peste 440.000 de locuitori, dar zona metropolitană, care cuprinde și Fort Lauderdale și West Palm Beach, trece de 6 milioane și e cea mai mare din Florida. Majoritatea locuitorilor sunt de origine hispanică; cartierul Little Havana e inima comunității cubaneze.",
+        "Pentru meciuri: Kaseya Center e în centru, pe malul golfului Biscayne; Nu Stadium, stadionul nou al lui Inter Miami, e lângă aeroport; Hard Rock Stadium, al lui Dolphins, e în Miami Gardens, spre nord."
+      ],
+      "sources": [
+        { "title": "Miami (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Miami" },
+        { "title": "American Sports Encyclopedia: Miami", "url": "https://github.com/andreimi2002-rgb/usa-places-explorer" }
+      ]
+    },
+    "miami-gardens": {
+      "name": "Miami Gardens", "metro": "mia", "wiki": "Miami Gardens, Florida", "county": "Miami-Dade", "pop": 111640, "founded": "2003",
+      "airport": { "code": "MIA", "name": "Aeroportul Internațional Miami" },
+      "image": "File:Miami Gardens FL Sunshine State Arch 01.JPG",
+      "summary": "Oraș tânăr la nord de Miami, cunoscut pentru Hard Rock Stadium: Dolphins, Super Bowl, Formula 1 și turneul de tenis Miami Open.",
+      "about": [
+        "Miami Gardens a devenit oraș abia în 2003, din mai multe cartiere ale comitatului Miami-Dade. Are în jur de 111.000 de locuitori și e cel mai mare oraș cu majoritate afro-americană din Florida.",
+        "Viața sportivă se învârte în jurul Hard Rock Stadium. Pe lângă meciurile lui Dolphins, aici se joacă Orange Bowl, unul dintre marile meciuri ale fotbalului american universitar, turneul de tenis Miami Open și, din 2022, Marele Premiu de Formula 1 de la Miami, pe un circuit construit în jurul stadionului."
+      ],
+      "sources": [
+        { "title": "Miami Gardens, Florida (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Miami_Gardens,_Florida" },
+        { "title": "Hard Rock Stadium (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Hard_Rock_Stadium" }
+      ]
+    },
+    "sunrise": {
+      "name": "Sunrise", "metro": "mia", "wiki": "Sunrise, Florida", "county": "Broward", "pop": 97335, "founded": "1961",
+      "airport": { "code": "FLL", "name": "Aeroportul Internațional Fort Lauderdale–Hollywood" },
+      "image": "File:Sunrise, Florida Aerial.jpg",
+      "summary": "Oraș din comitatul Broward, la marginea mlaștinilor Everglades, unde joacă Florida Panthers.",
+      "about": [
+        "Sunrise a fost fondat în 1961 de constructorul Norman Johnson, sub numele „Sunrise Golf Village”, ca un cartier de case noi la vest de Fort Lauderdale. Azi are aproape 100.000 de locuitori.",
+        "Arena lui Panthers e chiar lângă Sawgrass Mills, unul dintre cele mai mari centre comerciale de tip outlet din Statele Unite, iar la vest de oraș încep mlaștinile Everglades.",
+        "Panthers au jucat primele sezoane la Miami Arena, în centrul orașului Miami, și s-au mutat aici în 1998. De atunci, Sunrise a văzut două Cupe Stanley câștigate pe propria gheață, în 2024 și 2025."
+      ],
+      "sources": [
+        { "title": "Sunrise, Florida (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Sunrise,_Florida" },
+        { "title": "Amerant Bank Arena (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Amerant_Bank_Arena" }
+      ]
+    },
+    "tampa": {
+      "name": "Tampa", "metro": "tpa", "wiki": "Tampa, Florida", "county": "Hillsborough", "pop": 384959, "founded": "1855",
+      "airport": { "code": "TPA", "name": "Aeroportul Internațional Tampa" },
+      "image": "File:Tampa Skyline - Eric Statzer.jpg",
+      "summary": "Oraș port pe coasta Golfului Mexic, cu două echipe campioane în ultimii ani: Buccaneers și Lightning.",
+      "about": [
+        "Tampa s-a dezvoltat la sfârșitul secolului al XIX-lea în jurul portului și al fabricilor de trabucuri din cartierul Ybor City, fondat în 1886 de Vicente Martinez-Ybor. De aici și porecla „Cigar City”.",
+        "Din 1904, orașul ține în fiecare an festivalul Gasparilla, în care o corabie de „pirați” invadează orașul. De aici vine și tema lui Buccaneers: corabia de pe stadion și tunurile trase la fiecare punct marcat.",
+        "În mai puțin de un an, între septembrie 2020 și iulie 2021, Tampa a câștigat trei titluri: Cupa Stanley de două ori (Lightning) și Super Bowl LV (Buccaneers, pe propriul stadion). Presa americană i-a spus atunci „Champa Bay”."
+      ],
+      "sources": [
+        { "title": "Tampa, Florida (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Tampa,_Florida" },
+        { "title": "Gasparilla Pirate Festival (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Gasparilla_Pirate_Festival" },
+        { "title": "American Sports Encyclopedia: Tampa", "url": "https://github.com/andreimi2002-rgb/usa-places-explorer" }
+      ]
+    },
+    "orlando": {
+      "name": "Orlando", "metro": "orl", "wiki": "Orlando, Florida", "county": "Orange", "pop": 307573, "founded": "1875",
+      "airport": { "code": "MCO", "name": "Aeroportul Internațional Orlando" },
+      "image": "File:Lake-eola-park-orlando-florida.jpg",
+      "summary": "Capitala parcurilor de distracție, în centrul Floridei, cu Magic în NBA și Orlando City în MLS.",
+      "about": [
+        "Orlando era un oraș mic, înconjurat de plantații de portocali, până în 1971, când s-a deschis Walt Disney World la sud-vest de oraș. Azi zona primește zeci de milioane de turiști pe an.",
+        "Orașul propriu-zis are circa 307.000 de locuitori și un centru compact, construit în jurul lacului Eola. Kia Center, arena lui Magic, e în centru, iar Inter&Co Stadium, stadionul lui Orlando City, e la câteva minute de mers pe jos spre vest.",
+        "În 2027, Orlando găzduiește temporar și meciurile de acasă ale lui Jacksonville Jaguars, pe Camping World Stadium, cât timp stadionul din Jacksonville e reconstruit."
+      ],
+      "tips": [
+        "SunRail, trenul regional, oprește la stația Church Street, lângă Kia Center. Cu biletul la un meci Magic din zilele lucrătoare, călătoria e gratuită."
+      ],
+      "sources": [
+        { "title": "Orlando, Florida (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Orlando,_Florida" },
+        { "title": "SunRail: Train to the Game", "url": "https://sunrail.com/agency-information/press-releases/back-by-popular-demand-sunrail-and-the-orlando-magic-train-to-the-game/" },
+        { "title": "Jaguars planning to play 2027 season in Orlando (WUSF)", "url": "https://www.wusf.org/sports/2025-11-10/jacksonville-jaguars-planning-to-play-2027-season-in-orlando-during-stadium-renovation" },
+        { "title": "American Sports Encyclopedia: Orlando", "url": "https://github.com/andreimi2002-rgb/usa-places-explorer" }
+      ]
+    },
+    "jacksonville": {
+      "name": "Jacksonville", "metro": "jax", "wiki": "Jacksonville, Florida", "county": "Duval", "pop": 949611, "founded": "1822",
+      "airport": { "code": "JAX", "name": "Aeroportul Internațional Jacksonville" },
+      "image": "File:Jacksonville skyline.jpg",
+      "summary": "Cel mai întins oraș din Statele Unite continentale, pe râul St. Johns, acasă la Jaguars.",
+      "about": [
+        "În 1968, orașul s-a unit cu comitatul Duval, așa că granițele lui cuprind aproape tot comitatul: peste 2.200 km², mai mult decât orice alt oraș din Statele Unite continentale. Are aproape 950.000 de locuitori, cei mai mulți dintre orașele Floridei.",
+        "Jaguars au intrat în NFL în 1995. Din 2013 joacă aproape în fiecare an cel puțin un meci „de acasă” la Londra.",
+        "Stadionul e reconstruit între 2026 și 2028: în sezonul 2026 se joacă cu capacitate redusă, iar în 2027 Jaguars își mută meciurile de acasă la Orlando."
+      ],
+      "sources": [
+        { "title": "Jacksonville, Florida (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Jacksonville,_Florida" },
+        { "title": "Jaguars prep for home season with EverBank Stadium getting renovated (NFL.com)", "url": "https://www.nfl.com/news/jaguars-everbank-stadium-renovation-2026-season" }
+      ]
+    }
+  },
+  "venues": {
+    "kaseya-center": {
+      "name": "Kaseya Center", "city": "miami", "wiki": "Kaseya Center", "kind": "arena", "roof": "closed",
+      "teams": ["heat"], "espn": ["Kaseya Center"],
+      "address": "601 Biscayne Boulevard, Miami", "opened": "1999", "owner": "Comitatul Miami-Dade",
+      "capacity": [["baschet", 19600]],
+      "names": [["American Airlines Arena", 1999, 2021], ["FTX Arena", 2021, 2023], ["Miami-Dade Arena", 2023, 2023], ["Kaseya Center", 2023, null]],
+      "image": "File:Kaseya Center Downtown Miami FL, 5 April 2024.jpg",
+      "summary": "Arena lui Heat din 2000, pe malul golfului Biscayne, în centrul orașului Miami.",
+      "about": [
+        "Heat au jucat aici primul meci pe 2 ianuarie 2000, o victorie cu Orlando Magic, 111–103. Arena e a comitatului Miami-Dade și stă chiar pe malul golfului, lângă Bayside Marketplace și portul de croaziere.",
+        "Numele ei arată cum funcționează arenele americane: firmele plătesc ca să-și pună numele pe clădire. A fost American Airlines Arena până în 2021, apoi FTX Arena, până la falimentul bursei de criptomonede FTX, câteva luni Miami-Dade Arena și, din aprilie 2023, Kaseya Center."
+      ],
+      "moments": [
+        "Heat au câștigat aici titlurile NBA din 2012 și 2013; pe cel din 2006 l-au câștigat la Dallas.",
+        "Finale NBA jucate aici: 2006, 2011, 2012, 2013, 2014 și 2023."
+      ],
+      "sources": [
+        { "title": "Kaseya Center (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Kaseya_Center" },
+        { "title": "Miami Heat home arena gets temporary name (NBA.com)", "url": "https://www.nba.com/news/miami-heat-home-arena-gets-temporary-name-after-ftx-collapse" },
+        { "title": "All 30 NBA arenas by team (NBA.com)", "url": "https://www.nba.com/news/all-30-nba-arenas-by-team" }
+      ]
+    },
+    "amerant-bank-arena": {
+      "name": "Amerant Bank Arena", "city": "sunrise", "wiki": "Amerant Bank Arena", "kind": "arena", "roof": "closed",
+      "teams": ["panthers"], "espn": ["Amerant Bank Arena", "FLA Live Arena"],
+      "address": "1 Panther Parkway, Sunrise", "opened": "1998", "owner": "Comitatul Broward",
+      "capacity": [["hochei", 19250], ["concerte", 23000]],
+      "names": [["National Car Rental Center", 1998, 2002], ["Office Depot Center", 2002, 2005], ["BankAtlantic Center", 2005, 2012], ["BB&T Center", 2012, 2021], ["FLA Live Arena", 2021, 2023], ["Amerant Bank Arena", 2023, null]],
+      "image": "File:View of Amerant Bank Arena from Publix Plaza before a Florida Panthers game during the 2023-24 season..jpg",
+      "summary": "Arena lui Florida Panthers din 1998, unde echipa a câștigat Cupa Stanley în 2024 și în 2025.",
+      "about": [
+        "Arena s-a deschis pe 3 octombrie 1998, cu un concert Celine Dion. E a comitatului Broward și a avut șase nume în 25 de ani: National Car Rental Center, Office Depot Center, BankAtlantic Center, BB&T Center, FLA Live Arena și, din septembrie 2023, Amerant Bank Arena.",
+        "Aici Panthers au câștigat Cupa Stanley de două ori la rând, de fiecare dată în finala cu Edmonton Oilers: în 2024 în meciul 7, în 2025 în meciul 6."
+      ],
+      "moments": [
+        "Tradiția șobolanilor: în octombrie 1995, Scott Mellanby a omorât cu crosa un șobolan în vestiar și apoi a marcat două goluri. De atunci, fanii aruncă șobolani de plastic pe gheață după victoriile importante.",
+        "A găzduit All-Star Game-ul NHL în 2003 și 2023."
+      ],
+      "sources": [
+        { "title": "Amerant Bank Arena (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Amerant_Bank_Arena" },
+        { "title": "Rat trick (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Rat_trick" }
+      ]
+    },
+    "benchmark-international-arena": {
+      "name": "Benchmark International Arena", "city": "tampa", "wiki": "Benchmark International Arena", "kind": "arena", "roof": "closed",
+      "teams": ["lightning"], "espn": ["Benchmark International Arena", "Amalie Arena"],
+      "address": "401 Channelside Drive, Tampa", "opened": "1996", "owner": "Comitatul Hillsborough",
+      "capacity": [["hochei", 19092], ["concerte", 21500]],
+      "names": [["Ice Palace", 1996, 2002], ["St. Pete Times Forum", 2002, 2012], ["Tampa Bay Times Forum", 2012, 2014], ["Amalie Arena", 2014, 2025], ["Benchmark International Arena", 2025, null]],
+      "image": "File:Amalie Arena.jpg",
+      "summary": "Arena lui Tampa Bay Lightning din 1996, în centrul orașului, cu bobinele Tesla care trimit fulgere deasupra gheții.",
+      "about": [
+        "S-a deschis pe 20 octombrie 1996 sub numele Ice Palace, în cartierul Channelside, lângă port. Din august 2025 se numește Benchmark International Arena; înainte a fost, pe rând, St. Pete Times Forum, Tampa Bay Times Forum și Amalie Arena.",
+        "Lightning au câștigat aici Cupa Stanley în 2004 (meciul 7 cu Calgary) și în 2021 (cu Montreal). Titlul din 2020 l-au câștigat în „bula” de la Edmonton, fără spectatori."
+      ],
+      "moments": [
+        "Sub acoperiș sunt bobine Tesla care descarcă fulgere electrice adevărate când Lightning marchează.",
+        "A găzduit All-Star Game-ul NHL în 1999 și 2018 și Final Four-ul baschetului universitar feminin de patru ori."
+      ],
+      "sources": [
+        { "title": "Benchmark International Arena (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Benchmark_International_Arena" }
+      ]
+    },
+    "hard-rock-stadium": {
+      "name": "Hard Rock Stadium", "city": "miami-gardens", "wiki": "Hard Rock Stadium", "kind": "stadium", "roof": "canopy",
+      "surface": "iarbă naturală (Bermuda)",
+      "teams": ["dolphins"], "espn": ["Hard Rock Stadium"],
+      "address": "347 Don Shula Drive, Miami Gardens", "opened": "1987", "owner": "Stephen M. Ross, proprietarul lui Dolphins",
+      "capacity": [["fotbal american", 64767], ["tenis", 14000]],
+      "names": [["Joe Robbie Stadium", 1987, 1996], ["Pro Player Park / Pro Player Stadium", 1996, 2005], ["Dolphins Stadium / Dolphin Stadium", 2005, 2009], ["Land Shark Stadium", 2009, 2010], ["Sun Life Stadium", 2010, 2016], ["New Miami Stadium", 2016, 2016], ["Hard Rock Stadium", 2016, null]],
+      "image": "File:Interior of updated Hard Rock Stadium.jpg",
+      "summary": "Stadionul lui Miami Dolphins din 1987: șase Super Bowl-uri, Formula 1, tenis și meciuri de Cupă Mondială în 2026.",
+      "about": [
+        "S-a deschis în august 1987 ca Joe Robbie Stadium, după numele fondatorului lui Dolphins, care l-a construit cu bani privați. De atunci a schimbat numele de mai multe ori; din 2016 se numește Hard Rock Stadium.",
+        "În 2016 a primit o copertină care acoperă tribunele, dar nu și terenul: spectatorii stau la umbră și feriți de ploaie, jucătorii nu.",
+        "Pe lângă Dolphins, aici se joacă Orange Bowl la fotbal american universitar, turneul de tenis Miami Open (din 2019) și Marele Premiu de Formula 1 de la Miami, pe un circuit construit în jurul stadionului (din 2022). În vara lui 2026 a fost stadion al Cupei Mondiale, sub numele Miami Stadium."
+      ],
+      "moments": [
+        "Șase Super Bowl-uri: 1989, 1995, 1999, 2007, 2010 și 2020."
+      ],
+      "sources": [
+        { "title": "Hard Rock Stadium (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Hard_Rock_Stadium" }
+      ]
+    },
+    "raymond-james-stadium": {
+      "name": "Raymond James Stadium", "city": "tampa", "wiki": "Raymond James Stadium", "kind": "stadium", "roof": "open",
+      "surface": "iarbă naturală (Bermuda)",
+      "teams": ["bucs"], "espn": ["Raymond James Stadium"],
+      "address": "4201 North Dale Mabry Highway, Tampa", "opened": "1998", "owner": "Tampa Sports Authority",
+      "capacity": [["fotbal american", 65890]],
+      "names": [["Raymond James Stadium", 1998, null]],
+      "image": "File:Raymond James Stadium02.JPG",
+      "summary": "Stadionul lui Buccaneers din 1998, cu o corabie de pirați în tribună și trei Super Bowl-uri găzduite.",
+      "about": [
+        "Stadionul s-a deschis în 1998, lângă vechiul Tampa Stadium, pe care l-a înlocuit. Numele vine de la Raymond James, o companie financiară din zonă.",
+        "În capătul nordic e o corabie de pirați lungă de peste 30 de metri, din care se trag tunuri când Buccaneers marchează. Corabia trimite la Gasparilla, festivalul cu pirați al orașului."
+      ],
+      "moments": [
+        "A găzduit Super Bowl-urile XXXV (2001), XLIII (2009) și LV (2021). În 2021, Buccaneers au devenit prima echipă care câștigă Super Bowl-ul pe propriul stadion."
+      ],
+      "sources": [
+        { "title": "Raymond James Stadium (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Raymond_James_Stadium" },
+        { "title": "List of current NFL stadiums (Wikipedia)", "url": "https://en.wikipedia.org/wiki/List_of_current_National_Football_League_stadiums" }
+      ]
+    },
+    "everbank-stadium": {
+      "name": "EverBank Stadium", "city": "jacksonville", "wiki": "EverBank Stadium", "kind": "stadium", "roof": "open",
+      "surface": "iarbă naturală (Bermuda)",
+      "teams": ["jaguars"], "espn": ["EverBank Stadium"],
+      "address": "1 EverBank Stadium Drive, Jacksonville", "opened": "1995", "owner": "Orașul Jacksonville",
+      "capacity": [["fotbal american, normal", 69132], ["fotbal american, în 2026", 42507]],
+      "names": [["Jacksonville Municipal Stadium", 1995, 1997], ["Alltel Stadium", 1997, 2007], ["Jacksonville Municipal Stadium", 2007, 2010], ["EverBank Field", 2010, 2018], ["TIAA Bank Field", 2018, 2023], ["EverBank Stadium", 2023, null]],
+      "image": "File:Chiefs at Jaguars (53314666155).jpg",
+      "summary": "Stadionul lui Jacksonville Jaguars de pe malul râului St. Johns, în plină reconstrucție (2026–2028).",
+      "about": [
+        "S-a deschis în 1995 pentru Jaguars, pe locul vechiului stadion Gator Bowl. A găzduit Super Bowl XXXIX, în 2005, și, an de an, meciul de fotbal american universitar dintre Florida și Georgia.",
+        "Din 2014 are în capătul nordic piscine pentru spectatori, o premieră în NFL.",
+        "Renovarea, de aproximativ 1,4 miliarde de dolari, a început în 2026: în sezonul 2026 încap doar circa 42.500 de spectatori, în 2027 Jaguars joacă acasă la Orlando, iar întoarcerea e plănuită pentru sezonul 2028."
+      ],
+      "sources": [
+        { "title": "EverBank Stadium (Wikipedia)", "url": "https://en.wikipedia.org/wiki/EverBank_Stadium" },
+        { "title": "Jaguars prep for home season with EverBank Stadium getting renovated (NFL.com)", "url": "https://www.nfl.com/news/jaguars-everbank-stadium-renovation-2026-season" },
+        { "title": "Jaguars announce temporary home for 2027 (CBS Sports)", "url": "https://cbssports.com/nfl/news/jaguars-orlando-2027-temporary-stadium/" }
+      ]
+    },
+    "kia-center": {
+      "name": "Kia Center", "city": "orlando", "wiki": "Kia Center", "kind": "arena", "roof": "closed",
+      "teams": ["magic"], "espn": ["Kia Center"],
+      "address": "400 West Church Street, Orlando", "opened": "2010", "owner": "Orașul Orlando",
+      "capacity": [["baschet", 18846]],
+      "names": [["Amway Center", 2010, 2023], ["Kia Center", 2023, null]],
+      "image": "File:Kia Center 12-22-24.jpg",
+      "summary": "Arena lui Orlando Magic din 2010, în centrul orașului, la doi pași de trenul SunRail.",
+      "about": [
+        "Arena s-a deschis pe 1 octombrie 2010 și a înlocuit Orlando Arena, prima casă a lui Magic, unde s-au jucat finalele NBA din 1995. E a orașului Orlando.",
+        "Primii 13 ani a purtat numele Amway, compania fondată de Rich DeVos, fostul proprietar al lui Magic. Din decembrie 2023 se numește Kia Center.",
+        "Nu e doar pentru baschet: în primii 15 ani a găzduit 3.291 de evenimente, cu aproape 20 de milioane de spectatori, printre care 644 de meciuri Magic, aproape 500 de concerte și meciurile lui Orlando Solar Bears, echipa de hochei din liga minoră ECHL."
+      ],
+      "sources": [
+        { "title": "Kia Center celebrates 15 legendary years", "url": "https://www.kiacenter.com/news/detail/kia-center-celebrates-15-legendary-years" },
+        { "title": "City of Orlando: Venues", "url": "https://www.orlando.gov/Our-Government/Departments-Offices/Venues" },
+        { "title": "All 30 NBA arenas by team (NBA.com)", "url": "https://www.nba.com/news/all-30-nba-arenas-by-team" }
+      ]
+    },
+    "inter-co-stadium": {
+      "name": "Inter&Co Stadium", "city": "orlando", "wiki": "Inter&Co Stadium", "kind": "stadium", "roof": "open",
+      "surface": "iarbă naturală",
+      "teams": ["orlandocity"], "espn": ["Inter&Co Stadium", "Exploria Stadium"],
+      "address": "655 West Church Street, Orlando", "opened": "2017", "owner": "Orlando City SC",
+      "capacity": [["fotbal", 25500]],
+      "names": [["Orlando City Stadium", 2017, 2019], ["Exploria Stadium", 2019, 2024], ["Inter&Co Stadium", 2024, null]],
+      "image": "File:Orlando City Stadium (04-21-18) 1.jpg",
+      "summary": "Stadionul lui Orlando City, construit special pentru fotbal, la câteva minute de centrul orașului.",
+      "about": [
+        "S-a deschis în 2017, construit de club special pentru fotbal: tribunele sunt aproape de teren, fără pistă de atletism. Aici joacă și Orlando Pride, echipa feminină din NWSL.",
+        "În capătul sudic e „The Wall”, o tribună de aproape 4.000 de locuri în picioare, prima de acest fel construită într-un stadion din MLS.",
+        "În tribune sunt 49 de scaune în culorile curcubeului, în memoria celor 49 de oameni uciși în atacul din clubul Pulse din Orlando, în iunie 2016."
+      ],
+      "moments": [
+        "A găzduit All-Star Game-ul MLS din 2019."
+      ],
+      "sources": [
+        { "title": "Inter&Co Stadium (Wikipedia)", "url": "https://en.wikipedia.org/wiki/Inter%26Co_Stadium" },
+        { "title": "2026 Major League Soccer season (Wikipedia)", "url": "https://en.wikipedia.org/wiki/2026_Major_League_Soccer_season" }
+      ]
+    },
+    "nu-stadium": {
+      "name": "Nu Stadium", "city": "miami", "wiki": "Nu Stadium", "kind": "stadium", "roof": "open",
+      "surface": "iarbă naturală",
+      "teams": ["intermiami"], "espn": ["Nu Stadium", "Miami Freedom Park"],
+      "address": "Miami Freedom Park, lângă Aeroportul Internațional Miami", "opened": "2026",
+      "capacity": [["fotbal", 26700]],
+      "names": [["Nu Stadium", 2026, null]],
+      "image": "File:Nu Stadium 2026.jpg",
+      "summary": "Stadionul nou al lui Inter Miami, deschis în aprilie 2026 lângă aeroportul din Miami.",
+      "about": [
+        "Inter Miami a jucat primele șase sezoane la Fort Lauderdale, pe un stadion provizoriu, Chase Stadium. Nu Stadium e casa definitivă a clubului și face parte din Miami Freedom Park, un complex construit pe locul unui fost teren de golf, lângă aeroport.",
+        "Primul meci s-a jucat pe 4 aprilie 2026: 2–2 cu Austin FC, cu gol marcat de Lionel Messi. O tribună poartă numele lui Messi."
+      ],
+      "sources": [
+        { "title": "Nu Stadium era begins with Inter Miami vs. Austin FC (Local 10)", "url": "https://www.local10.com/sports/local/2026/04/02/nu-stadium-era-begins-with-inter-miami-vs-austin-fc/" },
+        { "title": "Messi marks new stadium with goal (Soccer America)", "url": "https://www.socceramerica.com/messi-marks-new-stadium-with-goal-but-miami-held-by-austin/" },
+        { "title": "Get to know your Nu Stadium (Inter Miami CF)", "url": "https://www.intermiamicf.com/news/we-re-coming-home-get-to-know-your-nu-stadium" }
+      ]
+    }
+  }
+}

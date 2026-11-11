@@ -2,6 +2,7 @@ import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, METROS, norm } from './teams.js
 import { esc, $, emb, pickInk, theme, isDark, onSystemTheme } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
 import { tabsHtml, panelHtml, wpHover } from './game.js';
+import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, stripHtml, STRIP, cityHtml, venueHtml, placeWeatherHtml, climateHover, floridaClock, cityCard } from './places.js';
 
 /* ================= data loading ================= */
 const CACHE_KEY = 'flcal-cache-v1';
@@ -420,8 +421,11 @@ function renderMap() {
   }
   $('map').innerHTML = svg + '</svg>';
   const M = METROS[state.metro], ks = Object.keys(TEAMS).filter(k => TEAMS[k].metro === state.metro), gs = home[state.metro];
+  const P = PLACES.data, cities = P ? Object.values(P.cities).filter(c => c.metro === state.metro) : [];
+  const venues = P ? Object.values(P.venues).filter(v => cities.some(c => c.id === v.city)) : [];
   $('mpanel').innerHTML = `<h3>${M.n}</h3><p>${gs.length} ${gs.length === 1 ? 'meci' : 'meciuri'} acasă în următoarele ${state.horizon} de zile. Numărul din cerc arată meciurile de acasă.</p>
-    <div class="mteams">${ks.map(k => `<button type="button" data-team="${k}">${emb(flSide(k), 'sm')}${esc(TEAMS[k].s)}</button>`).join('')}</div>
+    ${cities.length ? `<div class="mcities">${cities.map(cityCard).join('')}</div>` : ''}
+    ${venues.length ? `<div class="mvenues">${venues.map(v => `<button type="button" data-venue="${v.id}">${v.image ? `<img src="${esc(v.image.small)}" alt="" loading="lazy">` : ''}<span><b>${esc(v.name)}</b><small>${v.teams.map(k => esc(TEAMS[k].s)).join(', ')} · ${v.roof === 'closed' ? 'arenă' : 'aer liber'}</small></span></button>`).join('')}</div>` : `<div class="mteams">${ks.map(k => `<button type="button" data-team="${k}">${emb(flSide(k), 'sm')}${esc(TEAMS[k].s)}</button>`).join('')}</div>`}
     <div class="rows">${gs.slice(0, 7).map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${esc(TEAMS[g.H.key].s)} – ${esc(g.a)}</span><span class="r">${g.tbd ? '' : fmtTime[state.tz].format(g.d)}</span></button>`).join('') || '<div class="row"><span></span><span>Niciun meci acasă în perioadă.</span><span></span></div>'}</div>
     ${gs.length > 7 ? `<div class="fn">și încă ${gs.length - 7}; vezi lista completă cu filtrul „Jucate în Florida”.</div>` : ''}`;
 }
@@ -460,7 +464,7 @@ function show(html, keep) {
 }
 function hideOv() {
   if ($('ov').hidden) return;
-  $('ov').hidden = true; openGameId = null;
+  $('ov').hidden = true; openGameId = null; openPlaceId = null;
   document.body.classList.remove('noscroll');
   $('page').inert = false;
   if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
@@ -480,6 +484,12 @@ function route(keep) {
   const h = decodeURIComponent(location.hash.slice(1)).split('/');
   if (h[0] === 'meci' && BY_ID.has(h[2])) { const t = h[3] || 'rezumat'; if (openGameId !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
   if (h[0] === 'echipa' && TEAMS[h[1]]) { openTeam(h[1], keep); return; }
+  if (h[0] === 'oras' || h[0] === 'stadion') {
+    // Place pages need data/places.json; it is small and usually here already.
+    if (!PLACES.data) { const p = loadPlaces(); if (p) { p.then(d => { if (d) route(keep); }); return; } }
+    if (h[0] === 'oras' && PLACES.data?.cities[h[1]]) { openCity(h[1], keep); return; }
+    if (h[0] === 'stadion' && PLACES.data?.venues[h[1]]) { openVenue(h[1], keep); return; }
+  }
   if (location.hash && GAMES.length) history.replaceState(null, '', location.pathname + location.search);
   hideOv();
 }
@@ -496,7 +506,7 @@ window.addEventListener('popstate', () => route());
 
 function openTeam(k, keep) {
   const T = TEAMS[k]; if (!T) return;
-  openGameId = null;
+  openGameId = null; openPlaceId = null;
   const st = teamStats(k), now = Date.now(), side = flSide(k);
   const mine = GAMES.filter(g => g.teams.includes(k));
   const last = lastGames(k).reverse(), next = mine.filter(g => !played(g) && (isLive(g) || g.end > now)).slice(0, 5);
@@ -517,7 +527,7 @@ function openTeam(k, keep) {
     <div><h3>Forma, ultimele ${last.length} meciuri</h3><div class="form">${formChips(k)}<span>cel mai recent în dreapta</span></div></div>
     <dl class="facts">
       <dt>Rivali</dt><dd>${esc(T.rivals)}</dd>
-      <dt>Arenă</dt><dd>${esc(T.arena)}</dd>
+      <dt>Arenă</dt><dd>${(() => { const v = venueOfTeam(k), c = v && cityOf(v); return v ? `<button class="linkish" type="button" data-venue="${v.id}">${esc(v.name)}</button>${c ? `, <button class="linkish" type="button" data-city="${c.id}">${esc(c.name)}</button>` : ''}` : esc(T.arena); })()}</dd>
       <dt>Capacitate</dt><dd>${esc(T.cap)}</dd>
       <dt>În ligă din</dt><dd>${T.since}</dd>
       <dt>Palmares</dt><dd>${esc(T.titles)}</dd>
@@ -531,6 +541,58 @@ function openTeam(k, keep) {
       <button class="ghost" type="button" data-share>Copiază linkul</button></div>
     </div>`, keep);
 }
+
+/* ================= city and stadium pages ================= */
+const placeCtx = {
+  emb: (k, cls = 'sm') => emb(flSide(k), cls),
+  homeRecord: k => teamStats(k).home || '',
+  // Games played at these venues: upcoming first-to-last, finished last-to-first.
+  gamesAt(ids) {
+    const now = Date.now(), at = GAMES.filter(g => { const v = venueByName(g.v); return v && ids.includes(v.id); });
+    return { up: at.filter(g => !played(g) && (isLive(g) || g.end > now)), past: at.filter(played).reverse() };
+  },
+  row: g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${esc(g.h)} – ${esc(g.a)} <span style="color:var(--muted);font-size:12.5px">· ${g.l}</span></span><span class="r">${played(g) || isLive(g) ? `${g.hs ?? 0}–${g.as ?? 0}` : g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`
+};
+let clockTimer = null;
+function startClock() {
+  clearInterval(clockTimer);
+  clockTimer = setInterval(() => { const el = $('flclock'); if (el) el.textContent = floridaClock(); else clearInterval(clockTimer); }, 20e3);
+}
+async function fillPlaceWeather(pt, venue, ownerId) {
+  try {
+    const [w] = await getWeather([pt], false);
+    if (openPlaceId !== ownerId || !$('pwx')) return;
+    let next = null;
+    if (venue) { const g = placeCtx.gamesAt([venue.id]).up[0]; if (g) next = { id: g.id, label: `${g.h} – ${g.a}, ${tShort(g.d)}` }; }
+    $('pwx').innerHTML = placeWeatherHtml(w, venue, next);
+  } catch (e) { if ($('pwx')) $('pwx').innerHTML = '<div class="fn">Prognoza nu a putut fi încărcată. Încearcă din nou mai târziu.</div>'; }
+}
+let openPlaceId = null;
+function openCity(id, keep) {
+  const c = PLACES.data.cities[id];
+  openGameId = null; openPlaceId = 'c:' + id;
+  show(cityHtml(c, placeCtx), keep);
+  startClock();
+  fillPlaceWeather(c, null, openPlaceId);
+}
+function openVenue(id, keep) {
+  const v = PLACES.data.venues[id];
+  openGameId = null; openPlaceId = 'v:' + id;
+  show(venueHtml(v, placeCtx), keep);
+  fillPlaceWeather(v, v, openPlaceId);
+}
+
+/* ----- weather strip on the home page ----- */
+async function renderStrip() {
+  if (!PLACES.data) return;
+  $('wxstrip').innerHTML = stripHtml(null);
+  try {
+    const list = await getWeather(STRIP.map(id => PLACES.data.cities[id]), true);
+    $('wxstrip').innerHTML = stripHtml(list);
+  } catch (e) { $('wxstrip').innerHTML = stripHtml(null).replace(/…/g, 'vremea nu e disponibilă'); }
+}
+loadPlaces()?.then(d => { if (!d) return; renderStrip(); if (GAMES.length) { renderMap(); if (!$('ov').hidden) route(true); } });
+setInterval(() => { if (!document.hidden && PLACES.data) renderStrip(); }, 30 * 60e3);
 
 function sideInfo(g, side) {
   const k = side.key;
@@ -565,7 +627,11 @@ function openGame(id, keep) {
     <div id="gdetail" role="tabpanel">${gameView.tab === 'rezumat' || !s ? summaryTop(g, ctx, k, other, done, on) : ''}${s ? panelHtml(g, s, viewFor()) : canFetch ? '<div class="skeleton" style="height:70px"></div>' : '<div class="fn">Detaliile meciului (statistici, jucători, faze) apar când sursa live răspunde.</div>'}</div>
     <div class="btns">${g.teams.map(t => `<button class="ghost" type="button" data-team="${t}">Profil ${esc(TEAMS[t].s)}</button>`).join('')}<button class="ghost" type="button" data-day="${k}" data-jump="1">Toate meciurile zilei</button><button class="ghost" type="button" data-share>Copiază linkul</button></div>
     </div>`, keep);
+  openPlaceId = null;
   if (canFetch && (!s || isLive(g))) loadGame(g);
+  // The stadium link and the weather card need data/places.json; draw again once it is here.
+  if (PLACES.data) { if (canFetch) loadGameWeather(g); }
+  else loadPlaces()?.then(d => { if (d && openGameId === g.id) { refreshGame(g); if (canFetch) loadGameWeather(g); } });
 }
 function gameContext(g) {
   const ctx = [];
@@ -585,11 +651,24 @@ const viewFor = () => ({ ...gameView, known: id => BY_ID.has(String(id)) });
 function summaryTop(g, ctx, k, other, done, on) {
   return `<dl class="facts">
       ${g.tbd ? '' : `<dt>Start</dt><dd>${fmtTime[state.tz].format(g.d)} ${TZNAME[state.tz]} · ${fmtTime[other].format(g.d)} ${TZNAME[other]} (${fmtShort[other].format(g.d).replace('.', '')})</dd>`}
-      <dt>Unde</dt><dd>${g.v ? esc(g.v) + ', ' : ''}${esc(g.city)}</dd>
+      <dt>Unde</dt><dd>${(() => { const v = venueByName(g.v), c = v && cityOf(v); return v ? `<button class="linkish" type="button" data-venue="${v.id}">${esc(g.v)}</button>, ${c ? `<button class="linkish" type="button" data-city="${c.id}">${esc(c.name)}</button>, FL` : esc(g.city)}` : `${g.v ? esc(g.v) + ', ' : ''}${esc(g.city)}`; })()}</dd>
       ${g.tv ? `<dt>Transmisie SUA</dt><dd>${esc(g.tv)}</dd>` : ''}
       ${done || on || g.tbd ? '' : `<dt>Pentru România</dt><dd>${{ good: 'Oră bună, se poate urmări seara.', late: 'Târziu, începe în jurul miezului nopții.', night: 'Noapte albă, începe după ora 01:00.' }[g.aw]}</dd>`}
     </dl>
-    ${ctx.length ? `<section><h3>Context</h3><ul class="notes">${ctx.map(c => `<li>${esc(c)}</li>`).join('')}</ul></section>` : ''}`;
+    ${ctx.length ? `<section><h3>Context</h3><ul class="notes">${ctx.map(c => `<li>${esc(c)}</li>`).join('')}</ul></section>` : ''}
+    ${!done && venueByName(g.v) ? `<div id="gwx">${GWX.get(g.id) || ''}</div>` : ''}`;
+}
+// Weather for a game in a Florida venue (not for finished games). Kept per game, so redraws reuse it.
+const GWX = new Map();
+async function loadGameWeather(g) {
+  const v = venueByName(g.v);
+  if (!v || played(g)) return;
+  try {
+    const [w] = await getWeather([v], false);
+    const html = gameWeatherHtml(g, v, w, LEAGUES[g.l].dur);
+    GWX.set(g.id, html);
+    if (openGameId === g.id && $('gwx')) $('gwx').innerHTML = html;
+  } catch (e) { /* the weather card is optional */ }
 }
 // Draws the tabs and the open tab again, keeping the scroll position (new data, tab switch, live score).
 function refreshGame(g) {
@@ -647,6 +726,7 @@ function handle(e) {
   const q = s => e.target.closest(s);
   let el;
   if ((el = q('[data-theme-set]'))) { setTheme(el.dataset.themeSet); return; }
+  if (q('.clim rect.hit')) { climateHover(e); return; }   // a tap on a month shows its numbers
   if (!GAMES.length && !q('#reload')) return;
   if (q('#prof-x') || e.target === $('ov')) { closeOv(); return; }
   if ((el = q('#reload'))) { load(true); return; }
@@ -657,6 +737,8 @@ function handle(e) {
   if ((el = q('[data-only]'))) { resetFilters(); state.team = el.dataset.only; state.day = null; closeOv(); render(); $('cal').scrollIntoView({ block: 'start' }); return; }
   if ((el = q('[data-game]'))) { const g = BY_ID.get(el.dataset.game); if (g) { gameView.tab = 'rezumat'; gameView.side = ''; go(gameHash(g)); } return; }
   if ((el = q('[data-team]'))) { go('#echipa/' + el.dataset.team); return; }
+  if ((el = q('[data-city]'))) { go('#oras/' + el.dataset.city); return; }
+  if ((el = q('[data-venue]'))) { go('#stadion/' + el.dataset.venue); return; }
   if ((el = q('[data-l]'))) { const l = el.dataset.l; state.leagues.has(l) ? state.leagues.delete(l) : state.leagues.add(l); el.setAttribute('aria-pressed', state.leagues.has(l)); render(); return; }
   if ((el = q('[data-view]'))) { state.view = el.dataset.view; store.set('flgames-view', state.view); render(); return; }
   if ((el = q('[data-wk]'))) { state.week = addDays(state.week, +el.dataset.wk); render(); return; }
@@ -681,7 +763,8 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); setTab(all[j].dataset.tab);
   }
 });
-document.addEventListener('pointermove', wpHover);
+document.addEventListener('pointermove', e => { wpHover(e); climateHover(e); });
+document.addEventListener('pointerleave', e => { if (e.target.matches && e.target.matches('.clim svg, .clim svg *')) climateHover({ type: 'pointerleave', target: e.target }); }, true);
 document.addEventListener('pointerleave', e => { if (e.target.matches && e.target.matches('svg.wp, svg.wp *')) wpHover({ ...e, type: 'pointerleave', target: e.target, clientX: e.clientX }); }, true);
 
 /* ================= loading, refresh, live scores ================= */

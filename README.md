@@ -6,6 +6,8 @@ clasamente, profiluri de echipă și pagini de meci.
 
 - Site static (HTML, CSS, module JavaScript) plus trei funcții Netlify care citesc datele
   publice gratuite ale ESPN. Fără chei API, fără servicii plătite.
+- Pagini pentru orașele și stadioanele echipelor, cu vremea (Open-Meteo), clima pe luni și
+  poze de pe Wikimedia Commons (cu autor și licență).
 - Logo-urile oficiale se încarcă de pe serverul ESPN; proiect pentru uz personal.
 - Dacă sursa live nu răspunde, pagina arată ultimele date salvate.
 

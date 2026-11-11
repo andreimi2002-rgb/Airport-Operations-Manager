@@ -53,6 +53,10 @@ export function normalizeEvent(ev, l, fl = {}) {
   };
   let note = c.notes?.[0]?.headline || '';
   if (!note && l === 'NFL' && ev.week?.number && (ev.seasonType?.type ?? 2) === 2) note = 'Etapa ' + ev.week.number;
+  const home = team(H), away = team(A);
+  // Soccer venues come without a state (only "USA"): a Florida team at home, not on a neutral
+  // ground, is playing in Florida.
+  const region = addr.state || (home.key && !c.neutralSite ? 'FL' : addr.country || '');
   return {
     id: String(ev.id),
     l,
@@ -60,11 +64,11 @@ export function normalizeEvent(ev, l, fl = {}) {
     tbd: c.timeValid === false || ev.timeValid === false,
     state: st.state || (st.completed ? 'post' : 'pre'),
     detail: st.shortDetail || st.detail || '',
-    home: team(H),
-    away: team(A),
+    home,
+    away,
     venue: c.venue?.fullName || '',
     city: addr.city || '',
-    region: addr.state || addr.country || '',
+    region,
     neutral: !!c.neutralSite,
     note,
     tv: c.broadcasts?.[0]?.names?.[0] || c.geoBroadcasts?.[0]?.media?.shortName || ''
