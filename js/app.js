@@ -155,7 +155,7 @@ function ago(ts) {
 const flSide = k => { const i = TEAMINFO[k] || {}; return { name: TEAMS[k].espn, abbr: i.abbr || TEAMS[k].ab, logo: i.logo, logoDark: i.logoDark, color: i.color, alt: i.alt, key: k }; };
 
 /* ================= state ================= */
-const state = { tz: 'ro', leagues: new Set(['NBA', 'NHL', 'NFL', 'MLS']), team: '', home: false, awake: false, day: null, view: 'month', week: null, month: null, metro: 'mia', fav: '', horizon: 30 };
+const state = { tz: 'ro', leagues: new Set(['NBA', 'NHL', 'NFL', 'MLS']), team: '', home: false, awake: false, day: null, view: 'month', week: null, month: null, metro: 'mia', fav: '', horizon: 30, agendaDays: 7 };
 {
   const s = store.get('flgames-tz'); if (s === 'fl' || s === 'ro') state.tz = s;
   const f = store.get('flgames-fav'); if (f && TEAMS[f]) state.fav = f;
@@ -395,16 +395,20 @@ function grouped(list, busy, showFull) {
   });
   return html + (cur ? '</div>' : '');
 }
+const nextDays = n => `următoarele ${n}${n >= 20 ? ' de' : ''} zile`;   // „14 zile”, „21 de zile”
 function renderAgenda(list, busy) {
-  const now = Date.now(), lim = horizonEnd();
+  // The list shows whole calendar days: today and the next ones, 7 at first, then 7 more per click.
+  const now = Date.now(), lastDay = addDays(todayKey(), state.agendaDays - 1);
   const inDay = g => keyOf(g.d, state.tz) === state.day;
-  const up = state.day ? list.filter(g => !played(g) && inDay(g)) : list.filter(g => !played(g) && g.d.getTime() < lim && (isLive(g) || g.end > now - 6 * 36e5));
+  const inRange = g => keyOf(g.d, state.tz) <= lastDay;
+  const up = state.day ? list.filter(g => !played(g) && inDay(g)) : list.filter(g => !played(g) && inRange(g) && (isLive(g) || g.end > now - 6 * 36e5));
   const recent = new Set(Object.keys(TEAMS).flatMap(k => lastGames(k).map(g => g.id)));
   const past = (state.day ? list.filter(g => played(g) && inDay(g)) : list.filter(g => played(g) && recent.has(g.id))).reverse();
   const inFL = up.filter(g => g.inFL).length, good = up.filter(g => g.aw === 'good' && !g.tbd).length;
-  $('count').innerHTML = `${up.length} ${up.length === 1 ? 'meci programat' : 'meciuri programate'} <span>· ${inFL} în Florida · ${good} la ore bune în România${state.day ? ' · ' + dayLabel(state.day) : ` · următoarele ${state.horizon} de zile`}</span>`;
+  $('count').innerHTML = `${up.length} ${up.length === 1 ? 'meci programat' : 'meciuri programate'} <span>· ${inFL} în Florida · ${good} la ore bune în România${state.day ? ' · ' + dayLabel(state.day) : ` · ${nextDays(state.agendaDays)}`}</span>`;
+  $('upcount').textContent = state.day ? `${up.length} ${up.length === 1 ? 'meci' : 'meciuri'}, ${dayLabel(state.day)}` : `${up.length} ${up.length === 1 ? 'meci' : 'meciuri'} în ${nextDays(state.agendaDays)}`;
   $('clear').hidden = !state.day;
-  const more = list.some(g => !played(g) && g.d.getTime() >= lim);
+  const more = list.some(g => !played(g) && !inRange(g));
   $('more').hidden = !!state.day || !more;
   $('agenda').innerHTML = up.length ? grouped(up, busy, true) : `<div class="empty">${state.day && past.length ? 'Meciurile din această zi s-au jucat. Scorurile sunt mai jos.' : 'Niciun meci programat pentru filtrele alese. Schimbă liga, echipa sau ziua.'}</div>`;
   $('rescount').textContent = state.day ? `${past.length} ${past.length === 1 ? 'meci' : 'meciuri'}` : `${past.length} ${past.length === 1 ? 'meci' : 'meciuri'}, ultimele 5 ale fiecărei echipe`;
@@ -712,7 +716,12 @@ $('team').onchange = e => { state.team = e.target.value; render(); };
 $('homeonly').onchange = e => { state.home = e.target.checked; render(); };
 $('awake').onchange = e => { state.awake = e.target.checked; render(); };
 $('clear').onclick = () => { state.day = null; render(); };
-$('more').onclick = () => { state.horizon += 30; render(); };
+$('more').onclick = () => { state.agendaDays += 7; render(); };
+// Open or closed, the schedule stays as the viewer left it.
+{
+  const s = store.get('flgames-prog'); if (s === 'closed') $('upwrap').open = false;
+  $('upwrap').addEventListener('toggle', () => store.set('flgames-prog', $('upwrap').open ? 'open' : 'closed'));
+}
 const gameHash = (g, tab) => `#meci/${g.l}/${g.id}${tab && tab !== 'rezumat' ? '/' + tab : ''}`;
 function setTab(t) {
   const g = BY_ID.get(openGameId); if (!g) return;
@@ -756,7 +765,9 @@ function handle(e) {
     const k = el.dataset.day, jump = !!el.dataset.jump;
     state.day = (state.day === k && !jump) ? null : k;
     if (jump) { resetFilters(); if (!$('ov').hidden) closeOv(); state.week = weekStart(k); state.month = k.slice(0, 7); }
-    render(); if (jump || state.view === 'week') $('count').scrollIntoView({ block: 'start' });
+    // A chosen day always shows its games, even if the schedule was folded away.
+    if (state.day) $('upwrap').open = true;
+    render(); if (jump || state.view === 'week') $('upwrap').scrollIntoView({ block: 'start' });
   }
 }
 document.addEventListener('click', handle);

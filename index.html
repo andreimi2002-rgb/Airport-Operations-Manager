@@ -76,14 +76,17 @@
     <div class="legend"><span><b style="color:var(--good)">Oră bună</b> = start între 12:00 și 23:00 în România · <b style="color:var(--warn)">Târziu</b> = până la 01:00 · <b>Noapte</b> = după 01:00</span></div>
   </section>
 
-  <section aria-label="Program" style="display:flex;flex-direction:column;gap:6px">
-    <div class="bar">
-      <div class="count" id="count"></div>
-      <button class="link" id="clear" type="button" hidden>Arată toate zilele</button>
+  <details class="res prog" id="upwrap" open>
+    <summary>Următoarele meciuri <span id="upcount"></span></summary>
+    <div class="progbody">
+      <div class="bar">
+        <div class="count" id="count"></div>
+        <button class="link" id="clear" type="button" hidden>Arată toate zilele</button>
+      </div>
+      <div id="agenda"></div>
+      <button class="link more-btn" id="more" type="button" hidden>Arată încă 7 zile</button>
     </div>
-    <div id="agenda"></div>
-    <button class="link more-btn" id="more" type="button" hidden>Arată încă 30 de zile</button>
-  </section>
+  </details>
   <details class="res" id="reswrap"><summary>Rezultate recente <span id="rescount"></span></summary><div id="results"></div></details>
 
   <section aria-label="Harta">
