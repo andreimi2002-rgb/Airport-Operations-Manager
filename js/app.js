@@ -8,7 +8,7 @@ import { registerSW, onInstallChange, install, downloadGame, APP_VERSION, checkU
 import { seasonHover } from './teamx.js';
 import { N, setNotifyRender, enableNotify, saveNotify, testNotify, disableNotify } from './notify.js';
 import { PLACES, loadPlaces, climateHover, AMERICA, loadAmerica } from './places.js';
-import { CACHE_KEY, DATA, GAMES, addDays, awake, build, gameById, getJSON, isLive, parts, played, state, store, weekStart, CLUB_RAW, addClubGames, refreshMineGames } from './core.js';
+import { CACHE_KEY, DATA, GAMES, addDays, awake, build, gameById, getJSON, isLive, parts, played, state, store, weekStart, CLUB_RAW, addClubGames, refreshMineGames, noteLive } from './core.js';
 import { PLAYOFFS, PO, minePick, render, renderHero, renderMap, renderMine, renderPhone, renderPlayoffs, renderSources, renderStatic, renderStatus, renderStrip } from './home.js';
 import { OV, cal, closeOv, clubSide, clubView, gameView, go, loadGame, notifyOpen, openCalendar, openClub, openTeam, pickerClubs, refreshGame, route, saveCal, setTeamTab, share, openNotify } from './pages.js';
 import { LG, navView, renderLeagues, renderTodayStrip, setLgHash, setupJump, usKey } from './views.js';
@@ -307,6 +307,7 @@ async function pollLive(leagues) {
     const scored = [];
     for (const x of r.games || []) {
       const g = gameById(x.id); if (!g) continue;
+      noteLive({ ...g, ...x });
       if (g.state !== x.state || g.hs !== x.hs || g.as !== x.as || g.detail !== x.detail) {
         if (x.state === 'post' && g.state !== 'post') finished = true;
         if ((x.hs ?? 0) !== (g.hs ?? 0) || (x.as ?? 0) !== (g.as ?? 0)) scored.push(g.id);

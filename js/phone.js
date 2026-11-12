@@ -7,7 +7,7 @@ import { calendar } from './ics.js';
 /* ================= offline ================= */
 // The version of this page. It must equal VERSION in sw.js (tools/test.mjs checks): the page compares
 // it with the published sw.js to know that a newer version is out.
-export const APP_VERSION = 'v19';
+export const APP_VERSION = 'v20';
 
 // The published version, read from sw.js past every cache.
 async function latestVersion() {
