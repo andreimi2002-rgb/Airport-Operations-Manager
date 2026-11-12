@@ -48,6 +48,9 @@ export function teamSide(t, l) {
 export function toGame(x) {
   const d = new Date(x.date);
   if (isNaN(d) || !LEAGUES[x.l]) return null;
+  // A playoff opponent not yet known comes from ESPN as "TBD Away" / "TBD Home".
+  const tbd = s => /^TBD\b/i.test(s?.name || '') ? { ...s, name: 'Adversar de stabilit', abbr: '?' } : s;
+  x = { ...x, home: tbd(x.home), away: tbd(x.away) };
   const H = teamSide(x.home, x.l), A = teamSide(x.away, x.l);
   const g = {
     id: String(x.id), l: x.l, d, tbd: x.tbd, state: x.state, detail: x.detail,

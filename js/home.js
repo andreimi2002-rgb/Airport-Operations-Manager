@@ -7,7 +7,7 @@ import { detailRo, noteRo } from './ro.js';
 import { installHtml, canInstall } from './phone.js';
 import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
 import { PLACES, venueByName, cityOf, getWeather, stripHtml, STRIP, cityCard, roofWord, AMERICA, loadAmerica } from './places.js';
-import { teamBtn, teamEmbBtn, AW, BY_ID, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters, myShort, outcomeFor } from './core.js';
+import { teamBtn, teamEmbBtn, AW, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters, myShort, outcomeFor, keepExtra, gameById } from './core.js';
 import { cal, clubSide, entryById, go } from './pages.js';
 import { HEALTH, healthNote, sourcesHtml } from './health.js';
 
@@ -313,7 +313,8 @@ export async function renderPlayoffs() {
   const l = PO.league;
   if (!PLAYOFFS.has(l)) {
     PLAYOFFS.set(l, null);
-    getJSON(`/api/playoffs?l=${l}`, 15000).then(j => { PLAYOFFS.set(l, j); renderPlayoffs(); }, () => PLAYOFFS.delete(l));
+    // Every playoff game is kept, so any series opens its game page, not only the home teams'.
+    getJSON(`/api/playoffs?l=${l}`, 15000).then(j => { keepExtra(j.games || []); PLAYOFFS.set(l, j); renderPlayoffs(); }, () => PLAYOFFS.delete(l));
   }
   const data = PLAYOFFS.get(l);
   const head = `<div class="tnhead"><h2 class="sec">Playoff ${l}</h2>${ls.length > 1 ? `<div class="seg" role="group" aria-label="Liga">${ls.map(x => `<button type="button" data-pl="${x}" aria-pressed="${x === l}">${x}</button>`).join('')}</div>` : ''}</div>`;
@@ -323,7 +324,7 @@ export async function renderPlayoffs() {
   const flName = n => Object.keys(TEAMS).find(k => TEAMS[k].l === l && norm(TEAMS[k].espn) === norm(n));
   const card = s => {
     const fl = s.teams.map(t => flName(t.name)).find(Boolean);
-    const target = fl && (s.next ? BY_ID.get(s.next.id) : BY_ID.get(s.games[s.games.length - 1].id));
+    const target = gameById((s.next || s.games[s.games.length - 1]).id);
     const many = s.games.length > 1;
     const status = s.winner ? `${esc(TEAMS[flName(s.winner.name)]?.s || s.winner.abbr || s.winner.name)} merge mai departe${many ? ` (${s.winner.wins}–${Math.min(...s.teams.map(t => t.wins))})` : ''}`
       : s.next ? `${s.next.tbd ? 'oră neanunțată' : `${tShort(new Date(s.next.date))}, ${fmtTime.ro.format(new Date(s.next.date))}`}${many && s.teams.some(t => t.wins) ? ` · seria ${s.teams[0].wins}–${s.teams[1].wins}` : ''}`
