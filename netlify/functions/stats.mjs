@@ -1,5 +1,7 @@
 // GET /api/stats?key=… — the visit counts of the last 30 days and the "Spune-ne ce crezi" messages,
 // as a small page. Only with the owner's key (STATS_KEY in the Netlify environment).
+// POST (same key) action=reset-day: today's counts start again from zero.
+// The page also switches counting off for the browser it is opened in (the owner's devices).
 import crypto from 'node:crypto';
 import { blobStore, storeName, roDay, KINDS, EVENTS, COUNTS } from '../lib/stats.mjs';
 import { ALL_TEAMS as TEAMS } from '../../js/teams.js';
@@ -8,7 +10,7 @@ import { env } from '../lib/subs.mjs';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const same = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 const page = (body, status = 200) => new Response(body, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
-const KIND_RO = { confidentialitate: 'Confidențialitate', acasa: 'Acasă', ligi: 'Ligile', ghid: 'Ghid', meci: 'Meciuri', echipa: 'Echipe Florida', club: 'Alte echipe', oras: 'Orașe', stadion: 'Stadioane', calendar: 'Calendar', notificari: 'Notificări', parere: 'Părere' };
+const KIND_RO = { confidentialitate: 'Confidențialitate', acasa: 'Acasă', ligi: 'Ligile', ghid: 'Ghid', meci: 'Meciuri', echipa: 'Echipele implicite', club: 'Alte echipe', oras: 'Orașe', stadion: 'Stadioane', calendar: 'Calendar', notificari: 'Notificări', parere: 'Părere' };
 const EVENT_RO = { install: 'Instalări', 'notify-on': 'Notificări pornite', calendar: 'Abonări la calendar', follow: 'Echipe urmărite', share: 'Distribuiri', feedback: 'Păreri trimise' };
 
 export default async (req, context) => {
@@ -17,6 +19,12 @@ export default async (req, context) => {
   if (!same(new URL(req.url).searchParams.get('key') || '', key)) return page('<p>Cheie greșită.</p>', 403);
   const ctx = context?.deploy?.context;
   const stats = await blobStore(storeName('stats', ctx)), fb = await blobStore(storeName('feedback', ctx));
+  if (req.method === 'POST') {
+    const form = new URLSearchParams(await req.text());
+    if (form.get('action') === 'reset-day') await stats.del(roDay());
+    // Back to the page (303: the browser loads it with GET).
+    return new Response(null, { status: 303, headers: { location: new URL(req.url).pathname + new URL(req.url).search, 'cache-control': 'no-store' } });
+  }
   const days = [];
   for (let i = 0; i < 30; i++) days.push(roDay(new Date(Date.now() - i * 864e5)));
   const recs = await Promise.all(days.map(d => stats.get(d)));
@@ -41,8 +49,24 @@ export default async (req, context) => {
 h1{font:italic 800 26px/1 'Arial Narrow',Arial,sans-serif;text-transform:uppercase;color:#0e1f3d;margin:0;border-bottom:3px solid #c8102e;padding-bottom:10px}h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#5d6678;margin:0 0 8px}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.c{background:#fff;border:1px solid #dde2ea;border-radius:10px;padding:12px}.c b{display:block;font-size:26px;color:#0e1f3d}.c span{color:#5d6678;font-size:13px}
 table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #dde2ea;border-radius:10px;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:7px 10px;border-bottom:1px solid #eef1f5}th{font-size:12px;color:#5d6678}
-.n{background:#fff;border:1px solid #dde2ea;border-radius:10px;padding:10px 12px;margin-bottom:8px}.n small{color:#5d6678}</style></head><body><main>
+.n{background:#fff;border:1px solid #dde2ea;border-radius:10px;padding:10px 12px;margin-bottom:8px}.n small{color:#5d6678}
+.own{background:#fff;border:1px solid #dde2ea;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}.own p{margin:0}.own .hint{color:#5d6678;font-size:13px}
+.own button{font:600 14px system-ui,sans-serif;border-radius:8px;padding:9px 14px;border:0;background:#c8102e;color:#fff;cursor:pointer}.own .ghost{background:none;border:1px solid #dde2ea;color:#1b2333}
+.ok{color:#1f8a4c}.no{color:#c8102e}</style></head><body><main>
 <h1>Statistici</h1>
+<section class="own"><h2>Dispozitivul tău</h2><p id="devstate">…</p>
+<button type="button" id="devbtn"></button>
+<p class="hint">Fiecare browser se numără separat: deschide pagina asta și apasă o dată în fiecare (Chrome, Edge, Safari pe iPhone). În aplicația instalată: 5 atingeri pe „Versiunea” din subsol.</p>
+<form method="post" onsubmit="return confirm('Ștergi cifrele de azi? Numărarea de azi pornește de la zero.')"><input type="hidden" name="action" value="reset-day"><button type="submit" class="ghost">Pornește numărarea de azi de la zero</button></form></section>
+<script>
+(() => {
+  const K = 'flgames-notrack', st = document.getElementById('devstate'), b = document.getElementById('devbtn');
+  const get = () => { try { return localStorage.getItem(K) === '1'; } catch (e) { return false; } };
+  const draw = () => { const off = get(); st.innerHTML = off ? '<b class="ok">✓ Vizitele din acest browser nu se numără.</b>' : '<b class="no">Vizitele din acest browser se numără.</b>'; b.textContent = off ? 'Numără-mă din nou' : 'Nu număra acest browser'; };
+  b.onclick = () => { try { get() ? localStorage.removeItem(K) : localStorage.setItem(K, '1'); } catch (e) {} draw(); };
+  draw();
+})();
+</script>
 <section><h2>Ultimele 7 zile</h2><div class="cards">
 <div class="c"><b>${sum(week, r => r.visitors)}</b><span>vizitatori pe zi, adunați</span></div>
 <div class="c"><b>${sum(week, r => r.fresh)}</b><span>vizitatori noi</span></div>

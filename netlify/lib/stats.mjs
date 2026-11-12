@@ -2,7 +2,7 @@
 // (new or returning, told apart by a date the page keeps in the visitor's own browser), views per kind
 // of page, opens of the installed app, and a few actions. Plus the "Spune-ne ce crezi" messages.
 // Netlify Blobs on Netlify (production and previews apart), JSON files when run locally.
-import { mkdir, readFile, writeFile, readdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import os from 'node:os';
 
@@ -13,6 +13,7 @@ export async function blobStore(name) {
     return {
       get: id => s.get(id, { type: 'json' }),
       set: (id, v) => s.setJSON(id, v),
+      del: id => s.delete(id),
       async list() { const { blobs } = await s.list(); return blobs.map(b => b.key); }
     };
   }
@@ -22,6 +23,7 @@ export async function blobStore(name) {
   return {
     get: id => readFile(file(id), 'utf8').then(JSON.parse, () => null),
     set: (id, v) => writeFile(file(id), JSON.stringify(v)),
+    del: id => rm(file(id), { force: true }),
     async list() { return (await readdir(dir)).map(f => f.replace(/\.json$/, '')); }
   };
 }
