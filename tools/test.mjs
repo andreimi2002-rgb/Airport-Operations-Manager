@@ -312,6 +312,8 @@ assert.equal((await import('../js/teamx.js')).roNum('27.7'), '27,7');
   } catch { /* no git here */ }
   if (changed?.length && mainSw) {
     const ver = s => (s.match(/const VERSION = '([^']+)'/) || [])[1];
+    assert.equal((readFileSync(new URL('../js/phone.js', import.meta.url), 'utf8').match(/APP_VERSION = '([^']+)'/) || [])[1], ver(readFileSync(new URL('../sw.js', import.meta.url), 'utf8')),
+      'APP_VERSION in js/phone.js must equal VERSION in sw.js: the page compares them to find a newer version');
     assert.notEqual(ver(readFileSync(new URL('../sw.js', import.meta.url), 'utf8')), ver(mainSw),
       `site files changed (${changed.slice(0, 3).join(', ')}…) but VERSION in sw.js is the same as on main: bump it, or installed apps keep the old version`);
   }

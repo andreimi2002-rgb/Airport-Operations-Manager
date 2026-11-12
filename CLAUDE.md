@@ -42,7 +42,8 @@ istoricul git, pe `main` până la merge-ul etapei 1).
   bleumarin, roșul e pentru logo, accente și acțiunea principală. Identificatorii interni rămân
   vechi: `UID …@meciuri-florida` în calendar (altfel abonamentele ar dubla meciurile), cheile
   `flgames-*` din browser, numele stocărilor de notificări.
-- **Versiunea aplicației:** la orice schimbare a fișierelor site-ului, crește `VERSION` în `sw.js`
+- **Versiunea aplicației:** la orice schimbare a fișierelor site-ului, crește `VERSION` în `sw.js` și,
+  la fel, `APP_VERSION` în `js/phone.js`
   (`tools/test.mjs` verifică față de `main`). Doar așa aplicația instalată vede versiunea nouă:
   la revenirea în aplicație caută una nouă și, când e gata, se reîncarcă singură (`js/phone.js`).
 
@@ -95,7 +96,7 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
    `tools/test-functions.mjs` (funcțiile Netlify cu ESPN și Open-Meteo simulate, inclusiv căderi și
    format schimbat); după un deploy, `node tools/smoke.mjs <adresa>` verifică site-ul publicat.
    Mai târziu, doar dacă site-ul devine public: varianta în engleză.
-10. **Rezumatul meciului și echipe clicabile** (în lucru, branch `stage-10-rezumat`). La un meci
+10. **Rezumatul meciului și echipe clicabile** (în producție, PR #11). La un meci
     terminat, pagina arată doar rezumatul oficial ESPN („Game Highlights”, 1–3 minute) în locul
     clipurilor scurte: întâi printre clipurile meciului, apoi în știrile ESPN ale meciului
     (`news?event=`) și pagina clipului (`content.core.api.espn.com/v1/video/clips/`); fără rezumat
@@ -103,6 +104,13 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     după rezumatul oficial NFL). La orice meci terminat: cronica ESPN, în engleză (`article`). Orice echipă de pe pagina de start (carduri de meci,
     clasamente, următorul meci) și din antetul paginii de meci duce la pagina ei (`teamBtn` în
     `js/core.js`: Florida → `#echipa/…`, restul → `#club/…`).
+11. **Actualizarea pe iPhone** (în lucru, branch `stage-11-actualizare`). Pe iPhone, aplicația instalată
+    nu primea versiunile noi: semnalele service worker-ului nu vin sigur la revenirea în aplicație.
+    Acum pagina își compară `APP_VERSION` cu `VERSION` din `sw.js` publicat (citit fără cache) la pornire
+    și la fiecare revenire; dacă e mai nouă, lasă noul service worker să preia, șterge cache-urile vechi
+    și se reîncarcă (cel mult o dată la 10 minute pe versiune). Subsolul arată „Versiunea N” și butonul
+    „Caută actualizare”. Numele și iconița de pe ecranul iPhone-ului nu se schimbă niciodată singure: iOS
+    le păstrează de la adăugare.
 
 ## Structura
 
