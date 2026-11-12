@@ -79,7 +79,7 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
 7. **Etapa 7: American Sports Hub** (în producție, PR #8). Proiectul se redenumește (titlu, antet, aplicația instalată,
    calendar, notificări, documentație) și primește identitate vizuală proprie (logo, iconițe, culori,
    titluri): un produs sportiv american, nu un calendar. Pagina de start pornește de la „Echipele
-   mele” (implicit Florida). **Adresa rămâne** `florida-sp-calendar.netlify.app` (decizia
+   mele” (implicit Florida). **Adresa rămâne** `americansportshub.netlify.app` (decizia
    utilizatorului): aplicația instalată, calendarul și notificările sunt legate de ea.
 8. **Etapa 8: zilnic** (în producție, PR #9). Rezumatul de dimineață: o notificare
    la 8:00, ora României (prima rulare `push-cron` după 8:00, până la 12:00, o dată pe zi,

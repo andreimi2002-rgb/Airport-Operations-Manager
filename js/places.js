@@ -166,7 +166,7 @@ function nowHtml(w, title) {
   const n = w.now, d0 = w.days?.[0];
   return `<div class="wxnow">${wxIcon(n.code, n.day, 52)}<div><div class="t">${Math.round(n.temp)}°</div><div class="c">${esc(wxText(n.code))}</div></div>
     <dl><dt>Se simte ca</dt><dd>${Math.round(n.feels)}°</dd><dt>Umiditate</dt><dd>${n.hum}%</dd><dt>Vânt</dt><dd>${n.wind} km/h${n.gust > n.wind + 10 ? `, rafale ${n.gust}` : ''}</dd>${d0 ? `<dt>Azi</dt><dd>${Math.round(d0.lo)}° – ${Math.round(d0.hi)}°${d0.pp != null ? `, ploaie ${d0.pp}%` : ''}</dd>${d0.uv >= 6 ? `<dt>Indice UV</dt><dd>${d0.uv} (${d0.uv >= 8 ? 'foarte ridicat' : 'ridicat'})</dd>` : ''}` : ''}</dl>
-    ${title ? `<small>${esc(title)} · ora Floridei ${esc(hm(n.time))}</small>` : ''}</div>`;
+    ${title ? `<small>${esc(title)} · ora locală ${esc(hm(n.time))}</small>` : ''}</div>`;
 }
 function daysHtml(w, n = 7) {
   if (!w?.days?.length) return '';
@@ -213,7 +213,7 @@ export function gameWeatherHtml(g, v, w, durMin) {
       <dl><dt>Se simte ca</dt><dd>${Math.round(s.feels)}°</dd><dt>Ploaie</dt><dd>${ppMax}%</dd><dt>Vânt</dt><dd>${s.wind} km/h${gust > s.wind + 10 ? `, rafale ${gust}` : ''}</dd></dl></div>
     <div class="gwxhours">${H.map(h => `<div><small>${esc(hm(h.t))}</small>${wxIcon(h.code, +h.t.slice(11, 13) >= 7 && +h.t.slice(11, 13) < 19, 26)}<b>${Math.round(h.temp)}°</b><small class="${h.pp >= 50 ? 'wet' : ''}">${h.pp ?? 0}%</small></div>`).join('')}</div>
     <ul class="wxnotes">${notes.map(([k, t]) => `<li class="${k}">${esc(t)}</li>`).join('')}</ul>
-    <div class="fn">Orele sunt ale Floridei. Prognoza se actualizează la 30 de minute.</div></section>`;
+    <div class="fn">Orele sunt cele locale. Prognoza se actualizează la 30 de minute.</div></section>`;
 }
 
 /* ================= weather strip (home page) ================= */

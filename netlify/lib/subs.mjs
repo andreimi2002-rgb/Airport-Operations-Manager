@@ -35,6 +35,6 @@ export async function subsStore(context = 'local') {
 export function vapid() {
   const publicKey = env('VAPID_PUBLIC_KEY'), privateKey = env('VAPID_PRIVATE_KEY');
   // The subject tells push services who sends; the site address, not a personal e-mail.
-  const subject = env('VAPID_SUBJECT') || (env('URL') ? env('URL') : 'https://florida-sp-calendar.netlify.app');
+  const subject = env('VAPID_SUBJECT') || (env('URL') ? env('URL') : 'https://americansportshub.netlify.app');
   return publicKey && privateKey ? { publicKey, privateKey, subject } : null;
 }

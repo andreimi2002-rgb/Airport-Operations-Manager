@@ -143,7 +143,7 @@ export function oppInfo(l, name) {
 
 /* ================= formatting ================= */
 export const TZ = { ro: 'Europe/Bucharest', fl: 'America/New_York' };
-export const TZNAME = { ro: 'ora României', fl: 'ora Floridei' };
+export const TZNAME = { ro: 'ora României', fl: 'ora SUA (Est)' };
 export const fmtKey = {}, fmtTime = {}, fmtShort = {}, fmtHM = {};
 for (const k in TZ) {
   fmtKey[k] = new Intl.DateTimeFormat('en-CA', { timeZone: TZ[k], year: 'numeric', month: '2-digit', day: '2-digit' });
