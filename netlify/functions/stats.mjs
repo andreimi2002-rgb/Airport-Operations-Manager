@@ -1,7 +1,7 @@
 // GET /api/stats?key=… — the visit counts of the last 30 days and the "Spune-ne ce crezi" messages,
 // as a small page. Only with the owner's key (STATS_KEY in the Netlify environment).
 // POST (same key) action=reset-day: today's counts start again from zero.
-// The page also switches counting off for the browser it is opened in (the owner's devices).
+// Opening the page switches counting off for that browser at once (only the owner has the key).
 import crypto from 'node:crypto';
 import { blobStore, storeName, roDay, KINDS, EVENTS, COUNTS } from '../lib/stats.mjs';
 import { ALL_TEAMS as TEAMS } from '../../js/teams.js';
@@ -64,7 +64,12 @@ table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #dde2
   const get = () => { try { return localStorage.getItem(K) === '1'; } catch (e) { return false; } };
   const draw = () => { const off = get(); st.innerHTML = off ? '<b class="ok">✓ Vizitele din acest browser nu se numără.</b>' : '<b class="no">Vizitele din acest browser se numără.</b>'; b.textContent = off ? 'Numără-mă din nou' : 'Nu număra acest browser'; };
   b.onclick = () => { try { get() ? localStorage.removeItem(K) : localStorage.setItem(K, '1'); } catch (e) {} draw(); };
+  // Only the owner has this page's key: the browser it opens in is the owner's, so it stops being counted
+  // at once (and shows the owner's Florida pack). The button undoes it.
+  let marked = false;
+  if (!get()) { try { localStorage.setItem(K, '1'); marked = true; } catch (e) {} }
   draw();
+  if (marked) st.innerHTML += '<br><small>Am marcat automat acest browser ca al tău.</small>';
 })();
 </script>
 <section><h2>Ultimele 7 zile</h2><div class="cards">
