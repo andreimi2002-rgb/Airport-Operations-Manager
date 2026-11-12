@@ -463,6 +463,15 @@ export function refreshGame(g) {
   $('gscore').innerHTML = `${midScore(g)}<small>${esc(gameStatus(g))}</small>`;
   $('gscore').classList.toggle('on', isLive(g));
   $('gtabs').innerHTML = tabsHtml(g, s, gameView.tab);
+  // A clip being watched (playing, paused part-way, full screen) is not replaced by a live update, which
+  // would stop it: the tab is drawn again when the clip ends. Switching tabs still redraws at once.
+  const d = $('gdetail'), fs = document.fullscreenElement || document.webkitFullscreenElement;
+  const busy = d.dataset.tab === gameView.tab && [...d.querySelectorAll('video')].find(v => !v.ended && (!v.paused || v.currentTime > 0 || v.webkitDisplayingFullscreen || (fs && (fs === v || fs.contains(v)))));
+  if (busy) {
+    if (!busy.dataset.later) { busy.dataset.later = '1'; busy.addEventListener('ended', () => { const x = gameById(OV.game); if (x && x.id === g.id) refreshGame(x); }, { once: true }); }
+    return;
+  }
+  d.dataset.tab = gameView.tab;
   const other = state.tz === 'ro' ? 'fl' : 'ro';
   const top = gameView.tab === 'rezumat' ? summaryTop(g, gameContext(g), keyOf(g.d, state.tz), other, played(g), isLive(g)) : '';
   $('gdetail').innerHTML = top + (s ? (panelHtml(g, s, viewFor()) || '') : '');
