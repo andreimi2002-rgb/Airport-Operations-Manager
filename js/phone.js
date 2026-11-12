@@ -5,28 +5,73 @@ import { esc } from './ui.js';
 import { calendar } from './ics.js';
 
 /* ================= offline ================= */
+// The version of this page. It must equal VERSION in sw.js (tools/test.mjs checks): the page compares
+// it with the published sw.js to know that a newer version is out.
+export const APP_VERSION = 'v12';
+
+// The published version, read from sw.js past every cache.
+async function latestVersion() {
+  const r = await fetch('/sw.js', { cache: 'no-store' });
+  return r.ok ? (/const VERSION = '([^']+)'/.exec(await r.text()) || [])[1] || null : null;
+}
+const waitActive = (reg, ms) => new Promise(done => {
+  const w = reg.installing || reg.waiting;
+  if (!w) return done();
+  const t = setTimeout(done, ms);
+  w.addEventListener('statechange', () => { if (w.state === 'activated' || w.state === 'redundant') { clearTimeout(t); done(); } });
+});
+// Take a newer version: let the new service worker take over (up to 8 s), drop the saved copies of the
+// old version, reload. Once per version every 10 minutes at most, so a half-published deploy cannot loop.
+let updating = false;
+async function takeUpdate(v) {
+  try {
+    const key = 'flgames-upd-' + v, last = +sessionStorage.getItem(key) || 0;
+    if (Date.now() - last < 600e3) return;
+    sessionStorage.setItem(key, String(Date.now()));
+  } catch (e) { /* no session storage: go on */ }
+  updating = true;
+  const reg = await navigator.serviceWorker.getRegistration().catch(() => null);
+  if (reg) { await reg.update().catch(() => {}); await waitActive(reg, 8000); }
+  const keys = await caches.keys().catch(() => []);
+  await Promise.all(keys.filter(k => !k.endsWith('-' + v)).map(k => caches.delete(k)));
+  location.reload();
+}
+// Is a newer version out? Takes it when there is. Returns the published version ('' offline / unknown).
+let lastCheck = 0;
+export async function checkUpdate(force) {
+  if (!('serviceWorker' in navigator) || !navigator.onLine || updating) return '';
+  if (!force && Date.now() - lastCheck < 60e3) return '';
+  lastCheck = Date.now();
+  try {
+    const v = await latestVersion();
+    if (v && v !== APP_VERSION) await takeUpdate(v);
+    return v || '';
+  } catch (e) { return ''; }
+}
+
 export function registerSW() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
   const sw = navigator.serviceWorker;
   // After the page has loaded, so the first visit is not slowed down.
-  window.addEventListener('load', () => sw.register('/sw.js', { updateViaCache: 'none' }).catch(() => {}));
-  // An installed app is usually brought back from the background, not started again: the old page
-  // stays in memory and the browser only looks for a new version on a full start. So look on every
-  // return to the app (at most every 2 minutes) and, when the new version has taken over, reload once.
-  let checked = Date.now();
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) return;
-    if (pendingReload) { location.reload(); return; }
-    if (Date.now() - checked < 120e3) return;
-    checked = Date.now();
-    sw.getRegistration().then(r => r?.update()).catch(() => {});
+  window.addEventListener('load', () => {
+    sw.register('/sw.js', { updateViaCache: 'none' }).catch(() => {});
+    setTimeout(() => checkUpdate(true), 3000);
   });
+  // An installed app is usually brought back from the background, not started again: the old page stays
+  // in memory. On an iPhone the browser's own update signals are not reliable there, so on every return
+  // to the app the page compares its version with the published one and takes the new one itself.
+  const back = () => { if (!document.hidden) checkUpdate(false); };
+  document.addEventListener('visibilitychange', back);
+  window.addEventListener('pageshow', back);
+  window.addEventListener('focus', back);
+  // Elsewhere (Android, desktop) the new service worker taking over is enough: reload once.
   const hadController = !!sw.controller;   // the first install also "takes over": no reload for that
-  let reloaded = false, pendingReload = false;
+  let reloaded = false;
   sw.addEventListener('controllerchange', () => {
-    if (!hadController || reloaded) return;
+    if (!hadController || reloaded || updating) return;
     reloaded = true;
-    if (document.hidden) pendingReload = true; else location.reload();
+    if (document.hidden) document.addEventListener('visibilitychange', () => location.reload(), { once: true });
+    else location.reload();
   });
 }
 

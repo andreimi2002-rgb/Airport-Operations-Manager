@@ -785,3 +785,6 @@ svg.cl .hit{fill:transparent;cursor:pointer}
 .ytbtn:hover{filter:brightness(1.08)}
 .recap{display:flex;flex-direction:column;gap:6px;max-width:70ch;line-height:1.55}
 .recap p{margin:0;color:var(--muted)}
+/* footer: the app version, and a way to look for a newer one */
+.appver{color:var(--muted)}
+.appver .link{font-size:inherit}

@@ -4,7 +4,7 @@ import { LEAGUES, TEAMS, parseClub } from './teams.js';
 import { toggleMine, resetMine } from './mine.js';
 import { $, theme, isDark, onSystemTheme } from './ui.js';
 import { wpHover } from './game.js';
-import { registerSW, onInstallChange, install, downloadGame } from './phone.js';
+import { registerSW, onInstallChange, install, downloadGame, APP_VERSION, checkUpdate } from './phone.js';
 import { seasonHover } from './teamx.js';
 import { N, setNotifyRender, enableNotify, saveNotify, testNotify, disableNotify, notifyHtml } from './notify.js';
 import { PLACES, loadPlaces, climateHover, AMERICA, loadAmerica } from './places.js';
@@ -90,6 +90,12 @@ function handle(e) {
       history.replaceState(history.state, '', location.pathname + location.search + `#club/${l}/${id}${clubView.tab !== 'rezumat' ? '/' + clubView.tab : ''}`);
       openClub(l, id, true);
     } else setTeamTab(el.dataset.ttab);
+    return;
+  }
+  // Footer: look for a newer version now (the installed app also does it on every return).
+  if ((el = q('[data-update]'))) {
+    el.textContent = 'Caut…';
+    checkUpdate(true).then(v => { el.textContent = !v ? 'Nu am putut verifica' : v === APP_VERSION ? 'Ai ultima versiune ✓' : 'Se actualizează…'; });
     return;
   }
   if ((el = q('[data-goview]'))) {
@@ -290,6 +296,7 @@ setInterval(() => { if (GAMES.length) { renderHero(); renderStatus(); } }, 30000
 setInterval(() => { if (!document.hidden) load(); }, 15 * 60e3);
 
 /* ================= start ================= */
+$('appver').textContent = 'Versiunea ' + APP_VERSION.replace(/^v/, '');
 loadPlaces()?.then(d => { if (!d) return; renderStrip(); if (GAMES.length) { render(); if (!$('ov').hidden) route(true); } });
 setInterval(() => { if (!document.hidden && PLACES.data) renderStrip(); }, 30 * 60e3);
 setNotifyRender(() => { if (notifyOpen && location.hash.startsWith('#notificari') && !$('ov').hidden) show(notifyHtml(teamEmb, pickerClubs(N.teams)), true); });
