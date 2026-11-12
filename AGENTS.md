@@ -104,13 +104,23 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     după rezumatul oficial NFL). La orice meci terminat: cronica ESPN, în engleză (`article`). Orice echipă de pe pagina de start (carduri de meci,
     clasamente, următorul meci) și din antetul paginii de meci duce la pagina ei (`teamBtn` în
     `js/core.js`: Florida → `#echipa/…`, restul → `#club/…`).
-11. **Actualizarea pe iPhone** (în lucru, branch `stage-11-actualizare`). Pe iPhone, aplicația instalată
+11. **Actualizarea pe iPhone** (în producție, PR #12). Pe iPhone, aplicația instalată
     nu primea versiunile noi: semnalele service worker-ului nu vin sigur la revenirea în aplicație.
     Acum pagina își compară `APP_VERSION` cu `VERSION` din `sw.js` publicat (citit fără cache) la pornire
     și la fiecare revenire; dacă e mai nouă, lasă noul service worker să preia, șterge cache-urile vechi
     și se reîncarcă (cel mult o dată la 10 minute pe versiune). Subsolul arată „Versiunea N” și butonul
     „Caută actualizare”. Numele și iconița de pe ecranul iPhone-ului nu se schimbă niciodată singure: iOS
     le păstrează de la adăugare.
+12. **Beta publică** (în lucru, branch `stage-12-beta`). Site-ul se deschide gratuit, fără reclame, ca beta,
+    cât timp datele sunt încă de la ESPN. Măsurarea vizitelor fără cookie-uri și fără nimic personal
+    (`js/track.js` → `/api/hit`, pe zile în Netlify Blobs `stats`): vizitatori noi și care revin, pagini,
+    deschideri din aplicație, acțiuni (instalare, notificări, calendar, urmărire, distribuire, păreri).
+    Nu se numără roboții, „Do Not Track” și dispozitivul proprietarului (`?eu=1` sau 5 atingeri pe
+    versiune). „Spune-ne ce crezi” (`#parere` → `/api/feedback`, Blobs `feedback`). Statisticile și
+    părerile: `/api/stats?key=…` cu `STATS_KEY` din mediul Netlify (secret). Previzualizarea pentru
+    distribuire (`og:` și `icons/og.png`), `robots.txt`, `sitemap.xml`, eticheta „Beta”.
+    În paralel: testul BALLDONTLIE (cheia doar local, apoi `BDL_KEY` în Netlify), vezi documentul despre
+    monetizare. Adresele reale și indexarea complete vin în etapa „Pregătit pentru public”.
 
 ## Structura
 
@@ -124,6 +134,7 @@ js/home.js                  pagina de start: stare, Echipele mele, următorul me
 js/pages.js                 ferestrele și adresele (#…): echipă, club, oraș, stadion, calendar, notificări, meci
 js/views.js                 Florida | Ligile, pagina „Ligile” cu scorurile zilei, bara de secțiuni
 js/search.js                căutarea: echipe, adversari, orașe, stadioane
+js/track.js                 numărarea vizitelor (fără cookie-uri) și a câtorva acțiuni, pentru /api/stats
 js/health.js                starea surselor (/api/health): rândul „Surse” și fraza din linia de stare
 js/game.js                  pagina de meci: filele Rezumat, Jucători, Statistici, Faze, Absenți; graficul de șanse
 js/ro.js                    traducerea textelor ESPN (stare meci, note, statistici, accidentări); fără DOM
@@ -152,11 +163,15 @@ netlify/functions/playoffs.mjs   GET /api/playoffs?l=MLS  meciurile de playoff a
 netlify/functions/scores.mjs     GET /api/scores?d=20261111  toate meciurile unei zile (SUA), din toate ligile
 netlify/functions/teamgames.mjs  GET /api/teamgames?l=NBA&id=2  sezonul oricărei echipe (pagina simplă de echipă)
 netlify/functions/health.mjs     GET /api/health  ESPN și Open-Meteo răspund, în formatul așteptat? (cache 5 min)
+netlify/functions/hit.mjs        POST /api/hit  o vizită sau o acțiune, numărată pe zi (fără date personale)
+netlify/functions/feedback.mjs   POST /api/feedback  un mesaj din „Spune-ne ce crezi”
+netlify/functions/stats.mjs      GET /api/stats?key=…  vizitele pe 30 de zile și părerile, doar cu STATS_KEY
 netlify/functions/push.mjs       /api/push  salvează / citește / testează / șterge un abonament la notificări
 netlify/functions/push-cron.mjs  programată, la 15 minute, doar în producție: trimite notificările datorate
 netlify/lib/webpush.mjs     Web Push fără bibliotecă: semnătură VAPID (RFC 8292), criptare (RFC 8291)
 netlify/lib/notify.mjs      ce notificări sunt datorate și textul lor; fără rețea
 netlify/lib/health.mjs      verificarea surselor: o întrebare tipică fiecăreia și forma răspunsului
+netlify/lib/stats.mjs       numărarea pe zile (pură, testată) și stocarea în Blobs (`stats`, `feedback`)
 netlify/lib/subs.mjs        stocarea abonamentelor (Netlify Blobs; local, fișiere JSON)
 netlify/lib/clubs.mjs       meciurile echipelor urmărite din afara Floridei, pentru calendar și notificări
 tools/vapid-keys.mjs        generează perechea de chei VAPID: node tools/vapid-keys.mjs

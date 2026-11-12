@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://florida-sp-calendar.netlify.app/sitemap.xml

@@ -14,6 +14,7 @@ import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameW
 import { teamBtn, teamEmbBtn, DATA, GAMES, OUT, OUTL, REC_LABEL, TEAMINFO, TZNAME, col, confShort, countdown, dayLabel, flKey, flSide, fmtShort, fmtTime, formChips, gameById, getJSON, isLive, keepExtra, keyOf, lastGames, oppInfo, outcome, played, recordOf, state, store, streakRo, tShort, teamStats } from './core.js';
 import { card, tableHtml } from './home.js';
 import { LG, lgCtx, loadScores, setView, usKey } from './views.js';
+import { trackView, trackEvent } from './track.js';
 
 /* ================= overlays ================= */
 // Each overlay has its own address: #meci/NBA/401909963[/tab] or #echipa/heat. Opening one adds a
@@ -44,6 +45,21 @@ export function closeOv() {
   if (depth) history.go(-depth);            // popstate then hides it
   else { history.replaceState(null, '', location.pathname + location.search); hideOv(); }
 }
+// "Spune-ne ce crezi": a short message to the owner (beta).
+export function openFeedback(keep) {
+  OV.game = null; OV.place = null;
+  show(`<div class="band plain"><div><div class="lgn" style="color:var(--accent)">Beta</div><h2 id="prof-name" style="font-size:24px">Spune-ne ce crezi</h2></div>
+      <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
+    <div class="pbody fbform">
+      <p class="lead">Ce îți place, ce lipsește, ce nu merge. Citim fiecare mesaj.</p>
+      <label for="fbtext">Mesajul tău</label>
+      <textarea id="fbtext" rows="6" maxlength="2000"></textarea>
+      <label for="fbcontact">Cum te putem contacta, dacă vrei răspuns (opțional)</label>
+      <input id="fbcontact" type="text" maxlength="200" autocomplete="email">
+      <div class="btns"><button class="primary" type="button" data-fb-send>Trimite</button></div>
+      <p class="nmsg" id="fbmsg" role="status"></p>
+    </div>`, keep);
+}
 export function go(hash) {
   if (location.hash === hash) { route(); return; }
   const depth = (history.state && history.state.ov) || 0;
@@ -51,7 +67,9 @@ export function go(hash) {
   route();
 }
 export function route(keep) {
+  if (!keep) trackView();
   const h = decodeURIComponent(location.hash.slice(1)).split('/');
+  if (h[0] === 'parere') { openFeedback(keep); return; }
   if (h[0] === 'meci' && gameById(h[2])) { const t = h[3] || 'rezumat'; if (OV.game !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
   if (h[0] === 'echipa' && TEAMS[h[1]]) { teamView.tab = ['sezon', 'lot', 'stiri'].includes(h[2]) ? h[2] : 'rezumat'; openTeam(h[1], keep); return; }
   if (h[0] === 'notificari') {
@@ -434,6 +452,7 @@ export async function loadGame(g) {
 }
 
 export async function share(btn) {
+  trackEvent('share');
   const url = location.href;
   try {
     if (navigator.share && matchMedia('(pointer:coarse)').matches) { await navigator.share({ title: document.title, url }); return; }

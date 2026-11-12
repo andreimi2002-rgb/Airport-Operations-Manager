@@ -788,3 +788,11 @@ svg.cl .hit{fill:transparent;cursor:pointer}
 /* footer: the app version, and a way to look for a newer one */
 .appver{color:var(--muted)}
 .appver .link{font-size:inherit}
+/* beta: the badge in the brand bar, the feedback form */
+.topbar .beta{font:700 10.5px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--brand-ink);border:1.5px solid var(--brand-red);border-radius:999px;padding:4px 8px;align-self:center}
+.fbform{display:flex;flex-direction:column;gap:8px}
+.fbform label{font-weight:600;font-size:13.5px;margin-top:6px}
+.fbform textarea,.fbform input{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);color:var(--ink);font:inherit;resize:vertical}
+.fbform .btns{margin-top:6px}
+#appver{cursor:default;-webkit-user-select:none;user-select:none}
+.fbform .nmsg.ok{color:var(--good);font-weight:600}
