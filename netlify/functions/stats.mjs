@@ -2,7 +2,7 @@
 // as a small page. Only with the owner's key (STATS_KEY in the Netlify environment).
 import crypto from 'node:crypto';
 import { blobStore, storeName, roDay, KINDS, EVENTS, COUNTS } from '../lib/stats.mjs';
-import { TEAMS } from '../../js/teams.js';
+import { ALL_TEAMS as TEAMS } from '../../js/teams.js';
 import { env } from '../lib/subs.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);

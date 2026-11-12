@@ -2,6 +2,7 @@
 // Pure rendering. app.js owns the data, the routing and passes `ctx` with its helpers:
 //   ctx.emb(side, cls), ctx.time(date) (time in the chosen zone), ctx.status(g), ctx.dayLabel(key),
 //   ctx.flKey(l, name) (Florida team key or null), ctx.col(l) (league colour)
+import { HOME } from './teams.js';
 import { esc } from './ui.js';
 
 export const LG_TABS = [['scoruri', 'Scoruri'], ['clasamente', 'Clasamente'], ['echipe', 'Echipe'], ['orase', 'Orașe și stadioane'], ['ghid', 'Ghid']];
@@ -19,7 +20,7 @@ export function lgHeadHtml(tab, leagues, chosen) {
 const side = (g, s, ctx) => {
   const t = s === 'home' ? g.H : g.A, sc = s === 'home' ? g.hs : g.as, other = s === 'home' ? g.as : g.hs;
   const win = g.state === 'post' && sc != null && other != null && sc > other;
-  return `<span class="gsd${t.key ? ' fl' : ''}${win ? ' win' : ''}">${ctx.emb(t, 'sm')}<span class="nm">${esc(t.name)}${t.key ? ' <i aria-label="echipă din Florida">★</i>' : ''}</span>${g.state !== 'pre' ? `<b>${sc ?? 0}</b>` : ''}</span>`;
+  return `<span class="gsd${t.key ? ' fl' : ''}${win ? ' win' : ''}">${ctx.emb(t, 'sm')}<span class="nm">${esc(t.name)}${t.key ? ' <i aria-label="una dintre echipele tale">★</i>' : ''}</span>${g.state !== 'pre' ? `<b>${sc ?? 0}</b>` : ''}</span>`;
 };
 export function gameRowHtml(g, ctx) {
   const st = ctx.status(g);
@@ -31,7 +32,7 @@ export function scoresHtml(day, data, chosen, ctx) {
   if (!data) return nav + '<div class="skeleton" style="height:240px"></div>';
   const blocks = L_ORDER.filter(l => chosen.has(l) && data[l]?.length).map(l => `<section class="lgblock"><h3><span class="ldot" style="--c:${ctx.col(l)}"></span>${L_NAME[l]} <small>${data[l].length} ${data[l].length === 1 ? 'meci' : 'meciuri'}</small></h3><div class="grows">${data[l].map(g => gameRowHtml(g, ctx)).join('')}</div></section>`);
   return nav + (blocks.join('') || '<div class="empty">Niciun meci în această zi pentru ligile alese.</div>')
-    + '<div class="fn">Echipele din Florida sunt marcate cu ★. Apasă pe un meci pentru pagina lui: statistici, faze, jucători.</div>';
+    + `<div class="fn">Echipele din ${esc(HOME.name)} sunt marcate cu ★. Apasă pe un meci pentru pagina lui: statistici, faze, jucători.</div>`;
 }
 
 /* ---------- standings ---------- */
@@ -64,7 +65,7 @@ export function teamsHtml(standings, chosen, ctx) {
     const teams = standings[l].flatMap(g => g.entries).slice().sort((a, b) => a.name.localeCompare(b.name));
     return `<section class="lgblock"><h3><span class="ldot" style="--c:${ctx.col(l)}"></span>${L_NAME[l]} <small>${teams.length} echipe</small></h3><div class="tgrid">${teams.map(e => {
       const k = ctx.flKey(l, e.name);
-      return `<button class="tcard${k ? ' fl' : ''}" type="button" ${k ? `data-team="${k}"` : `data-club="${l}|${esc(e.id)}"`}>${ctx.emb({ ...e, key: k }, 'lg')}<span><b>${esc(e.name)}</b><small>${e.w ?? 0}–${e.l ?? 0}${l === 'NHL' ? '–' + (e.otl ?? 0) : l === 'MLS' ? '–' + (e.t ?? 0) : ''}${k ? ' · ★ Florida' : ''}</small></span></button>`;
+      return `<button class="tcard${k ? ' fl' : ''}" type="button" ${k ? `data-team="${k}"` : `data-club="${l}|${esc(e.id)}"`}>${ctx.emb({ ...e, key: k }, 'lg')}<span><b>${esc(e.name)}</b><small>${e.w ?? 0}–${e.l ?? 0}${l === 'NHL' ? '–' + (e.otl ?? 0) : l === 'MLS' ? '–' + (e.t ?? 0) : ''}${k ? ' · ★ ' + esc(HOME.name) : ''}</small></span></button>`;
     }).join('')}</div></section>`;
   });
   return out.join('') || '<div class="empty">Lista echipelor nu e disponibilă acum.</div>';

@@ -1,6 +1,6 @@
 // Reads ESPN's public JSON endpoints (free, no key) and turns them into the small format the page uses.
 // ESPN's site API is unofficial: every reader below is defensive and returns partial data instead of throwing.
-import { LEAGUES, TEAMS, norm } from '../../js/teams.js';
+import { LEAGUES, ALL_TEAMS, PACKS, norm } from '../../js/teams.js';
 
 const SITE = 'https://site.api.espn.com/apis/site/v2/sports/';
 const CORE = 'https://site.api.espn.com/apis/v2/sports/';
@@ -56,9 +56,9 @@ export function normalizeEvent(ev, l, fl = {}) {
   // Soccer playoffs carry the round only in the season slug ("eastern-conference-playoffs---round-one").
   if (!note && /playoff/i.test(ev.season?.slug || '')) note = ev.season.slug.replace(/-+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const home = team(H), away = team(A);
-  // Soccer venues come without a state (only "USA"): a Florida team at home, not on a neutral
-  // ground, is playing in Florida.
-  const region = addr.state || (home.key && !c.neutralSite ? 'FL' : addr.country || '');
+  // Soccer venues come without a state (only "USA"): a pack team at home, not on a neutral ground,
+  // is playing in its own state.
+  const region = addr.state || (home.key && !c.neutralSite ? ALL_TEAMS[home.key]?.st || '' : addr.country || '');
   return {
     id: String(ev.id),
     l,
@@ -77,19 +77,19 @@ export function normalizeEvent(ev, l, fl = {}) {
   };
 }
 
-// Finds the ESPN ids of the Florida teams by display name.
-export async function floridaIds(errors) {
+// Finds the ESPN ids of a pack's teams (Florida by default) by display name.
+export async function floridaIds(errors, pack = 'fl') {
   const out = {};
   const byLeague = {};
-  for (const [k, t] of Object.entries(TEAMS)) (byLeague[t.l] ||= []).push(k);
+  for (const k of PACKS[pack].keys) (byLeague[ALL_TEAMS[k].l] ||= []).push(k);
   await Promise.all(Object.entries(byLeague).map(async ([l, keys]) => {
     try {
       const j = await getJSON(SITE + LEAGUES[l].path + '/teams');
       const list = (j.sports?.[0]?.leagues?.[0]?.teams || []).map(x => x.team);
       for (const k of keys) {
-        const hit = list.find(t => norm(t.displayName) === norm(TEAMS[k].espn));
+        const hit = list.find(t => norm(t.displayName) === norm(ALL_TEAMS[k].espn));
         if (hit) out[k] = teamInfo(hit);
-        else errors.push(`team not found: ${TEAMS[k].espn}`);
+        else errors.push(`team not found: ${ALL_TEAMS[k].espn}`);
       }
     } catch (e) { errors.push(String(e.message || e)); }
   }));

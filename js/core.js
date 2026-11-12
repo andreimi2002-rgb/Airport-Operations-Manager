@@ -1,9 +1,9 @@
 // Shared data and state: the games and standings, the viewer's filters, dates and times, storage.
-import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm } from './teams.js';
+import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, HOME, PACK } from './teams.js';
 import { $, esc, emb, theme } from './ui.js';
 
 /* ================= data loading ================= */
-export const CACHE_KEY = 'flcal-cache-v1';
+export const CACHE_KEY = 'flcal-cache-v1' + (PACK === 'fl' ? '' : '-' + PACK);   // one saved season per pack
 export const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage full or blocked */ } },
@@ -51,7 +51,7 @@ export function toGame(x) {
   const g = {
     id: String(x.id), l: x.l, d, tbd: x.tbd, state: x.state, detail: x.detail,
     H, A, h: x.home.name, a: x.away.name, hs: x.home.score, as: x.away.score,
-    v: x.venue, city: [x.city, x.region].filter(Boolean).join(', '), inFL: x.region === 'FL', note: x.note || '', tv: x.tv || '', raw: x
+    v: x.venue, city: [x.city, x.region].filter(Boolean).join(', '), inFL: HOME.regions.includes(x.region), note: x.note || '', tv: x.tv || '', raw: x
   };
   g.teams = [H.key, A.key].filter(k => k && TEAMS[k]);
   g.derby = g.teams.length === 2;

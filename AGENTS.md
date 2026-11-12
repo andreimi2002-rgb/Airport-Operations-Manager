@@ -121,12 +121,19 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     distribuire (`og:` și `icons/og.png`), `robots.txt`, `sitemap.xml`, eticheta „Beta”.
     În paralel: testul BALLDONTLIE (cheia doar local, apoi `BDL_KEY` în Netlify), vezi documentul despre
     monetizare. Adresele reale și indexarea complete vin în etapa „Pregătit pentru public”.
-13. **Activitatea pe site** (în lucru, branch `stage-13-activitate`). Tot ce se întâmplă, numărat pe zile,
+13. **Activitatea pe site** (în producție, PR #14). Adresa nouă `americansportshub.netlify.app` (PR #15). Tot ce se întâmplă, numărat pe zile,
     niciodată pe persoană: sursa vizitei (`?sursa=instagram`, `utm_source`, browserul din Instagram sau
     Facebook, pagina de dinainte), dispozitivul, sistemul, cât durează o vizită, secțiunile văzute pe pagina
     de start, echipele și meciurile deschise, clicurile, alegerile din căutare, serviciile de streaming din
     ghid, erorile. Pagina trimite pachete (`{ b: [...] }`) la 4 secunde și la ieșire. Pagina
     „Confidențialitate” (`#confidentialitate`) spune ce se numără. Statisticile au un tabel pe categorie.
+15. **Varianta publică** (în lucru, branch `stage-15-public`). Două pachete de echipe implicite în
+    `js/teams.js` (`PACKS`): Florida (11 echipe) pe dispozitivele proprietarului, marcate cu `?eu=1`, și
+    New York (Knicks, Rangers, Giants, NYCFC, Yankees) pentru toți ceilalți. `TEAMS` e pachetul activ,
+    `ALL_TEAMS` toate cheile (serverul le recunoaște pe toate). Pagina de start urmează pachetul: program
+    (`/api/schedule?pack=ny`, cache separat), clasamentele diviziilor, „zi plină” (`busy`), derby-uri,
+    orașele și stadioanele (Florida din places.json, New York din america.json); harta doar pentru Florida.
+    Calendarul și notificările primesc chei din orice pachet.
 
 ## Structura
 

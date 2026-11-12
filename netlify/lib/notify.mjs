@@ -2,7 +2,7 @@
 // A subscription: { id, endpoint, keys, teams: ['heat', 'NBA-2'], lead: 60 (minutes, 0 = none), final: true,
 //                   morning: true (absent = true), morningDay: '2026-11-12' (last morning summary, Romanian date),
 //                   created (ms), sent: { [gameId]: { p: ms, f: ms } } }
-import { LEAGUES, TEAMS, sideIn } from '../../js/teams.js';
+import { LEAGUES, ALL_TEAMS as TEAMS, sideIn } from '../../js/teams.js';
 import { detailRo } from '../../js/ro.js';
 
 const SPORT = { NBA: '🏀', NHL: '🏒', NFL: '🏈', MLS: '⚽', MLB: '⚾' };

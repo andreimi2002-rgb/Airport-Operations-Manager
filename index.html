@@ -117,7 +117,7 @@
     <div class="filters">
       <span id="chips" class="filters"></span>
       <select id="team" aria-label="Echipă"></select>
-      <label class="check" for="homeonly"><input type="checkbox" id="homeonly"> Jucate în Florida</label>
+      <label class="check" for="homeonly"><input type="checkbox" id="homeonly"> Jucate în <span data-home>Florida</span></label>
       <label class="check" for="awake"><input type="checkbox" id="awake"> Doar la ore bune în România</label>
     </div>
     <div class="calbar">
@@ -125,7 +125,7 @@
         <button id="v-month" type="button" data-view="month" aria-pressed="true">Lună</button>
         <button id="v-week" type="button" data-view="week" aria-pressed="false">Săptămână</button>
       </div>
-      <div class="legend"><span><span class="box"></span>Zi plină: joacă cel puțin 4 echipe din Florida</span></div>
+      <div class="legend"><span><span class="box"></span>Zi plină: joacă cel puțin <span data-busy>4</span> echipe din <span data-home>Florida</span></span></div>
     </div>
     <div id="cal"></div>
     <div class="legend"><span><b style="color:var(--good)">Oră bună</b> = start între 12:00 și 23:00 în România · <b style="color:var(--warn)">Târziu</b> = până la 01:00 · <b>Noapte</b> = după 01:00</span></div>
@@ -166,7 +166,7 @@
   <footer>
     <div id="sources" class="sources" aria-live="polite"></div>
     <div class="appver"><span id="appver"></span> · <button type="button" class="link" data-update>Caută actualizare</button> · <a href="#parere" class="link" data-feedback>Spune-ne ce crezi</a> · <a href="#confidentialitate" class="link" data-privacy>Confidențialitate</a></div>
-    <div><b>MLB:</b> Miami Marlins și Tampa Bay Rays apar singure în program când se apropie sezonul (de la sfârșitul lui martie până în octombrie); în rest, liga e marcată „extrasezon”.</div>
+    <div><b>MLB:</b> meciurile de baseball apar singure în program când se apropie sezonul (de la sfârșitul lui martie până în octombrie); în rest, liga e marcată „extrasezon”.</div>
     <div>Date de la ESPN (program, scoruri, clasamente) și logo-uri ESPN, pentru uz personal. Orele se pot modifica, în special la NFL.</div>
   </footer>
 </div>

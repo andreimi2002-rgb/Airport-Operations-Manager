@@ -4,6 +4,7 @@ import { sendPush } from '../lib/webpush.mjs';
 import { subsStore, vapid, env } from '../lib/subs.mjs';
 import { due, markSent } from '../lib/notify.mjs';
 import { buildSchedule } from './schedule.mjs';
+import { packOf } from '../../js/teams.js';
 import { clubGames, mergeGames } from '../lib/clubs.mjs';
 
 async function getJSON(url) {
@@ -16,9 +17,11 @@ async function getJSON(url) {
 // Florida (clubs, 'NBA-2'), with fresh scores from /api/live for games started in the last hours,
 // so a final whistle is noticed within one run.
 export async function currentGames(site, now = Date.now(), clubs = []) {
-  let data;
-  try { data = await getJSON(site + '/api/schedule'); } catch (e) { data = await buildSchedule(); }
-  const games = clubs.length ? mergeGames(data.games || [], await clubGames(site, clubs)) : (data.games || []);
+  // One schedule per pack of default teams the subscribers follow (Florida, New York), plus any other team.
+  const packs = [...new Set(['fl', ...clubs.map(packOf).filter(Boolean)])];
+  const lists = await Promise.all(packs.map(p => getJSON(site + '/api/schedule' + (p === 'fl' ? '' : '?pack=' + p)).catch(() => buildSchedule(p))));
+  const base = mergeGames(lists[0].games || [], lists.slice(1).flatMap(d => d.games || []));
+  const games = clubs.length ? mergeGames(base, await clubGames(site, clubs)) : base;
   const recent = games.filter(g => g.state !== 'post' && Math.abs(new Date(g.date).getTime() - now) < 6 * 36e5);
   const leagues = [...new Set(recent.map(g => g.l))];
   if (leagues.length) {
