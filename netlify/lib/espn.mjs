@@ -324,6 +324,21 @@ export async function recapVideo(l, id, clips = []) {
   return v && safeClip(v) ? { ...v, title: v.title || a.headline || '' } : null;
 }
 
+// The written recap of a finished game (ESPN / AP, in English): the headline and the first paragraphs.
+const ENT = { '&amp;': '&', '&quot;': '"', '&#39;': "'", '&apos;': "'", '&lt;': '<', '&gt;': '>', '&nbsp;': ' ' };
+const plain = s => String(s || '').replace(/<[^>]+>/g, '').replace(/--\s*—/g, '—').replace(/&(amp|quot|#39|apos|lt|gt|nbsp);/g, m => ENT[m]).replace(/\s+/g, ' ').trim();
+export function recapArticle(j) {
+  const a = j?.article;
+  if (!a || !/recap/i.test(a.type || '') || !a.story) return null;
+  const paras = String(a.story).split(/<\/p>|\n\s*\n/).map(plain).filter(p => p.length > 40);
+  const text = [];
+  let len = 0;
+  for (const p of paras) { if (text.length && len + p.length > 900) break; text.push(p); len += p.length; if (text.length >= 3) break; }
+  // ESPN gives http:// links; only its own pages, always over https.
+  const url = String(a.links?.web?.href || '').replace(/^http:\/\//, 'https://');
+  return text.length ? { title: plain(a.headline), text, url: /^https:\/\/(www\.)?espn\.com\//.test(url) ? url : '' } : null;
+}
+
 // NHL, before the game: the expected goalies.
 function goalies(j) {
   const g = j.goalies;
@@ -375,6 +390,7 @@ export function normalizeSummary(j, l) {
     videos: safe(() => videos(j), []).slice(0, 4),
     allVideos: safe(() => videos(j), []),
     goalies: safe(() => goalies(j), []),
+    article: safe(() => recapArticle(j), null),
     predictor: predictor && predictor.home != null ? predictor : null,
     attendance: num(g.attendance),
     officials: (g.officials || []).slice(0, 1).map(o => o.displayName).join(''),

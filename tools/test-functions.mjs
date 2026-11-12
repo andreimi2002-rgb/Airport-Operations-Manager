@@ -117,7 +117,7 @@ await test('game: the recap among the clips; no recap keeps the clips, cached br
   assert.equal(j.recap, true); assert.equal(j.videos.length, 1);
   routes = [['summary?event', () => summaryJ('post', [shortClip('Bam dunks'), shortClip('Bad host', 'https://evil.example')])], ['/news?event', () => ({ articles: [] })]];
   const r = await game(req('/api/game?l=NBA&id=401'));
-  assert.match(r.headers.get('netlify-cdn-cache-control'), /s-maxage=1800/);
+  assert.match(r.headers.get('netlify-cdn-cache-control'), /s-maxage=900/);
   j = await body(r);
   assert.equal(j.recap, undefined);
   assert.deepEqual(j.videos.map(v => v.title), ['Bam dunks'], 'only clips from ESPN servers');
@@ -125,6 +125,17 @@ await test('game: the recap among the clips; no recap keeps the clips, cached br
   j = await body(await game(req('/api/game?l=NBA&id=401')));
   assert.equal(j.recap, undefined, 'no recap lookup before the game');
   assert.equal((await game(req('/api/game?l=XYZ&id=1'))).status, 400);
+});
+
+await test('game: the written recap, as plain text, with a link only to ESPN', async () => {
+  const { recapArticle } = await import('../netlify/lib/espn.mjs');
+  const story = '<p>MADRID -- — Joe Burrow threw for three touchdowns and the <a href="x">Bengals</a>\' offense kept rolling &amp; won.</p><p>Short.</p><p>Ja’Marr Chase had eight receptions for 142 yards in a career-high first half for him.</p>';
+  const a = recapArticle({ article: { type: 'Recap', headline: 'Burrow powers Bengals', story, links: { web: { href: 'http://www.espn.com/nfl/recap?gameId=1' } } } });
+  assert.equal(a.title, 'Burrow powers Bengals');
+  assert.deepEqual(a.text, ["MADRID — Joe Burrow threw for three touchdowns and the Bengals' offense kept rolling & won.", 'Ja’Marr Chase had eight receptions for 142 yards in a career-high first half for him.']);
+  assert.equal(a.url, 'https://www.espn.com/nfl/recap?gameId=1');
+  assert.equal(recapArticle({ article: { type: 'Preview', story } }), null, 'a preview is not a recap');
+  assert.equal(recapArticle({ article: { type: 'Recap', story, links: { web: { href: 'https://evil.example/x' } } } }).url, '');
 });
 
 /* ---------- /api/weather ---------- */

@@ -780,3 +780,8 @@ svg.cl .hit{fill:transparent;cursor:pointer}
 .duel .side .tname{font-size:inherit;text-align:center}
 /* the recap of a finished game: one video, wide */
 .vids.one{grid-template-columns:minmax(0,1fr);max-width:720px}
+/* NFL recap on YouTube; the written recap */
+.ytbtn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:9px 14px;font-weight:700;text-decoration:none}
+.ytbtn:hover{filter:brightness(1.08)}
+.recap{display:flex;flex-direction:column;gap:6px;max-width:70ch;line-height:1.55}
+.recap p{margin:0;color:var(--muted)}

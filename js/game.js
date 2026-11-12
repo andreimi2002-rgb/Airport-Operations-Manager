@@ -62,6 +62,12 @@ export function panelHtml(g, s, view) {
 }
 
 /* ================= summary ================= */
+// YouTube search for the NFL's own recap ("Bengals vs. Falcons Game Highlights | NFL 2026 Season Week 10").
+export function nflRecapUrl(g) {
+  const nick = n => String(n || '').split(' ').pop();
+  const y = g.d.getUTCFullYear(), season = g.d.getUTCMonth() < 2 ? y - 1 : y;
+  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(`${nick(g.a)} vs. ${nick(g.h)} game highlights NFL ${season}`);
+}
 function summaryHtml(g, s, known) {
   if (!s) return '';
   let html = '';
@@ -80,6 +86,9 @@ function summaryHtml(g, s, known) {
   if (s.goalies?.length && !played(g)) html += `<section><h3>Portari probabili</h3><ul class="notes">${s.goalies.map(x => `<li>${esc(shortOf(g, x.side))}: <b>${esc(x.n)}</b>${x.j ? ` (#${esc(x.j)})` : ''}</li>`).join('')}</ul></section>`;
   if (s.leaders?.length) html += `<section><h3>${played(g) || isLive(g) ? 'Cei mai buni jucători' : 'Liderii echipelor în sezon'}</h3><div class="leaders">${s.leaders.map(t => `<div class="tbl"><h4>${t.side ? emb(sideOf(g, t.side), 'sm') : ''}${esc(t.side ? shortOf(g, t.side) : t.team)}</h4><ul>${t.items.map(i => `<li><span class="c">${esc(catRo(i.cat))}</span> ${esc(i.who)} · <b>${esc(leaderValRo(i.val))}</b></li>`).join('')}</ul></div>`).join('')}</div></section>`;
   if (s.videos?.length) html += `<section><h3>${s.recap ? 'Rezumatul meciului' : 'Faze video'}</h3><div class="vids${s.recap ? ' one' : ''}">${s.videos.map(v => `<figure><video controls preload="none" playsinline src="${esc(v.mp4)}"${v.thumb ? ` poster="${esc(v.thumb)}"` : ''}></video><figcaption>${esc(v.title)}${v.dur ? ` <span>· ${Math.floor(v.dur / 60)}:${String(v.dur % 60).padStart(2, '0')}</span>` : ''}</figcaption></figure>`).join('')}</div><div class="fn">Clipuri ESPN, în engleză.</div></section>`;
+  // NFL: ESPN has no video rights; the league's own recap is on YouTube.
+  if (played(g) && g.l === 'NFL' && !s.videos?.length) html += `<section><h3>Rezumatul meciului</h3><a class="ytbtn" href="${esc(nflRecapUrl(g))}" target="_blank" rel="noopener"><span aria-hidden="true">▶</span> Rezumatul pe YouTube</a><div class="fn">Video oficial NFL, se deschide pe YouTube. ESPN nu are drepturi video pentru NFL.</div></section>`;
+  if (s.article && played(g)) html += `<section><h3>Cronica meciului</h3><div class="recap" lang="en"><b>${esc(s.article.title)}</b>${s.article.text.map(p => `<p>${esc(p)}</p>`).join('')}</div><div class="fn">Text ESPN, în engleză.${s.article.url ? ` <a href="${esc(s.article.url)}" target="_blank" rel="noopener">Citește tot pe ESPN ›</a>` : ''}</div></section>`;
   if (s.series?.games?.length) html += seriesHtml(g, s, known);
   if (s.last5?.length) html += `<section><h3>Forma, ultimele 5 meciuri</h3><div class="l5">${s.last5.map(t => `<div class="tbl"><h4>${emb(sideOf(g, t.side), 'sm')}${esc(shortOf(g, t.side))}</h4><div class="rows">${t.games.map(x => `<div class="row"><span class="when">${dayShort(x.date)}</span><span>${x.at ? 'la' : 'vs'} ${esc(x.opp)}</span><span class="r ${x.res}">${x.res === 'V' ? 'V' : x.res === 'I' ? 'Î' : 'E'} ${x.mine ?? ''}–${x.their ?? ''}</span></div>`).join('')}</div></div>`).join('')}</div></section>`;
   if (s.attendance) html += `<div class="fn">Spectatori: ${s.attendance.toLocaleString('ro-RO')}</div>`;
