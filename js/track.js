@@ -93,7 +93,7 @@ export function trackEvent(e) { push({ e }); }
 // A click on any of these counts as the named action (the first that matches).
 const CLICKS = [
   ['[data-theme-set]', el => 'tema ' + el.dataset.themeSet],
-  ['#tz-ro', () => 'ora României'], ['#tz-fl', () => 'ora Floridei'],
+  ['#tz-ro', () => 'ora României'], ['#tz-fl', () => 'ora SUA'],
   ['[data-jump]', el => 'bara ' + el.dataset.jump],
   ['[data-view]', el => 'calendar ' + el.dataset.view],
   ['[data-day]', () => 'calendar zi'],

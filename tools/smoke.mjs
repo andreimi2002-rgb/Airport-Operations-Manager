@@ -1,7 +1,7 @@
 // After a deploy: asks a published site (preview or production) for its pages and data, the way the page
 // does, and says plainly what does not work. Uses the real ESPN and Open-Meteo through the site.
-//   node tools/smoke.mjs https://deploy-preview-10--florida-sp-calendar.netlify.app
-const site = (process.argv[2] || 'https://florida-sp-calendar.netlify.app').replace(/\/$/, '');
+//   node tools/smoke.mjs https://deploy-preview-10--americansportshub.netlify.app
+const site = (process.argv[2] || 'https://americansportshub.netlify.app').replace(/\/$/, '');
 const usDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()).replace(/-/g, '');
 
 const checks = [

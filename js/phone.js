@@ -7,7 +7,7 @@ import { calendar } from './ics.js';
 /* ================= offline ================= */
 // The version of this page. It must equal VERSION in sw.js (tools/test.mjs checks): the page compares
 // it with the published sw.js to know that a newer version is out.
-export const APP_VERSION = 'v14';
+export const APP_VERSION = 'v15';
 
 // The published version, read from sw.js past every cache.
 async function latestVersion() {
@@ -119,7 +119,7 @@ export function calendarLinks(url, name) {
 export function calendarHtml(sel, alarm, emb, clubs = []) {
   const url = sel.length ? feedUrl(sel, alarm) : '';
   const nameOf = k => TEAMS[k]?.s || clubs.find(c => c.id === k)?.name || k;
-  const name = sel.length === Object.keys(TEAMS).length && sel.every(k => TEAMS[k]) ? 'American Sports Hub: Florida' : 'American Sports Hub: ' + sel.map(nameOf).join(', ');
+  const name = sel.length === Object.keys(TEAMS).length && sel.every(k => TEAMS[k]) ? 'American Sports Hub' : 'American Sports Hub: ' + sel.map(nameOf).join(', ');
   const L = url ? calendarLinks(url, name) : null;
   const byL = {};
   for (const k in TEAMS) (byL[TEAMS[k].l] ||= []).push(k);

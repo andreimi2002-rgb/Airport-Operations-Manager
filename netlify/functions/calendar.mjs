@@ -27,7 +27,7 @@ export default async req => {
     const [data, more] = await Promise.all([fl.length ? schedule(u.origin) : { games: [] }, clubGames(u.origin, clubs)]);
     const games = pick(mergeGames(data.games || [], more), teams);
     const allFL = fl.length === Object.keys(TEAMS).length && !clubs.length;
-    const name = allFL ? 'American Sports Hub: Florida' : 'American Sports Hub: ' + [...fl.map(k => TEAMS[k].s), ...clubs.map(s => clubName(s, more) || s)].join(', ');
+    const name = allFL ? 'American Sports Hub' : 'American Sports Hub: ' + [...fl.map(k => TEAMS[k].s), ...clubs.map(s => clubName(s, more) || s)].join(', ');
     const body = calendar(games, { name, site: u.origin, alarm });
     return new Response(body, {
       headers: {

@@ -40,12 +40,14 @@ export default async () => {
   const store = await subsStore('production');
   const subs = await store.list();
   if (!subs.length) return new Response('no subscribers');
-  const site = env('URL') || 'https://florida-sp-calendar.netlify.app';
+  const site = env('URL') || 'https://americansportshub.netlify.app';
+  // Subscriptions made on the old address keep it; their links go to the new one (the old one redirects anyway).
+  const siteOf = sub => (!sub.site || sub.site.includes('florida-sp-calendar') ? site : sub.site);
   const now = Date.now();
   const games = await currentGames(site, now, subs.flatMap(s => s.teams || []));
   let sent = 0, removed = 0;
   for (const sub of subs) {
-    const items = due(sub, games, now, sub.site || site);
+    const items = due(sub, games, now, siteOf(sub));
     if (!items.length) continue;
     const done = [];
     for (const it of items) {
