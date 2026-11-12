@@ -1,6 +1,6 @@
 // Entry point: theme, the page events, loading the season (live, then cached, then the snapshot),
 // live scores. The rest is in core.js (data, state), home.js, pages.js (overlays, router), views.js, search.js.
-import { LEAGUES, TEAMS, parseClub } from './teams.js';
+import { LEAGUES, TEAMS, parseClub, HOME, PACK } from './teams.js';
 import { toggleMine, resetMine } from './mine.js';
 import { $, theme, isDark, onSystemTheme } from './ui.js';
 import { wpHover } from './game.js';
@@ -241,7 +241,7 @@ async function load(manual) {
   if (loading) return; loading = true;
   if (manual) { $('status').className = 'status'; $('status').textContent = 'Se reîncarcă…'; }
   try {
-    const raw = await getJSON('/api/schedule');
+    const raw = await getJSON('/api/schedule' + (PACK === 'fl' ? '' : '?pack=' + PACK));
     if (!raw.games || !raw.games.length) throw new Error('fără meciuri');
     store.set(CACHE_KEY, JSON.stringify(raw));
     apply(raw, 'live');
@@ -252,7 +252,7 @@ async function load(manual) {
       let used = false;
       if (c) { try { apply(JSON.parse(c), 'cache'); used = true; } catch (x) { store.del(CACHE_KEY); } }
       if (!used) {
-        try { apply(await getJSON('data/snapshot.json'), 'snapshot'); }
+        try { if (PACK !== 'fl') throw new Error('no snapshot'); apply(await getJSON('data/snapshot.json'), 'snapshot'); }
         catch (x) { $('banner').hidden = false; $('banner').className = 'banner'; $('banner').textContent = 'Nu am putut încărca datele. Verifică conexiunea și reîncarcă pagina.'; $('status').textContent = ''; }
       }
     }
@@ -319,6 +319,10 @@ setInterval(() => { if (GAMES.length) { renderHero(); renderStatus(); } }, 30000
 setInterval(() => { if (!document.hidden) load(); }, 15 * 60e3);
 
 /* ================= start ================= */
+// The pack's name and numbers in the page's fixed texts ("Jucate în New York", "cel puțin 3 echipe").
+document.querySelectorAll('[data-home]').forEach(el => { el.textContent = HOME.name; });
+document.querySelectorAll('[data-busy]').forEach(el => { el.textContent = HOME.busy; });
+if (HOME.strip.src === 'america') renderStrip();
 $('appver').textContent = 'Versiunea ' + APP_VERSION.replace(/^v/, '');
 loadPlaces()?.then(d => { if (!d) return; renderStrip(); if (GAMES.length) { render(); if (!$('ov').hidden) route(true); } });
 setInterval(() => { if (!document.hidden && PLACES.data) renderStrip(); }, 30 * 60e3);

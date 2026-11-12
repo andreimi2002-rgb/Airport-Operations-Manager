@@ -1,12 +1,12 @@
 // The home page: status line, "Echipele mele", the next game, highlights, calendar, agenda, map,
 // playoff bracket, weather strip and the phone section.
-import { LEAGUES, TEAMS, DIVISIONS, METROS, norm } from './teams.js';
+import { LEAGUES, TEAMS, DIVISIONS, METROS, norm, HOME } from './teams.js';
 import { MINE, isMine, mineFL, clubId } from './mine.js';
 import { esc, $, emb } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
 import { installHtml, canInstall } from './phone.js';
 import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
-import { PLACES, venueByName, cityOf, getWeather, stripHtml, STRIP, cityCard, roofWord } from './places.js';
+import { PLACES, venueByName, cityOf, getWeather, stripHtml, STRIP, cityCard, roofWord, AMERICA, loadAmerica } from './places.js';
 import { teamBtn, teamEmbBtn, AW, BY_ID, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters } from './core.js';
 import { cal, clubSide, entryById, go } from './pages.js';
 import { HEALTH, healthNote, sourcesHtml } from './health.js';
@@ -84,13 +84,13 @@ export function minePickHtml() {
   return `<div class="minepick"><div class="mphead"><input id="minefilter" type="search" autocomplete="off" placeholder="Caută echipa (ex. Celtics, Yankees)" aria-label="Caută echipa" value="${esc(minePick.q)}">
       <button class="ghost" type="button" data-mine-close>Gata</button></div>
     <div class="mplist">${Object.entries(byL).map(([l, ts]) => `<div class="mpgrp"><b><span class="ldot" style="--c:${col(l)}"></span>${l}</b>${ts.map(t => { const on = isMine(t.id); return `<button class="mpteam${on ? ' on' : ''}" type="button" data-mine-toggle="${esc(t.id)}" aria-pressed="${on}">${emb(t.side, 'sm')}<span class="nm">${esc(t.name)}</span><i>${on ? '★' : '+'}</i></button>`; }).join('')}</div>`).join('') || `<div class="empty">Nicio echipă pentru „${esc(minePick.q)}”.</div>`}</div>
-    ${MINE.custom ? '<button class="link" type="button" data-mine-reset>Înapoi la echipele din Florida</button>' : ''}</div>`;
+    ${MINE.custom ? '<button class="link" type="button" data-mine-reset>Înapoi la echipele implicite</button>' : ''}</div>`;
 }
 export function renderMine() {
   const el = $('teams'); if (!el) return;
   el.innerHTML = `<div class="teams">${MINE.list.map(mineCardHtml).join('')}
       <button class="tbtn add" type="button" data-mine-add aria-expanded="${minePick.open}"><span class="plus" aria-hidden="true">+</span><span><b>Adaugă o echipă</b><small>din oricare ligă</small></span></button></div>
-    ${MINE.list.length ? '' : '<div class="fn">Nu urmărești nicio echipă. Adaugă una sau revino la echipele din Florida.</div>'}
+    ${MINE.list.length ? '' : '<div class="fn">Nu urmărești nicio echipă. Adaugă una sau revino la echipele implicite.</div>'}
     ${minePick.open ? minePickHtml() : ''}`;
 }
 export function renderMinePickList() {
@@ -137,12 +137,12 @@ export function renderHighlights(busy) {
   let html = '';
   GAMES.filter(g => g.derby && !played(g) && g.end > now && g.d.getTime() < horizonEnd() + 30 * 864e5).slice(0, 3).forEach(g => {
     const k = keyOf(g.d, state.tz);
-    html += `<button class="hlc derby" type="button" data-game="${g.id}"><span class="k">Derby Florida · ${g.l}</span><span class="t">${esc(TEAMS[g.H.key].s)} – ${esc(TEAMS[g.A.key].s)}</span><span class="d">${dayLabel(k)}, ${fmtTime[state.tz].format(g.d)} · ${esc(g.v)}</span></button>`;
+    html += `<button class="hlc derby" type="button" data-game="${g.id}"><span class="k">Derby ${esc(HOME.name)} · ${g.l}</span><span class="t">${esc(TEAMS[g.H.key].s)} – ${esc(TEAMS[g.A.key].s)}</span><span class="d">${dayLabel(k)}, ${fmtTime[state.tz].format(g.d)} · ${esc(g.v)}</span></button>`;
   });
-  Object.keys(busy).filter(k => k >= today && k <= lim && busy[k].teams.size >= 4)
+  Object.keys(busy).filter(k => k >= today && k <= lim && busy[k].teams.size >= HOME.busy)
     .sort((a, b) => busy[b].teams.size - busy[a].teams.size || (a < b ? -1 : 1)).slice(0, 3).sort()
     .forEach(k => {
-      html += `<button class="hlc" type="button" data-day="${k}" data-jump="1"><span class="k">Zi plină</span><span class="t">${dayLabel(k)}</span><span class="d">${busy[k].teams.size} echipe din Florida · ${[...busy[k].leagues].join(', ')}</span></button>`;
+      html += `<button class="hlc" type="button" data-day="${k}" data-jump="1"><span class="k">Zi plină</span><span class="t">${dayLabel(k)}</span><span class="d">${busy[k].teams.size} echipe din ${esc(HOME.name)} · ${[...busy[k].leagues].join(', ')}</span></button>`;
     });
   $('hl').innerHTML = html || '<div class="empty">Nimic special în următoarele zile.</div>';
 }
@@ -164,7 +164,7 @@ export function monthsHtml(list, busy) {
       const k = `${yy}-${String(mm + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const gs = byDay[k] || [];
       const cls = ['day']; if (gs.length) cls.push('has'); if (k === today) cls.push('today'); if (k === state.day) cls.push('sel'); if (k < today) cls.push('old');
-      const full = busy[k] && busy[k].teams.size >= 4; if (full && gs.length) cls.push('busy');
+      const full = busy[k] && busy[k].teams.size >= HOME.busy; if (full && gs.length) cls.push('busy');
       const dots = [...new Set(gs.map(g => g.l))].map(l => `<i style="--c:${col(l)}"></i>`).join('');
       html += gs.length
         ? `<button type="button" class="${cls.join(' ')}" data-day="${k}" aria-pressed="${k === state.day}" aria-label="${dayLabel(k)}: ${gs.length} ${gs.length === 1 ? 'meci' : 'meciuri'}${full ? ', zi plină' : ''}"><span class="n">${d}</span><span class="dots">${dots}</span></button>`
@@ -190,7 +190,7 @@ export function weekHtml(list, busy) {
       const lab = g.teams.map(t => TEAMS[t].s).join(' · ');
       pills += `<button class="pill${played(g) ? ' done' : ''}" type="button" data-game="${g.id}" style="--c:${col(g.l)};left:${st / 1440 * 100}%;width:${du / 1440 * 100}%;top:${5 + ln * 23}px" title="${fmtTime[state.tz].format(g.d)} ${esc(g.h)} – ${esc(g.a)}" aria-label="${fmtTime[state.tz].format(g.d)}, ${esc(g.h)} – ${esc(g.a)}">${esc(lab)}</button>`;
     });
-    const full = busy[k] && busy[k].teams.size >= 4;
+    const full = busy[k] && busy[k].teams.size >= HOME.busy;
     html += `<div class="wkrow"><button class="wkday${k === today ? ' today' : ''}${full ? ' busy' : ''}" type="button" data-day="${k}" aria-label="${dayLabel(k)}">${DOW[i]} ${parts(k)[2]}</button><div class="track" style="height:${Math.max(30, 10 + lanes.length * 23)}px">${pills}</div></div>`;
   }
   return html + `<div class="fn">Fiecare bandă e un meci, așezat după ora de start (${TZNAME[state.tz]}). Apasă pe un meci pentru detalii sau pe zi pentru lista ei.</div></div>`;
@@ -203,7 +203,7 @@ export function tn(g, side) {
 }
 export function card(g) {
   const other = state.tz === 'ro' ? 'fl' : 'ro', done = played(g), on = isLive(g);
-  const where = g.derby ? '<span class="tag derby">Derby Florida</span>' : g.inFL ? '<span class="tag home">Acasă</span>' : '<span class="tag away">Deplasare</span>';
+  const where = g.derby ? `<span class="tag derby">Derby ${esc(HOME.name)}</span>` : g.inFL ? '<span class="tag home">Acasă</span>' : '<span class="tag away">Deplasare</span>';
   const time = g.tbd ? '<span style="font-size:15px">oră neanunțată</span>' : fmtTime[state.tz].format(g.d);
   const alt = g.tbd ? '' : `<small>${fmtTime[other].format(g.d)} ${TZNAME[other]}<br>${fmtShort[other].format(g.d)}</small>`;
   let extra = '';
@@ -229,7 +229,7 @@ export function grouped(list, busy, showFull) {
     const k = keyOf(g.d, state.tz);
     if (k !== cur) {
       if (cur) html += '</div>';
-      const b = busy[k], full = showFull && b && b.teams.size >= 4;
+      const b = busy[k], full = showFull && b && b.teams.size >= HOME.busy;
       html += `<h3 class="dayhead"><span>${dayLabel(k)}</span>${full ? `<span class="full">Zi plină · ${b.teams.size} echipe</span>` : ''}</h3><div class="list">`; cur = k;
     }
     html += card(g);
@@ -246,7 +246,7 @@ export function renderAgenda(list, busy) {
   const recent = new Set(Object.keys(TEAMS).flatMap(k => lastGames(k).map(g => g.id)));
   const past = (state.day ? list.filter(g => played(g) && inDay(g)) : list.filter(g => played(g) && recent.has(g.id))).reverse();
   const inFL = up.filter(g => g.inFL).length, good = up.filter(g => g.aw === 'good' && !g.tbd).length;
-  $('count').innerHTML = `${up.length} ${up.length === 1 ? 'meci programat' : 'meciuri programate'} <span>· ${inFL} în Florida · ${good} la ore bune în România${state.day ? ' · ' + dayLabel(state.day) : ` · ${nextDays(state.agendaDays)}`}</span>`;
+  $('count').innerHTML = `${up.length} ${up.length === 1 ? 'meci programat' : 'meciuri programate'} <span>· ${inFL} în ${esc(HOME.name)} · ${good} la ore bune în România${state.day ? ' · ' + dayLabel(state.day) : ` · ${nextDays(state.agendaDays)}`}</span>`;
   $('upcount').textContent = state.day ? `${up.length} ${up.length === 1 ? 'meci' : 'meciuri'}, ${dayLabel(state.day)}` : `${up.length} ${up.length === 1 ? 'meci' : 'meciuri'} în ${nextDays(state.agendaDays)}`;
   $('clear').hidden = !state.day;
   const more = list.some(g => !played(g) && !inRange(g));
@@ -261,6 +261,8 @@ export function renderAgenda(list, busy) {
 /* ================= render: map ================= */
 export const FL_OUTLINE = [[31.0, -87.6], [31.0, -85.0], [30.7, -84.9], [30.7, -82.2], [30.36, -82.05], [30.7, -81.45], [30.3, -81.4], [29.9, -81.3], [29.0, -80.9], [28.4, -80.55], [27.8, -80.4], [27.0, -80.05], [26.3, -80.07], [25.6, -80.25], [25.2, -80.4], [25.12, -81.1], [25.85, -81.7], [26.5, -82.1], [27.0, -82.4], [27.6, -82.75], [28.2, -82.8], [28.9, -82.7], [29.5, -83.4], [30.05, -84.0], [29.9, -84.4], [29.65, -85.1], [29.7, -85.4], [30.2, -85.9], [30.4, -86.6], [30.3, -87.5]];
 export function renderMap() {
+  // The map is of Florida: shown only with the Florida pack.
+  if (!HOME.map) { $('harta').hidden = true; return; }
   const K = 40, px = lon => (lon + 88.2) * K, py = lat => (31.4 - lat) * K * 1.13, now = Date.now(), lim = horizonEnd();
   const home = {}; for (const m in METROS) home[m] = [];
   GAMES.forEach(g => { if (!played(g) && g.inFL && g.end > now && g.d.getTime() < lim && g.H.key) home[TEAMS[g.H.key].metro].push(g); });
@@ -278,7 +280,7 @@ export function renderMap() {
     ${cities.length ? `<div class="mcities">${cities.map(cityCard).join('')}</div>` : ''}
     ${venues.length ? `<div class="mvenues">${venues.map(v => `<button type="button" data-venue="${v.id}">${v.image ? `<img src="${esc(v.image.small)}" alt="" loading="lazy">` : ''}<span><b>${esc(v.name)}</b><small>${v.teams.map(k => esc(TEAMS[k].s)).join(', ')} · ${roofWord(v)}</small></span></button>`).join('')}</div>` : `<div class="mteams">${ks.map(k => `<button type="button" data-team="${k}">${emb(flSide(k), 'sm')}${esc(TEAMS[k].s)}</button>`).join('')}</div>`}
     <div class="rows">${gs.slice(0, 7).map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${esc(TEAMS[g.H.key].s)} – ${esc(g.a)}</span><span class="r">${g.tbd ? '' : fmtTime[state.tz].format(g.d)}</span></button>`).join('') || '<div class="row"><span></span><span>Niciun meci acasă în perioadă.</span><span></span></div>'}</div>
-    ${gs.length > 7 ? `<div class="fn">și încă ${gs.length - 7}; vezi lista completă cu filtrul „Jucate în Florida”.</div>` : ''}`;
+    ${gs.length > 7 ? `<div class="fn">și încă ${gs.length - 7}; vezi lista completă cu filtrul „Jucate în ${esc(HOME.name)}”.</div>` : ''}`;
 }
 
 export function render() {
@@ -336,11 +338,23 @@ export async function renderPlayoffs() {
   };
   sec.hidden = false;
   sec.innerHTML = head + layout.map(b => `<div class="bconf">${b.conf ? `<h3>${esc(confRo(b.conf))}</h3>` : ''}<div class="bcols">${b.rounds.map(r => `<div class="bcol"><div class="bround">${esc(roundRo(r.stage, l))}</div><div class="bser">${r.series.map(card).join('')}</div></div>`).join('')}</div></div>`).join('')
-    + '<div class="fn">Numărul mic din fața echipei e locul din sezonul regulat. Echipele din Florida sunt evidențiate; apasă pe seria lor pentru pagina meciului.</div>';
+    + '<div class="fn">Numărul mic din fața echipei e locul din sezonul regulat. Echipele tale sunt evidențiate; apasă pe seria lor pentru pagina meciului.</div>';
 }
 
 /* ----- weather strip on the home page ----- */
 export async function renderStrip() {
+  // New York (and any pack outside Florida): its cities and stadiums from data/america.json.
+  if (HOME.strip.src === 'america') {
+    const A = AMERICA.data || await loadAmerica();
+    if (!A) return;
+    const names = Object.fromEntries(Object.values(TEAMS).map(t => [t.espn, t.s]));
+    $('vstrip').innerHTML = HOME.strip.venues.map(id => A.venues[id]).filter(Boolean).map(v => `<button type="button" class="vchip" data-venue="${v.id}">${v.photo ? `<img src="${esc(v.photo)}" alt="" loading="lazy" decoding="async">` : ''}<span><b>${esc(v.name)}</b><small>${esc((v.teams || []).map(t => names[t.name]).filter(Boolean).join(', '))} · ${esc(A.cities[v.city]?.name || '')}</small></span></button>`).join('');
+    const cities = HOME.strip.cities.map(id => A.cities[id]).filter(Boolean);
+    $('wxstrip').innerHTML = stripHtml(null, cities);
+    try { $('wxstrip').innerHTML = stripHtml(await getWeather(cities, true), cities); }
+    catch (e) { $('wxstrip').innerHTML = stripHtml(null, cities).replace(/…/g, 'vremea nu e disponibilă'); }
+    return;
+  }
   if (!PLACES.data) return;
   // The nine stadiums, north to south, as a row that scrolls sideways on a phone.
   $('vstrip').innerHTML = Object.values(PLACES.data.venues).sort((a, b) => b.lat - a.lat).map(v => `<button type="button" class="vchip" data-venue="${v.id}">${v.image ? `<img src="${esc(v.image.small)}" alt="" loading="lazy" decoding="async">` : ''}<span><b>${esc(v.name)}</b><small>${v.teams.map(k => esc(TEAMS[k].s)).join(', ')} · ${esc(cityOf(v)?.name || '')}</small></span></button>`).join('');

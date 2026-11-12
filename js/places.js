@@ -218,11 +218,13 @@ export function gameWeatherHtml(g, v, w, durMin) {
 
 /* ================= weather strip (home page) ================= */
 export const STRIP = ['miami', 'tampa', 'orlando', 'jacksonville'];   // one city per metro area
-export function stripHtml(list) {
+// `cities`: the city records to show (default: the Florida strip).
+export function stripHtml(list, cities) {
   const C = PLACES.data?.cities;
-  if (!C) return '';
-  return STRIP.map((id, i) => {
-    const c = C[id], w = list?.[i], n = w?.now, d = w?.days?.[0];
+  const L = cities || (C ? STRIP.map(id => C[id]) : []);
+  if (!L.length) return '';
+  return L.map((c, i) => {
+    const id = c.id, w = list?.[i], n = w?.now, d = w?.days?.[0];
     return `<button class="wxtile" type="button" data-city="${id}"><span class="nm">${esc(c.name)}</span>${n ? `${wxIcon(n.code, n.day, 34)}<span class="tt">${Math.round(n.temp)}°</span><span class="cc">${esc(wxText(n.code))}</span>${d ? `<span class="dd">${Math.round(d.lo)}° – ${Math.round(d.hi)}°${d.pp >= 20 ? ` · ploaie ${d.pp}%` : ''}</span>` : ''}` : '<span class="cc">…</span>'}</button>`;
   }).join('');
 }
@@ -366,7 +368,7 @@ export function cityLiteHtml(c, ctx) {
     <section><h3>Vremea acum</h3><div id="pwx"><div class="skeleton" style="height:120px"></div></div></section>
     <section><h3>${venues.length === 1 ? 'Stadionul' : 'Stadioanele'}</h3><div class="vcards">${venues.map(v => `<button class="vcard" type="button" data-venue="${esc(v.id)}">${v.photo || v.credit ? `<img src="${esc(v.photo || v.credit.url)}" alt="" loading="lazy">` : ''}<span class="vb"><b>${esc(v.name)}</b><small>${v.teams.map(t => esc(t.name)).join(' · ')}</small><small>${v.capacity ? num(v.capacity) + ' locuri · ' : ''}${roofWord(v)}</small></span></button>`).join('')}</div></section>
     <section><h3>Echipe</h3><div class="hosts">${venues.flatMap(v => v.teams).map(t => clubBtn(t, ctx)).join('')}</div></section>
-    ${games.up.length ? `<section><h3>Echipele din Florida joacă aici</h3><div class="rows">${games.up.slice(0, 6).map(ctx.row).join('')}</div></section>` : ''}
+    ${games.up.length ? `<section><h3>Echipele tale joacă aici</h3><div class="rows">${games.up.slice(0, 6).map(ctx.row).join('')}</div></section>` : ''}
     <div class="fn">Oraș din afara Floridei: pagina are faptele de bază (ora, vremea, echipele), fără textele în română de la orașele din Florida.</div>
     <div class="btns"><button class="ghost" type="button" data-share>Copiază linkul</button></div>
     </div>`;
@@ -385,8 +387,8 @@ export function venueLiteHtml(v, ctx) {
     </div>
     <section><h3>${v.teams.length === 1 ? 'Echipa gazdă' : 'Echipele gazdă'}</h3><div class="hosts">${v.teams.map(t => clubBtn(t, ctx)).join('')}</div></section>
     <section><h3>${v.roof === 'closed' ? 'Vremea afară' : 'Vremea'}</h3><div id="pwx"><div class="skeleton" style="height:110px"></div></div></section>
-    ${games.up.length ? `<section><h3>Echipele din Florida joacă aici</h3><div class="rows">${games.up.slice(0, 6).map(ctx.row).join('')}</div></section>` : ''}
-    ${games.past.length ? `<section><h3>Ultimele meciuri ale echipelor din Florida aici</h3><div class="rows">${games.past.slice(0, 4).map(ctx.row).join('')}</div></section>` : ''}
+    ${games.up.length ? `<section><h3>Echipele tale joacă aici</h3><div class="rows">${games.up.slice(0, 6).map(ctx.row).join('')}</div></section>` : ''}
+    ${games.past.length ? `<section><h3>Ultimele meciuri ale echipelor tale aici</h3><div class="rows">${games.past.slice(0, 4).map(ctx.row).join('')}</div></section>` : ''}
     ${v.names?.length ? `<section><h3>Nume anterioare</h3><ol class="tline">${v.names.slice().reverse().map(([n, a, b]) => `<li><span class="yr">${a ?? ''}${b ? '–' + b : ''}</span><span>${esc(n)}</span></li>`).join('')}</ol></section>` : ''}
     <dl class="facts">${c ? `<dt>Oraș</dt><dd><button class="linkish" type="button" data-city="${esc(c.id)}">${esc(c.name)}</button>, ${esc(c.state)}, ${esc(c.country)}</dd>` : ''}${v.surface ? `<dt>Gazon</dt><dd>${esc(v.surface)}</dd>` : ''}<dt>Acoperiș</dt><dd>${esc(ROOF[v.roof] || '')}</dd><dt>Hartă</dt><dd><a href="https://www.openstreetmap.org/search?query=${encodeURIComponent(v.name + ', ' + (c?.name || ''))}" target="_blank" rel="noopener">OpenStreetMap</a></dd></dl>
     <div class="fn">Date: ESPN, Open-Meteo${v.opened || v.capacity ? ', American Sports Encyclopedia' : ''}.</div>

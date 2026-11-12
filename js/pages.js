@@ -1,5 +1,5 @@
 // The overlay pages and the address router: team, club, city, stadium, calendar, notifications, game.
-import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, parseClub } from './teams.js';
+import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, parseClub, HOME } from './teams.js';
 import { MINE, mineIds, isMine, mineClubs, clubId, refreshMine } from './mine.js';
 import { esc, $, emb, pickInk } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
@@ -291,7 +291,7 @@ export function openClub(l, id, keep) {
       ${last.length ? `<div><h3>Forma, ultimele ${last.length} meciuri</h3><div class="form">${last.slice().reverse().map(g => { const o = outcomeOf(g, id); return `<i class="${o}" title="${OUT[o]}">${OUTL[o]}</i>`; }).join('')}<span>cel mai recent în dreapta</span></div></div>` : ''}
       ${aboutHtml(info)}
       <dl class="facts">${home ? `<dt>${home.kind === 'arena' ? 'Arenă' : 'Stadion'}</dt><dd><button class="linkish" type="button" data-venue="${esc(home.id)}">${esc(home.name)}</button>${homeCity ? `, <button class="linkish" type="button" data-city="${esc(homeCity.id)}">${esc(homeCity.name)}</button> (${esc(homeCity.state)})` : ''}</dd>${home.capacity ? `<dt>Capacitate</dt><dd>aprox. ${Number(home.capacity).toLocaleString('ro-RO')} de locuri</dd>` : ''}${homeCity ? `<dt>Ora acum</dt><dd>${clockIn(homeCity.tz)}, cu ${hoursBehindRomania(new Date(), homeCity.tz)} ore în urma României</dd>` : ''}` : ''}${infoFactsHtml(info, c?.x?.coach)}</dl>
-      ${vsFL.length ? `<section><h3>Cu echipele din Florida</h3><div class="rows">${vsFL.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${esc(g.h)} – ${esc(g.a)}</span><span class="r">${g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`).join('')}</div></section>` : ''}
+      ${vsFL.length ? `<section><h3>Cu echipele din ${esc(HOME.name)}</h3><div class="rows">${vsFL.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${esc(g.h)} – ${esc(g.a)}</span><span class="r">${g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`).join('')}</div></section>` : ''}
       ${c ? `<section><h3>Următoarele meciuri</h3><div class="rows">${next.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}</span><span class="r">${g.state === 'in' ? 'LIVE' : g.tbd ? 'oră neanunțată' : fmtTime[state.tz].format(g.d)}</span></button>`).join('') || '<div class="row"><span></span><span>Niciun meci programat.</span><span></span></div>'}</div></section>
       <section><h3>Ultimele rezultate</h3><div class="rows">${last.map(g => `<button class="row" type="button" data-game="${g.id}"><span class="when">${tShort(g.d)}</span><span>${opp(g)}</span>${res(g)}</button>`).join('') || '<div class="row"><span></span><span>Niciun meci jucat încă.</span><span></span></div>'}</div></section>` : '<div class="skeleton" style="height:160px"></div>'}
       ${groupTableHtml(l, id)}`;
@@ -411,7 +411,7 @@ export function openGame(id, keep) {
 }
 export function gameContext(g) {
   const ctx = [];
-  if (g.derby) ctx.push('Derby al Floridei: ambele echipe sunt din stat.');
+  if (g.derby) ctx.push(`Derby: ambele echipe sunt din ${HOME.name}.`);
   const sameDiv = (() => { if (g.l === 'MLS') return null; for (const [dk, D] of Object.entries(DIVISIONS)) if (D.members && D.members.some(m => norm(m) === norm(g.h)) && D.members.some(m => norm(m) === norm(g.a))) return D.t.split(' · ')[1]; return null; })();
   if (sameDiv) ctx.push(`Rivale de divizie (${sameDiv}): meciurile directe contează mult pentru locul în divizie.`);
   if (/wild card/i.test(g.note) && g.l === 'MLS') ctx.push('Meci eliminatoriu, într-o singură manșă: cine pierde a încheiat sezonul.');

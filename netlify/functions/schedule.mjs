@@ -1,13 +1,14 @@
-// GET /api/schedule — season games of the Florida teams plus standings of their leagues.
+// GET /api/schedule[?pack=ny] — season games of a pack's teams (Florida by default) plus standings of their leagues.
 // Cached on Netlify's CDN for 15 minutes, so ESPN is asked at most a few times an hour.
-import { TEAMS } from '../../js/teams.js';
+import { ALL_TEAMS, PACKS } from '../../js/teams.js';
 import { floridaIds, teamSchedule, scoreboardRange, standings, normalizeEvent, json } from '../lib/espn.mjs';
 
 const ymd = d => d.toISOString().slice(0, 10).replace(/-/g, '');
 
-export async function buildSchedule() {
+export async function buildSchedule(pack = 'fl') {
   const errors = [];
-  const ids = await floridaIds(errors);
+  const TEAMS = Object.fromEntries(PACKS[pack].keys.map(k => [k, ALL_TEAMS[k]]));
+  const ids = await floridaIds(errors, pack);
   const fl = Object.fromEntries(Object.entries(ids).map(([k, t]) => [TEAMS[k].l + ':' + t.id, k]));
   const games = new Map();
   const teams = {};
@@ -63,6 +64,7 @@ export async function buildSchedule() {
   return {
     updated: new Date().toISOString(),
     source: 'espn',
+    pack,
     teams,
     games: [...games.values()].sort((a, b) => String(a.date).localeCompare(String(b.date))),
     standings: tables,
@@ -71,9 +73,11 @@ export async function buildSchedule() {
   };
 }
 
-export default async () => {
+export default async req => {
+  const p = new URL(req?.url || 'http://x/').searchParams.get('pack');
+  const pack = PACKS[p] ? p : 'fl';
   try {
-    const body = await buildSchedule();
+    const body = await buildSchedule(pack);
     const ok = body.games.length > 0;
     return json(body, ok ? { browser: 120, cdn: 900 } : { browser: 0, cdn: 60, status: 502 });
   } catch (e) {
