@@ -3,6 +3,7 @@
 // A Florida team by its key ('heat'); any other team as 'NBA-2', with what the page needs to draw it
 // before its data loads (name, logo, colours). Replaces the old single "echipa mea" (flgames-fav).
 import { TEAMS, parseClub } from './teams.js';
+import { trackEvent } from './track.js';
 
 const KEY = 'flgames-mine';
 const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -33,6 +34,7 @@ export function toggleMine(id, meta = {}) {
     MINE.list.push(c ? { id, l: c.l, eid: c.id, name: meta.name || id, abbr: meta.abbr || '', logo: meta.logo || '', logoDark: meta.logoDark || '', color: meta.color || '', alt: meta.alt || '' } : { id });
   }
   save();
+  if (isMine(id)) trackEvent('follow');
   return isMine(id);
 }
 // Back to the eleven Florida teams.

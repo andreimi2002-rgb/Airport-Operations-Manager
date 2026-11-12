@@ -6,6 +6,18 @@
 <title>American Sports Hub</title>
 <meta name="description" content="Sportul american pe românește: echipele tale din NBA, NHL, NFL, MLS și MLB, cu ora României, scoruri, clasamente și calendar.">
 <meta name="theme-color" content="#0e1f3d">
+<link rel="canonical" href="https://florida-sp-calendar.netlify.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="American Sports Hub">
+<meta property="og:title" content="American Sports Hub: sportul american pe românește">
+<meta property="og:description" content="NBA, NHL, NFL, MLS și MLB cu ora României: echipele tale, scoruri live, rezumate, clasamente, notificări și calendar. Gratuit.">
+<meta property="og:url" content="https://florida-sp-calendar.netlify.app/">
+<meta property="og:image" content="https://florida-sp-calendar.netlify.app/icons/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="American Sports Hub: sportul american pe românește">
+<meta property="og:locale" content="ro_RO">
+<meta name="twitter:card" content="summary_large_image">
 <script>
   // Apply the chosen theme before the first paint, so the page never flashes in the wrong one.
   try { var t = localStorage.getItem('flgames-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
@@ -28,6 +40,7 @@
     <svg class="mk" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#c8102e"/><polygon points="50,23 57.1,43.3 78.5,43.7 61.4,56.7 67.6,77.3 50,65 32.4,77.3 38.6,56.7 21.5,43.7 42.9,43.3" fill="#fff"/></svg>
     <h1>American Sports<small>Hub</small></h1>
   </a>
+  <span class="beta" title="Versiune de test: spune-ne ce crezi">Beta</span>
   <div class="lgs" aria-hidden="true"><span style="--c:#ff8a55">NBA</span><span style="--c:#6ea3ff">NHL</span><span style="--c:#5fce70">NFL</span><span style="--c:#ee7bd3">MLS</span><span style="--c:#c9ced6">MLB</span></div>
 </div></div>
 <div class="wrap" id="page">
@@ -152,7 +165,7 @@
 
   <footer>
     <div id="sources" class="sources" aria-live="polite"></div>
-    <div class="appver"><span id="appver"></span> · <button type="button" class="link" data-update>Caută actualizare</button></div>
+    <div class="appver"><span id="appver"></span> · <button type="button" class="link" data-update>Caută actualizare</button> · <a href="#parere" class="link" data-feedback>Spune-ne ce crezi</a></div>
     <div><b>MLB:</b> Miami Marlins și Tampa Bay Rays apar singure în program când se apropie sezonul (de la sfârșitul lui martie până în octombrie); în rest, liga e marcată „extrasezon”.</div>
     <div>Date de la ESPN (program, scoruri, clasamente) și logo-uri ESPN, pentru uz personal. Orele se pot modifica, în special la NFL.</div>
   </footer>

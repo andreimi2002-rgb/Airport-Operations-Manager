@@ -197,5 +197,45 @@ await test('push: save, read, delete a subscription', async () => {
   delete process.env.VAPID_PUBLIC_KEY; delete process.env.VAPID_PRIVATE_KEY;
 });
 
+/* ---------- /api/hit, /api/feedback, /api/stats (beta) ---------- */
+await test('stats: counting views and actions, nothing else accepted', async () => {
+  const st = await import('../netlify/lib/stats.mjs');
+  assert.equal(st.cleanHit({ k: 'meci', f: 1, n: 0, a: 1, ip: '1.2.3.4' }).ip, undefined, 'nothing extra is kept');
+  assert.equal(st.cleanHit({ k: 'evil' }), null);
+  assert.equal(st.cleanHit({ e: 'nope' }), null);
+  let r = st.addHit(null, { k: 'acasa', f: true, n: true, a: false });
+  r = st.addHit(r, { k: 'meci', f: false, n: false, a: false });
+  r = st.addHit(r, { k: 'acasa', f: true, n: false, a: true });
+  r = st.addHit(r, { e: 'follow' });
+  assert.deepEqual(r, { views: 3, visitors: 2, fresh: 1, back: 1, app: 1, pages: { acasa: 2, meci: 1 }, events: { follow: 1 } });
+  const track = await import('../js/track.js').catch(() => null);
+  if (track) {
+    assert.equal(track.kindOf(''), 'acasa'); assert.equal(track.kindOf('#ligi/ghid'), 'ghid');
+    assert.equal(track.kindOf('#meci/NBA/1'), 'meci'); assert.equal(track.kindOf('#ceva'), 'acasa');
+  }
+});
+await test('stats: the hit and feedback functions, and the key on the stats page', async () => {
+  const hit = (await import('../netlify/functions/hit.mjs')).default;
+  const fb = (await import('../netlify/functions/feedback.mjs')).default;
+  const stats = (await import('../netlify/functions/stats.mjs')).default;
+  const post = (fn, path, o, ua = 'Mozilla/5.0') => fn(req(path, { method: 'POST', headers: { 'content-type': 'application/json', 'user-agent': ua }, body: JSON.stringify(o) }), {});
+  assert.equal((await post(hit, '/api/hit', { k: 'ghid', f: true, n: true, a: false })).status, 204);
+  assert.equal((await post(hit, '/api/hit', { k: 'nope' })).status, 400);
+  assert.equal((await post(hit, '/api/hit', { k: 'ghid', f: true }, 'Googlebot/2.1')).status, 204, 'bots answered, not counted');
+  assert.equal((await post(fb, '/api/feedback', { text: '' })).status, 400);
+  assert.equal((await post(fb, '/api/feedback', { text: 'x'.repeat(2001) })).status, 400);
+  assert.equal((await post(fb, '/api/feedback', { text: 'Îmi place ghidul <b>mult</b>', contact: 'test' })).status, 200);
+  delete process.env.STATS_KEY;
+  assert.equal((await stats(req('/api/stats?key=x'), {})).status, 503);
+  process.env.STATS_KEY = 'secret-key-123';
+  assert.equal((await stats(req('/api/stats?key=wrong'), {})).status, 403);
+  const page = await stats(req('/api/stats?key=secret-key-123'), {});
+  assert.equal(page.status, 200);
+  const html = await page.text();
+  assert.match(html, /Ghid<\/td><td>\d+/);
+  assert.match(html, /Îmi place ghidul &lt;b&gt;mult&lt;\/b&gt;/, 'messages are escaped');
+  delete process.env.STATS_KEY;
+});
+
 globalThis.fetch = realFetch;
 console.log(`all ${n} function checks passed`);

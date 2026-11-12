@@ -3,6 +3,7 @@
 import { TEAMS } from './teams.js';
 import { esc } from './ui.js';
 import { isStandalone } from './phone.js';
+import { trackEvent } from './track.js';
 
 export const N = { status: 'unknown', teams: [], lead: 60, final: true, morning: true, msg: '', busy: false, key: null };
 let onChange = () => {};
@@ -45,6 +46,7 @@ export const enableNotify = () => run(async () => {
   const s = (await r.pushManager.getSubscription()) || await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(N.key) });
   await post({ action: 'save', subscription: s.toJSON(), prefs: prefs() });
   N.status = 'on';
+  trackEvent('notify-on');
 }, 'Gata: notificările sunt pornite. Încearcă „Trimite o notificare de test”.');
 export const saveNotify = () => run(async () => {
   const s = await (await reg()).pushManager.getSubscription();
