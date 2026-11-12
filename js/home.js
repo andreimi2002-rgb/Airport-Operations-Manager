@@ -1,13 +1,13 @@
 // The home page: status line, "Echipele mele", the next game, highlights, calendar, agenda, map,
 // playoff bracket, weather strip and the phone section.
 import { LEAGUES, TEAMS, DIVISIONS, METROS, norm, HOME } from './teams.js';
-import { MINE, isMine, mineFL, clubId } from './mine.js';
+import { MINE, isMine, mineFL, clubId, mineIds } from './mine.js';
 import { esc, $, emb } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
 import { installHtml, canInstall } from './phone.js';
 import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
 import { PLACES, venueByName, cityOf, getWeather, stripHtml, STRIP, cityCard, roofWord, AMERICA, loadAmerica } from './places.js';
-import { teamBtn, teamEmbBtn, AW, BY_ID, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters } from './core.js';
+import { teamBtn, teamEmbBtn, AW, BY_ID, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters, myShort, outcomeFor } from './core.js';
 import { cal, clubSide, entryById, go } from './pages.js';
 import { HEALTH, healthNote, sourcesHtml } from './health.js';
 
@@ -112,17 +112,16 @@ export function tableHtml(k) {
 
 /* ================= render: hero & highlights ================= */
 export function renderHero() {
-  const now = Date.now(), ups = GAMES.filter(g => !played(g) && !g.tbd && (isLive(g) || g.end > now));
-  // A list of teams the viewer chose (not the default Florida eleven): their games come first.
-  const favs = MINE.custom ? mineFL() : [], mine = favs.length ? ups.filter(g => g.teams.some(k => favs.includes(k))) : [];
+  // The next game of my teams ("Echipele mele": the pack's teams still followed, and any added team).
+  const now = Date.now(), ups = GAMES.filter(g => g.mine?.length && !played(g) && !g.tbd && (isLive(g) || g.end > now));
   const live = ups.filter(isLive);
-  const g = mine[0] || live[0] || ups[0];
+  const g = live[0] || ups[0], mine = MINE.custom && g ? [g] : [];
   if (!g) { $('hero').innerHTML = '<div><div class="k">Urmează</div><div class="m">Niciun meci programat în datele curente.</div></div>'; return; }
   const k = keyOf(g.d, state.tz), on = isLive(g);
   const soon = ups.filter(x => x !== g && x.d.getTime() - now < 864e5).slice(0, 6);
   const big = on ? `${g.hs ?? 0}–${g.as ?? 0}` : g.d.getTime() <= now ? 'Urmează să înceapă' : 'în ' + countdown(g.d.getTime() - now);
   $('hero').innerHTML = `<div data-gid="${esc(g.id)}">
-      <div class="k">${mine[0] === g ? 'Echipa ta · ' + esc(TEAMS[g.teams.find(k => favs.includes(k))].s) : on ? 'În desfășurare' : 'Următorul meci'} · ${g.l}</div>
+      <div class="k">${mine[0] === g ? 'Echipa ta · ' + esc(myShort(g.mine[0], g)) : on ? 'În desfășurare' : 'Următorul meci'} · ${g.l}</div>
       <div class="duo">${teamEmbBtn(g.l, g.H, '', true)}<span class="at">vs</span>${teamEmbBtn(g.l, g.A, '', true)}</div>
       <div class="cd">${big}</div>
       <div class="m">${teamBtn(g.l, g.H)} – ${teamBtn(g.l, g.A)}${on && g.detail ? ` <span class="tag live">LIVE · ${esc(detailRo(g.detail, g.l))}</span>` : ''}</div>
@@ -187,7 +186,7 @@ export function weekHtml(list, busy) {
     gs.forEach(g => {
       const [h, m] = fmtHM[state.tz].format(g.d).split(':').map(Number), st = (h % 24) * 60 + m, du = Math.min(LEAGUES[g.l].dur, 1440 - st);
       let ln = lanes.findIndex(e => e <= st); if (ln < 0) { ln = lanes.length; lanes.push(0); } lanes[ln] = st + du + 10;
-      const lab = g.teams.map(t => TEAMS[t].s).join(' · ');
+      const lab = g.mine.map(t => myShort(t, g)).join(' · ');
       pills += `<button class="pill${played(g) ? ' done' : ''}" type="button" data-game="${g.id}" style="--c:${col(g.l)};left:${st / 1440 * 100}%;width:${du / 1440 * 100}%;top:${5 + ln * 23}px" title="${fmtTime[state.tz].format(g.d)} ${esc(g.h)} – ${esc(g.a)}" aria-label="${fmtTime[state.tz].format(g.d)}, ${esc(g.h)} – ${esc(g.a)}">${esc(lab)}</button>`;
     });
     const full = busy[k] && busy[k].teams.size >= HOME.busy;
@@ -208,7 +207,7 @@ export function card(g) {
   const alt = g.tbd ? '' : `<small>${fmtTime[other].format(g.d)} ${TZNAME[other]}<br>${fmtShort[other].format(g.d)}</small>`;
   let extra = '';
   if (on) extra = `<span class="tag live">LIVE${g.detail ? ' · ' + esc(detailRo(g.detail, g.l)) : ''}</span>`;
-  else if (done) { const o = outcome(g, g.teams[0]); extra = `<span class="tag r-${o}">${OUT[o]}</span>`; }
+  else if (done) { const o = outcomeFor(g, g.mine?.[0] || g.teams[0]); extra = `<span class="tag r-${o}">${OUT[o]}</span>`; }
   else if (!g.tbd) extra = `<span class="tag aw-${g.aw}">${AW[g.aw]}</span>`;
   const mid = done || on ? `<span class="sc">${g.hs ?? 0}–${g.as ?? 0}</span>` : '<span class="vs">vs</span>';
   return `<article class="game${g.derby ? ' derby' : ''}${on ? ' live' : ''}" style="--c:${col(g.l)}" data-gid="${esc(g.id)}">
@@ -243,7 +242,7 @@ export function renderAgenda(list, busy) {
   const inDay = g => keyOf(g.d, state.tz) === state.day;
   const inRange = g => keyOf(g.d, state.tz) <= lastDay;
   const up = state.day ? list.filter(g => !played(g) && inDay(g)) : list.filter(g => !played(g) && inRange(g) && (isLive(g) || g.end > now - 6 * 36e5));
-  const recent = new Set(Object.keys(TEAMS).flatMap(k => lastGames(k).map(g => g.id)));
+  const recent = new Set(mineIds().flatMap(k => lastGames(k).map(g => g.id)));
   const past = (state.day ? list.filter(g => played(g) && inDay(g)) : list.filter(g => played(g) && recent.has(g.id))).reverse();
   const inFL = up.filter(g => g.inFL).length, good = up.filter(g => g.aw === 'good' && !g.tbd).length;
   $('count').innerHTML = `${up.length} ${up.length === 1 ? 'meci programat' : 'meciuri programate'} <span>· ${inFL} în ${esc(HOME.name)} · ${good} la ore bune în România${state.day ? ' · ' + dayLabel(state.day) : ` · ${nextDays(state.agendaDays)}`}</span>`;

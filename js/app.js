@@ -1,16 +1,16 @@
 // Entry point: theme, the page events, loading the season (live, then cached, then the snapshot),
 // live scores. The rest is in core.js (data, state), home.js, pages.js (overlays, router), views.js, search.js.
 import { LEAGUES, TEAMS, parseClub, HOME, PACK } from './teams.js';
-import { toggleMine, resetMine } from './mine.js';
+import { toggleMine, resetMine, mineClubs } from './mine.js';
 import { $, theme, isDark, onSystemTheme } from './ui.js';
 import { wpHover } from './game.js';
 import { registerSW, onInstallChange, install, downloadGame, APP_VERSION, checkUpdate } from './phone.js';
 import { seasonHover } from './teamx.js';
-import { N, setNotifyRender, enableNotify, saveNotify, testNotify, disableNotify, notifyHtml } from './notify.js';
+import { N, setNotifyRender, enableNotify, saveNotify, testNotify, disableNotify } from './notify.js';
 import { PLACES, loadPlaces, climateHover, AMERICA, loadAmerica } from './places.js';
-import { CACHE_KEY, DATA, GAMES, addDays, awake, build, gameById, getJSON, isLive, parts, played, state, store, weekStart } from './core.js';
+import { CACHE_KEY, DATA, GAMES, addDays, awake, build, gameById, getJSON, isLive, parts, played, state, store, weekStart, CLUB_RAW, addClubGames, refreshMineGames } from './core.js';
 import { PLAYOFFS, PO, minePick, render, renderHero, renderMap, renderMine, renderPhone, renderPlayoffs, renderSources, renderStatic, renderStatus, renderStrip } from './home.js';
-import { OV, cal, closeOv, clubSide, clubView, gameView, go, loadGame, notifyOpen, openCalendar, openClub, openTeam, pickerClubs, refreshGame, route, saveCal, setTeamTab, share, show, teamEmb } from './pages.js';
+import { OV, cal, closeOv, clubSide, clubView, gameView, go, loadGame, notifyOpen, openCalendar, openClub, openTeam, pickerClubs, refreshGame, route, saveCal, setTeamTab, share, openNotify } from './pages.js';
 import { LG, navView, renderLeagues, renderTodayStrip, setLgHash, setupJump, usKey } from './views.js';
 import { pickSearch } from './search.js';
 import { loadHealth } from './health.js';
@@ -140,19 +140,19 @@ function handle(e) {
   if ((el = q('[data-mine-toggle]'))) {
     const id = el.dataset.mineToggle, inPick = !!el.closest('.minepick');
     toggleMine(id, parseClub(id) ? clubSide(id) : {});
-    renderMine(); renderHero();
+    loadMineClubs(); render(); renderMine();
     // Keep the place: the same button in the list, or the "add" card after a team was taken out.
     (inPick ? document.querySelector(`.minepick [data-mine-toggle="${CSS.escape(id)}"]`) : document.querySelector('[data-mine-add]'))?.focus({ preventScroll: true });
     return;
   }
   if ((el = q('[data-mine-add]'))) { minePick.open = !minePick.open; renderMine(); if (minePick.open) $('minefilter')?.focus({ preventScroll: true }); return; }
   if ((el = q('[data-mine-close]'))) { minePick.open = false; minePick.q = ''; renderMine(); document.querySelector('[data-mine-add]')?.focus({ preventScroll: true }); return; }
-  if ((el = q('[data-mine-reset]'))) { resetMine(); renderMine(); renderHero(); return; }
+  if ((el = q('[data-mine-reset]'))) { resetMine(); refreshMineGames(); render(); renderMine(); return; }
   if ((el = q('[data-follow]'))) {
     // Follow / stop following: a Florida team, or any team ('NBA-2'), with its name and logo.
     const id = el.dataset.follow, c = parseClub(id);
     toggleMine(id, c ? clubSide(id) : {});
-    renderStatic(); render();
+    loadMineClubs(); renderStatic(); render();
     if (c) openClub(c.l, c.id, true); else openTeam(id, true);
     return;
   }
@@ -186,11 +186,18 @@ document.addEventListener('change', e => {
     if (t.id === 'ntffinal') N.final = t.checked;
     if (t.id === 'ntfmorning') N.morning = t.checked;
     N.msg = N.status === 'on' ? 'Apasă „Salvează alegerile” ca să se aplice.' : '';
-    show(notifyHtml(teamEmb, pickerClubs(N.teams)), true);
+    openNotify(true);
     const again = t.id ? $(t.id) : document.querySelector(`[data-ntfteam="${t.dataset.ntfteam}"]`);
     if (again) again.focus({ preventScroll: true });
     return;
   }
+  if (t.id === 'ntfadd' && t.value) {
+    N.teams = [...new Set([...N.teams, t.value])];
+    N.msg = N.status === 'on' ? 'Apasă „Salvează alegerile” ca să se aplice.' : '';
+    openNotify(true);
+    return;
+  }
+  if (t.id === 'caladd' && t.value) { cal.teams = [...new Set([...cal.teams, t.value])]; saveCal(); openCalendar(true); return; }
   if (t.dataset && t.dataset.calteam) {
     const k = t.dataset.calteam;
     cal.teams = t.checked ? [...new Set([...cal.teams, k])] : cal.teams.filter(x => x !== k);
@@ -220,12 +227,23 @@ document.addEventListener('pointerleave', e => {
 document.addEventListener('pointerleave', e => { if (e.target.matches && e.target.matches('svg.wp, svg.wp *')) wpHover({ ...e, type: 'pointerleave', target: e.target, clientX: e.clientX }); }, true);
 
 /* ================= loading, refresh, live scores ================= */
+// The seasons of the followed teams from elsewhere (/api/teamgames, cached on the CDN): their games join
+// the home page. Fetched once per team and page load, kept across the 15-minute reloads.
+async function loadMineClubs() {
+  const want = mineClubs().map(x => x.id).filter(id => !CLUB_RAW.has(id) && parseClub(id));
+  refreshMineGames();
+  if (!want.length || DATA.mode === 'snapshot') return;
+  const lists = await Promise.all(want.map(id => { const c = parseClub(id); return getJSON(`/api/teamgames?l=${c.l}&id=${c.id}`, 12000).then(j => (CLUB_RAW.set(id, j.games || []), j.games || [])).catch(() => []); }));
+  addClubGames(lists.flat());
+  render(); scheduleLive();
+}
 function apply(raw, mode) {
   DATA.raw = raw; DATA.mode = mode; DATA.loadedAt = mode === 'live' ? Date.now() : new Date(raw.updated).getTime();
   build(raw);
   $('banner').hidden = true;
   renderStatic(); render();
   scheduleLive();
+  loadMineClubs();
   PLAYOFFS.clear(); renderPlayoffs();
   if (mode !== 'snapshot') renderTodayStrip();
   // The rest of America's stadiums: links on away games, weather for Florida's away games.
@@ -326,7 +344,7 @@ if (HOME.strip.src === 'america') renderStrip();
 $('appver').textContent = 'Versiunea ' + APP_VERSION.replace(/^v/, '');
 loadPlaces()?.then(d => { if (!d) return; renderStrip(); if (GAMES.length) { render(); if (!$('ov').hidden) route(true); } });
 setInterval(() => { if (!document.hidden && PLACES.data) renderStrip(); }, 30 * 60e3);
-setNotifyRender(() => { if (notifyOpen && location.hash.startsWith('#notificari') && !$('ov').hidden) show(notifyHtml(teamEmb, pickerClubs(N.teams)), true); });
+setNotifyRender(() => { if (notifyOpen && location.hash.startsWith('#notificari') && !$('ov').hidden) openNotify(true); });
 onInstallChange(renderPhone);
 renderPhone();
 registerSW();

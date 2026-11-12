@@ -1,5 +1,6 @@
 // Shared data and state: the games and standings, the viewer's filters, dates and times, storage.
-import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, HOME, PACK } from './teams.js';
+import { isMine, mineIds } from './mine.js';
+import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, HOME, PACK, parseClub } from './teams.js';
 import { $, esc, emb, theme } from './ui.js';
 
 /* ================= data loading ================= */
@@ -83,8 +84,42 @@ export function build(raw) {
   TEAMINFO = raw.teams || {};
   GAMES = (raw.games || []).map(toGame).filter(g => g && g.teams.length).sort((a, b) => a.d - b.d);
   BY_ID = new Map(GAMES.map(g => [g.id, g]));
+  // The seasons of the followed teams from elsewhere, kept from earlier loads.
+  addClubGames([...CLUB_RAW.values()].flat());
   // Baseball is "extrasezon" while no game of the Florida teams is ahead (the schedule keeps 60 days).
   LEAGUES.MLB.off = !GAMES.some(g => g.l === 'MLB' && g.state !== 'post');
+}
+
+/* ----- "Echipele mele" on the home page ----- */
+// Which of the viewer's teams play a game: the pack's teams still followed, and followed teams from
+// elsewhere ('NHL-124292'). The home page shows only games with at least one.
+export function mineOf(g) {
+  const ids = g.teams.filter(isMine);
+  for (const s of [g.H, g.A]) { const cid = `${g.l}-${s.id}`; if (s.id && !s.key && isMine(cid)) ids.push(cid); }
+  return ids;
+}
+export function refreshMineGames() { for (const g of GAMES) g.mine = mineOf(g); }
+// The season of each followed team from elsewhere (raw /api/teamgames games), by id.
+export const CLUB_RAW = new Map();
+export function addClubGames(list) {
+  for (const x of list) {
+    const g = toGame(x);
+    if (g && !BY_ID.has(g.id)) { GAMES.push(g); BY_ID.set(g.id, g); }
+  }
+  GAMES.sort((a, b) => a.d - b.d);
+  refreshMineGames();
+}
+// Short name of one of my teams: a pack team's own, else the nickname ("Seattle Kraken" -> "Kraken").
+export function myShort(id, g) {
+  if (TEAMS[id]) return TEAMS[id].s;
+  const c = parseClub(id), s = g && [g.H, g.A].find(x => x.id === c?.id);
+  return s ? String(s.name).split(' ').slice(-1)[0] : id;
+}
+// V / Î / E for one of my teams (a pack key or 'NHL-124292') in a finished game.
+export function outcomeFor(g, id) {
+  const c = parseClub(id), home = c ? g.H.id === c.id : g.H.key === id;
+  const mine = home ? g.hs : g.as, their = home ? g.as : g.hs;
+  return mine > their ? 'V' : mine < their ? 'I' : 'E';
 }
 
 /* ----- per-team numbers ----- */
@@ -208,16 +243,16 @@ export function weekStart(k) { return addDays(k, -((dowOf(k) + 6) % 7)); }
 readFilters();
 
 export function filtered() {
-  return GAMES.filter(g => state.leagues.has(g.l) && (!state.team || g.teams.includes(state.team)) && (!state.home || g.inFL) && (!state.awake || played(g) || isLive(g) || g.aw === 'good'));
+  return GAMES.filter(g => g.mine?.length && state.leagues.has(g.l) && (!state.team || g.teams.includes(state.team)) && (!state.home || g.inFL) && (!state.awake || played(g) || isLive(g) || g.aw === 'good'));
 }
 export function busyMap() {
   const m = {};
-  GAMES.forEach(g => { const k = keyOf(g.d, state.tz); (m[k] ||= { teams: new Set(), leagues: new Set() }); g.teams.forEach(t => m[k].teams.add(t)); m[k].leagues.add(g.l); });
+  GAMES.forEach(g => { if (!g.mine?.length) return; const k = keyOf(g.d, state.tz); (m[k] ||= { teams: new Set(), leagues: new Set() }); g.mine.forEach(t => m[k].teams.add(t)); m[k].leagues.add(g.l); });
   return m;
 }
 export const todayKey = () => keyOf(new Date(), state.tz);
 export const horizonEnd = () => Date.now() + state.horizon * 864e5;
-export function lastGames(k, n = 5) { return GAMES.filter(g => g.teams.includes(k) && played(g)).slice(-n); }
+export function lastGames(k, n = 5) { return GAMES.filter(g => (g.teams.includes(k) || g.mine?.includes(k)) && played(g)).slice(-n); }
 export function outcome(g, k) {
   const home = g.H.key === k, mine = home ? g.hs : g.as, their = home ? g.as : g.hs;
   return mine > their ? 'V' : mine < their ? 'I' : 'E';
