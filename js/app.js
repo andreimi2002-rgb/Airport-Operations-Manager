@@ -14,7 +14,7 @@ import { OV, cal, closeOv, clubSide, clubView, gameView, go, loadGame, notifyOpe
 import { LG, navView, renderLeagues, renderTodayStrip, setLgHash, setupJump, usKey } from './views.js';
 import { pickSearch } from './search.js';
 import { loadHealth } from './health.js';
-import { trackEvent, trackInstall, setNotCounted, notCounted } from './track.js';
+import { trackEvent, trackInstall, setupActivity, setNotCounted, notCounted } from './track.js';
 
 /* ----- theme ----- */
 function applyTheme() {
@@ -97,6 +97,7 @@ function handle(e) {
   // Counted actions that also go on to their normal handling.
   if (e.target.closest('a[href^="webcal:"], a[href*="calendar.google.com"], [data-copycal]')) trackEvent('calendar');
   if ((el = q('[data-feedback]'))) { e.preventDefault(); go('#parere'); return; }
+  if ((el = q('[data-privacy]'))) { e.preventDefault(); go('#confidentialitate'); return; }
   if ((el = q('[data-fb-send]'))) {
     const text = $('fbtext').value.trim(), contact = $('fbcontact').value.trim(), msg = $('fbmsg');
     if (text.length < 3) { msg.textContent = 'Scrie câteva cuvinte.'; return; }
@@ -330,4 +331,5 @@ window.addEventListener('online', () => load());
 window.addEventListener('offline', () => renderStatus());
 setupJump();
 trackInstall();
+setupActivity();
 

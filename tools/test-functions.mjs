@@ -207,7 +207,23 @@ await test('stats: counting views and actions, nothing else accepted', async () 
   r = st.addHit(r, { k: 'meci', f: false, n: false, a: false });
   r = st.addHit(r, { k: 'acasa', f: true, n: false, a: true });
   r = st.addHit(r, { e: 'follow' });
-  assert.deepEqual(r, { views: 3, visitors: 2, fresh: 1, back: 1, app: 1, pages: { acasa: 2, meci: 1 }, events: { follow: 1 } });
+  assert.deepEqual(r, { views: 3, visitors: 2, fresh: 1, back: 1, app: 1, pages: { acasa: 2, meci: 1 }, events: { follow: 1 }, counts: {} });
+  // Visitor facts count once per visitor and day (on the first view only); other counts each time.
+  const hits = st.cleanBatch({ b: [
+    { k: 'acasa', f: true, n: true, a: false, src: 'instagram', dev: 'telefon', os: 'iOS', inapp: 'Instagram' },
+    { k: 'meci', f: false, src: 'google' },
+    { c: 'team', v: 'heat' }, { c: 'team', v: 'NBA-2' }, { c: 'team', v: 'heat' },
+    { c: 'click', v: 'tema dark' }, { c: 'watch', v: 'ESPN pe Disney+' }, { c: 'dur', v: '1-5 min' },
+    { c: 'src', v: 'spam' }, { c: 'click', v: '<script>' }, { c: 'nope', v: 'x' }
+  ] });
+  assert.equal(hits.length, 8, 'a visitor fact sent as a count, odd characters and unknown kinds are dropped');
+  assert.equal(hits[1].src, undefined, 'the source only rides on the first view of the day');
+  const d = hits.reduce(st.addHit, null);
+  assert.deepEqual(d.counts, { src: { instagram: 1 }, dev: { telefon: 1 }, os: { iOS: 1 }, inapp: { Instagram: 1 }, team: { heat: 2, 'NBA-2': 1 }, click: { 'tema dark': 1 }, watch: { 'ESPN pe Disney+': 1 }, dur: { '1-5 min': 1 } });
+  assert.equal(st.cleanBatch({ b: Array(100).fill({ c: 'click', v: 'x' }) }).length, 60, 'at most 60 per request');
+  let big = null;
+  for (let i = 0; i < 320; i++) big = st.addHit(big, { c: 'search', v: 'x' + i });
+  assert.equal(Object.keys(big.counts.search).length, 300, 'a day keeps at most 300 values per kind');
   const track = await import('../js/track.js').catch(() => null);
   if (track) {
     assert.equal(track.kindOf(''), 'acasa'); assert.equal(track.kindOf('#ligi/ghid'), 'ghid');
@@ -222,6 +238,8 @@ await test('stats: the hit and feedback functions, and the key on the stats page
   assert.equal((await post(hit, '/api/hit', { k: 'ghid', f: true, n: true, a: false })).status, 204);
   assert.equal((await post(hit, '/api/hit', { k: 'nope' })).status, 400);
   assert.equal((await post(hit, '/api/hit', { k: 'ghid', f: true }, 'Googlebot/2.1')).status, 204, 'bots answered, not counted');
+  assert.equal((await post(hit, '/api/hit', { b: [{ k: 'meci', f: true, n: false, src: 'instagram' }, { c: 'team', v: 'heat' }] })).status, 204, 'a batch');
+  assert.equal((await post(hit, '/api/hit', { b: [{ c: 'nope' }] })).status, 400);
   assert.equal((await post(fb, '/api/feedback', { text: '' })).status, 400);
   assert.equal((await post(fb, '/api/feedback', { text: 'x'.repeat(2001) })).status, 400);
   assert.equal((await post(fb, '/api/feedback', { text: 'Îmi place ghidul <b>mult</b>', contact: 'test' })).status, 200);
@@ -233,6 +251,8 @@ await test('stats: the hit and feedback functions, and the key on the stats page
   assert.equal(page.status, 200);
   const html = await page.text();
   assert.match(html, /Ghid<\/td><td>\d+/);
+  assert.match(html, /De unde vin, ultimele 7 zile[\s\S]*instagram/);
+  assert.match(html, /Echipe deschise[\s\S]*Miami Heat/, 'team keys shown by name');
   assert.match(html, /Îmi place ghidul &lt;b&gt;mult&lt;\/b&gt;/, 'messages are escaped');
   delete process.env.STATS_KEY;
 });

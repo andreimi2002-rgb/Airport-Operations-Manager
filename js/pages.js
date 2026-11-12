@@ -45,6 +45,27 @@ export function closeOv() {
   if (depth) history.go(-depth);            // popstate then hides it
   else { history.replaceState(null, '', location.pathname + location.search); hideOv(); }
 }
+// What the site counts, said plainly (no cookies, nothing personal).
+export function openPrivacy(keep) {
+  OV.game = null; OV.place = null;
+  show(`<div class="band plain"><div><div class="lgn" style="color:var(--accent)">Pe scurt</div><h2 id="prof-name" style="font-size:24px">Confidențialitate</h2></div>
+      <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
+    <div class="pbody">
+      <p class="lead">Nu folosim cookie-uri și nu păstrăm nimic care să te identifice: nici adresa IP, nici un cont, nici traseul tău pe site.</p>
+      <section><h3>Ce numărăm</h3><ul class="notes">
+        <li>Câte vizite are site-ul pe zi și câte sunt ale celor care revin.</li>
+        <li>De unde vin vizitele (de exemplu Instagram sau Google), pe ce fel de dispozitiv și sistem.</li>
+        <li>Ce pagini, secțiuni, echipe și meciuri se deschid, pe ce se apasă și cât durează o vizită.</li>
+        <li>Erorile care apar, ca să le putem repara.</li>
+      </ul><p class="fn">Totul se adună pe zile, ca numere. Ca să știm dacă o vizită e nouă sau a cuiva care revine, browserul tău păstrează două date (prima vizită și ultima zi), care nu pleacă nicăieri.</p></section>
+      <section><h3>Ce păstrăm doar dacă alegi tu</h3><ul class="notes">
+        <li>Echipele tale, tema și ora: doar în browserul tău.</li>
+        <li>Notificările: adresa de livrare dată de browser și echipele alese, ca să-ți putem trimite anunțurile. Le oprești oricând.</li>
+        <li>Mesajele din „Spune-ne ce crezi”, cu contactul doar dacă îl scrii.</li>
+      </ul></section>
+      <section><h3>Nu vrei să fii numărat?</h3><p>Activează „Do Not Track” în browser și nu mai numărăm nimic de pe dispozitivul tău.</p></section>
+    </div>`, keep);
+}
 // "Spune-ne ce crezi": a short message to the owner (beta).
 export function openFeedback(keep) {
   OV.game = null; OV.place = null;
@@ -70,6 +91,7 @@ export function route(keep) {
   if (!keep) trackView();
   const h = decodeURIComponent(location.hash.slice(1)).split('/');
   if (h[0] === 'parere') { openFeedback(keep); return; }
+  if (h[0] === 'confidentialitate') { openPrivacy(keep); return; }
   if (h[0] === 'meci' && gameById(h[2])) { const t = h[3] || 'rezumat'; if (OV.game !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
   if (h[0] === 'echipa' && TEAMS[h[1]]) { teamView.tab = ['sezon', 'lot', 'stiri'].includes(h[2]) ? h[2] : 'rezumat'; openTeam(h[1], keep); return; }
   if (h[0] === 'notificari') {
