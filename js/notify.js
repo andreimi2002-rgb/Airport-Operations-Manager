@@ -1,6 +1,6 @@
 // Notifications page (#notificari): permission, push subscription, the viewer's choices.
 // The server side is netlify/functions/push.mjs; the sending, every 15 minutes, push-cron.mjs.
-import { TEAMS } from './teams.js';
+import { TEAMS, parseClub } from './teams.js';
 import { esc } from './ui.js';
 import { isStandalone } from './phone.js';
 import { trackEvent } from './track.js';
@@ -27,7 +27,9 @@ export async function refreshNotify(defaults) {
     const s = await (await reg()).pushManager.getSubscription();
     if (!s) { N.status = 'off'; return onChange(); }
     const { prefs } = await post({ action: 'get', subscription: s.toJSON() });
-    if (prefs) { Object.assign(N, prefs); N.status = 'on'; } else N.status = 'off';
+    // Teams of the other pack (saved while this device showed it) are not on the page: they drop out at the
+    // next save, so no notification comes for a team that cannot be seen or unticked here.
+    if (prefs) { Object.assign(N, prefs); N.teams = N.teams.filter(k => TEAMS[k] || parseClub(k)); N.status = 'on'; } else N.status = 'off';
   } catch (e) { N.status = navigator.onLine ? 'error' : 'offline'; N.msg = navigator.onLine ? String(e.message || e) : ''; }
   onChange();
 }
