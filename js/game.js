@@ -243,7 +243,7 @@ function playsHtml(g, s) {
       what = `<span class="ev goal">${esc(nflKindRo(p.kind))}</span>${esc(nflPlayRo(p.text))}`;
     }
     const sc = p.hs != null && p.as != null ? `${p.hs}–${p.as}` : '';
-    html += `<div class="row play"><span class="when">${esc(p.clock)}</span><span>${emb(sideOf(g, p.side), 'sm')}${what}</span><span class="r">${sc}</span></div>`;
+    html += `<div class="row play"><span class="when">${esc(p.clock)}</span><span>${emb(sideOf(g, p.side), 'sm')}<span class="pw">${what}</span></span><span class="r">${sc}</span></div>`;
   }
   if (cur !== undefined) html += '</div>';
   const hdr = g.l === 'MLS' ? '' : `<div class="fn" style="margin:0 0 4px">Scorul din dreapta: ${esc(shortOf(g, 'home'))}–${esc(shortOf(g, 'away'))}.${g.l === 'NHL' || g.l === 'NFL' ? ' Ora e timpul rămas din perioadă.' : ''}</div>`;

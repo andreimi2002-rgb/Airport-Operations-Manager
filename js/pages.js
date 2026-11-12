@@ -380,7 +380,7 @@ export function openNotify(keep) {
 
 export function sideInfo(g, side) {
   const k = side.key;
-  if (k && TEAMS[k]) { const st = teamStats(k); return `<small>${st.rec}${st.conf != null ? ` · locul ${st.conf} ${esc(st.confN)}` : ''}</small><div class="form">${formChips(k)}</div>`; }
+  if (k && TEAMS[k]) { const st = teamStats(k); return `<small>${st.rec}${st.conf != null ? ` · locul ${st.conf} ${esc(st.confN)}` : ''}</small><div class="form sm">${formChips(k)}</div>`; }
   const o = oppInfo(g.l, side.name); return o ? `<small>${esc(o)}</small>` : '<small>&nbsp;</small>';
 }
 export function gameStatus(g) {
