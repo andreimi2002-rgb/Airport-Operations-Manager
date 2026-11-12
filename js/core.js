@@ -70,7 +70,8 @@ const LIVE = new Map(), RANK = { pre: 0, in: 1, post: 2 };
 export function noteLive(g) { LIVE.set(g.id, { state: g.state, hs: g.hs, as: g.as, detail: g.detail, at: Date.now() }); }
 function patchLive(g) {
   const p = LIVE.get(g.id);
-  if (!p || Date.now() - p.at > 20 * 60e3 || (RANK[p.state] ?? 0) < (RANK[g.state] ?? 0)) return;
+  // A finished game stays finished; a live score is trusted for 20 minutes.
+  if (!p || (p.state !== 'post' && Date.now() - p.at > 20 * 60e3) || (RANK[p.state] ?? 0) < (RANK[g.state] ?? 0)) return;
   Object.assign(g, { state: p.state, hs: p.hs, as: p.as, detail: p.detail });
 }
 // Any team as a link: a Florida team opens its full profile, any other its club page (#club/NBA/2).
