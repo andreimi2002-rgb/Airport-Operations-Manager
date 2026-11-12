@@ -87,7 +87,7 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
    (`#ligi/ghid`, `js/guide.js`): „Cum vezi meciurile din România” pe ligă (listă scrisă de mână,
    `WATCH_CHECKED` = data verificării; de reverificat în fiecare toamnă) și explicații pentru
    începători, pornind de la glosarul enciclopediei. Pagina de meci are rândul „Unde îl vezi”.
-9. **Etapa 9: tehnic** (în lucru, branch `stage-9-tehnic`). `app.js` împărțit pe module (`core`,
+9. **Etapa 9: tehnic** (în producție, PR #10). `app.js` împărțit pe module (`core`,
    `home`, `pages`, `views`, `search`; vezi Structura). Verificarea surselor: `/api/health` întreabă
    ESPN și Open-Meteo și se uită și la formatul răspunsului (ESPN poate schimba formatul fără anunț);
    pagina arată rândul „Surse” în subsol și o frază roșie în linia de stare când o sursă are probleme
@@ -95,6 +95,13 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
    `tools/test-functions.mjs` (funcțiile Netlify cu ESPN și Open-Meteo simulate, inclusiv căderi și
    format schimbat); după un deploy, `node tools/smoke.mjs <adresa>` verifică site-ul publicat.
    Mai târziu, doar dacă site-ul devine public: varianta în engleză.
+10. **Rezumatul meciului și echipe clicabile** (în lucru, branch `stage-10-rezumat`). La un meci
+    terminat, pagina arată doar rezumatul oficial ESPN („Game Highlights”, 1–3 minute) în locul
+    clipurilor scurte: întâi printre clipurile meciului, apoi în știrile ESPN ale meciului
+    (`news?event=`) și pagina clipului (`content.core.api.espn.com/v1/video/clips/`); fără rezumat
+    (NFL nu are video) rămân clipurile. Orice echipă de pe pagina de start (carduri de meci,
+    clasamente, următorul meci) și din antetul paginii de meci duce la pagina ei (`teamBtn` în
+    `js/core.js`: Florida → `#echipa/…`, restul → `#club/…`).
 
 ## Structura
 
@@ -183,7 +190,8 @@ Rulare locală cu funcții: `npx netlify dev`. Doar pagina (cu datele de rezerv�
 `/api/game` (o pagină de meci) are în plus, fiecare secțiune goală dacă ESPN nu o trimite:
 `box` (jucători, pe grupe cu `keys` ESPN), `teamStats` (`{k, label, h, a}`), `plays` (goluri,
 puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, `last5`, `videos`
-(doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`.
+(doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`. La un meci terminat cu rezumat, `videos` are
+doar rezumatul și `recap: true` (cache o zi; fără rezumat, 30 de minute, până îl publică ESPN).
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
 `#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei), `#calendar/heat,NBA-2`, `#notificari/NBA-2`,

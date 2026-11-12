@@ -772,3 +772,11 @@ svg.cl .hit{fill:transparent;cursor:pointer}
 .sources .src.bad i{background:var(--bad)}
 .sources .when{color:var(--muted)}
 .status .srcwarn{color:var(--bad);font-weight:600}
+/* ---- every team is a link: emblem buttons, names on the dark hero and the game page ---- */
+.embtn{border:0;background:none;padding:0;cursor:pointer;border-radius:999px;line-height:0}
+.embtn:hover .emb{box-shadow:0 0 0 2px var(--accent)}
+.hero .tname{color:inherit;font-weight:inherit;text-decoration-color:rgba(128,128,128,.55)}
+.hero .tname:hover{color:inherit;text-decoration-color:currentColor}
+.duel .side .tname{font-size:inherit;text-align:center}
+/* the recap of a finished game: one video, wide */
+.vids.one{grid-template-columns:minmax(0,1fr);max-width:720px}

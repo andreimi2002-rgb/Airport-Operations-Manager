@@ -92,6 +92,41 @@ await test('health: the page sentence and the footer line', async () => {
   assert.match(h.sourcesHtml({ data, failed: false }, 2), /2 cereri către ESPN au eșuat/);
 });
 
+/* ---------- /api/game ---------- */
+const game = (await import('../netlify/functions/game.mjs')).default;
+const summaryJ = (state, videos) => ({
+  header: { competitions: [{ status: { type: { state, shortDetail: 'Final' } }, competitors: [
+    { homeAway: 'home', team: { id: '14', displayName: 'Miami Heat', abbreviation: 'MIA' }, score: '112' },
+    { homeAway: 'away', team: { id: '2', displayName: 'Boston Celtics', abbreviation: 'BOS' }, score: '104' }] }] },
+  videos
+});
+const shortClip = (h, host = 'https://media.video-cdn.espn.com') => ({ headline: h, duration: 20, links: { source: { href: host + '/a.mp4' } }, thumbnail: '' });
+await test('game: a finished game shows only its recap, found in the news', async () => {
+  routes = [['summary?event', () => summaryJ('post', [shortClip('Bam dunks'), shortClip('Tatum three')])],
+    ['/news?event=401', () => ({ articles: [{ type: 'Story', id: 1, headline: 'Heat beat Celtics' }, { type: 'Media', id: 55, headline: 'Boston Celtics vs. Miami Heat: Game Highlights' }] })],
+    ['video/clips/55', () => ({ videos: [{ headline: 'Boston Celtics vs. Miami Heat: Game Highlights', duration: 92, links: { source: { HD: { href: 'https://espnmedia-cdn.akamaized.net/r.mp4' } } }, thumbnail: 'https://espnmedia-cdn.akamaized.net/r.jpg' }] })]];
+  const r = await game(req('/api/game?l=NBA&id=401'));
+  assert.match(r.headers.get('netlify-cdn-cache-control'), /s-maxage=86400/);
+  const j = await body(r);
+  assert.equal(j.recap, true);
+  assert.deepEqual(j.videos.map(v => [v.title, v.dur]), [['Boston Celtics vs. Miami Heat: Game Highlights', 92]]);
+});
+await test('game: the recap among the clips; no recap keeps the clips, cached briefly', async () => {
+  routes = [['summary?event', () => summaryJ('post', [shortClip('Bam dunks'), shortClip('Celtics vs. Heat: Game Highlights')])]];
+  let j = await body(await game(req('/api/game?l=NBA&id=401')));
+  assert.equal(j.recap, true); assert.equal(j.videos.length, 1);
+  routes = [['summary?event', () => summaryJ('post', [shortClip('Bam dunks'), shortClip('Bad host', 'https://evil.example')])], ['/news?event', () => ({ articles: [] })]];
+  const r = await game(req('/api/game?l=NBA&id=401'));
+  assert.match(r.headers.get('netlify-cdn-cache-control'), /s-maxage=1800/);
+  j = await body(r);
+  assert.equal(j.recap, undefined);
+  assert.deepEqual(j.videos.map(v => v.title), ['Bam dunks'], 'only clips from ESPN servers');
+  routes = [['summary?event', () => summaryJ('pre', [shortClip('Preview: Game Highlights')])]];
+  j = await body(await game(req('/api/game?l=NBA&id=401')));
+  assert.equal(j.recap, undefined, 'no recap lookup before the game');
+  assert.equal((await game(req('/api/game?l=XYZ&id=1'))).status, 400);
+});
+
 /* ---------- /api/weather ---------- */
 const weather = (await import('../netlify/functions/weather.mjs')).default;
 await test('weather: only places in North America, Open-Meteo trimmed', async () => {

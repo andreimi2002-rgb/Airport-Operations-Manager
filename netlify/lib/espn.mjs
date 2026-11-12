@@ -297,11 +297,31 @@ function lastFive(j, sideOf) {
 
 // Highlight clips: only ESPN's own media hosts, so the page never embeds anything else.
 const MEDIA = /^https:\/\/[a-z0-9.-]*(espncdn\.com|espn\.com|akamaized\.net)\//i;
+const clip = v => ({
+  title: v.headline || '', dur: num(v.duration),
+  mp4: v.links?.source?.HD?.href || v.links?.source?.href || '', thumb: v.thumbnail || ''
+});
+const safeClip = v => MEDIA.test(v.mp4) && (!v.thumb || MEDIA.test(v.thumb));
 function videos(j) {
-  return (j.videos || []).map(v => ({
-    title: v.headline || '', dur: num(v.duration),
-    mp4: v.links?.source?.HD?.href || v.links?.source?.href || '', thumb: v.thumbnail || ''
-  })).filter(v => MEDIA.test(v.mp4) && (!v.thumb || MEDIA.test(v.thumb))).slice(0, 4);
+  return (j.videos || []).map(clip).filter(safeClip);
+}
+
+// The official recap of a finished game ("Game Highlights", one to three minutes). ESPN puts it among the
+// game's clips (NBA) or only in the news filed under the game (NHL, MLS), where the clip page has the file.
+export const RECAP = /game highlights|full highlights?|condensed game|extended highlights/i;
+export function recapInNews(j) {
+  return (j?.articles || []).find(a => a.type === 'Media' && a.id &&
+    (RECAP.test(a.headline || '') || (a.categories || []).some(c => /full highlight/i.test(c.description || '')))) || null;
+}
+export async function recapVideo(l, id, clips = []) {
+  const own = clips.find(v => RECAP.test(v.title));
+  if (own) return own;
+  const news = await getJSON(`${SITE}${LEAGUES[l].path}/news?event=${encodeURIComponent(id)}`, 5000).catch(() => null);
+  const a = recapInNews(news);
+  if (!a) return null;
+  const c = await getJSON(`https://content.core.api.espn.com/v1/video/clips/${encodeURIComponent(a.id)}`, 5000).catch(() => null);
+  const v = c?.videos?.[0] && clip(c.videos[0]);
+  return v && safeClip(v) ? { ...v, title: v.title || a.headline || '' } : null;
 }
 
 // NHL, before the game: the expected goalies.
@@ -352,7 +372,8 @@ export function normalizeSummary(j, l) {
     injuries: safe(() => injuries(j, sideOf), []),
     series: safe(() => series(j), null),
     last5: safe(() => lastFive(j, sideOf), []),
-    videos: safe(() => videos(j), []),
+    videos: safe(() => videos(j), []).slice(0, 4),
+    allVideos: safe(() => videos(j), []),
     goalies: safe(() => goalies(j), []),
     predictor: predictor && predictor.home != null ? predictor : null,
     attendance: num(g.attendance),
@@ -362,7 +383,14 @@ export function normalizeSummary(j, l) {
 }
 
 export async function summary(l, id) {
-  return normalizeSummary(await getJSON(`${SITE}${LEAGUES[l].path}/summary?event=${encodeURIComponent(id)}`), l);
+  const s = normalizeSummary(await getJSON(`${SITE}${LEAGUES[l].path}/summary?event=${encodeURIComponent(id)}`), l);
+  // A finished game: only its recap, when ESPN has one, instead of the short clips.
+  const all = s.allVideos; delete s.allVideos;
+  if (s.state === 'post') {
+    const r = await recapVideo(l, id, all).catch(() => null);
+    if (r) { s.videos = [r]; s.recap = true; }
+  }
+  return s;
 }
 
 /* ---------- scores: every game of one day, in every league (one request per league) ---------- */
