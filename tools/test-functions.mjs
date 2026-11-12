@@ -253,6 +253,12 @@ await test('stats: the hit and feedback functions, and the key on the stats page
   assert.match(html, /Ghid<\/td><td>\d+/);
   assert.match(html, /De unde vin, ultimele 7 zile[\s\S]*instagram/);
   assert.match(html, /Echipe deschise[\s\S]*Miami Heat/, 'team keys shown by name');
+  assert.match(html, /Nu număra acest browser|devbtn/, 'the owner can switch counting off from the stats page');
+  // Today from zero: only with the key.
+  const reset = (k) => stats(req('/api/stats?key=' + k, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'action=reset-day' }), {});
+  assert.equal((await reset('wrong')).status, 403);
+  assert.equal((await reset('secret-key-123')).status, 303);
+  assert.match(await (await stats(req('/api/stats?key=secret-key-123'), {})).text(), /Nicio vizită încă/);
   assert.match(html, /Îmi place ghidul &lt;b&gt;mult&lt;\/b&gt;/, 'messages are escaped');
   delete process.env.STATS_KEY;
 });
