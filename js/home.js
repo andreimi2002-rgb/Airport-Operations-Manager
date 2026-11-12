@@ -7,7 +7,7 @@ import { detailRo, noteRo } from './ro.js';
 import { installHtml, canInstall } from './phone.js';
 import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
 import { PLACES, venueByName, cityOf, getWeather, stripHtml, STRIP, cityCard, roofWord } from './places.js';
-import { AW, BY_ID, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters } from './core.js';
+import { teamBtn, teamEmbBtn, AW, BY_ID, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters } from './core.js';
 import { cal, clubSide, entryById, go } from './pages.js';
 import { HEALTH, healthNote, sourcesHtml } from './health.js';
 
@@ -106,7 +106,7 @@ export function tableHtml(k) {
   const flKey = name => Object.keys(TEAMS).find(t => TEAMS[t].l === D.l && norm(TEAMS[t].espn) === norm(name));
   if (!rows.length) return `<div class="tbl"><h3><span class="ldot" style="--c:${col(D.l)}"></span>${D.t}</h3><div class="fn">Clasament indisponibil momentan.</div></div>`;
   return `<div class="tbl"><h3><span class="ldot" style="--c:${col(D.l)}"></span>${D.t}</h3><table><thead><tr><th></th><th>Echipă</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>` +
-    rows.map((e, i) => { const fk = flKey(e.name); return `<tr class="${fk ? 'fl' : ''}"><td>${i + 1}</td><td>${emb({ ...e, key: fk }, 'sm')}${fk ? `<button class="tname" type="button" data-team="${fk}">${esc(e.name)}</button>` : esc(e.name)}</td>${cells(e).map(c => `<td>${c ?? '–'}</td>`).join('')}</tr>`; }).join('') +
+    rows.map((e, i) => { const fk = flKey(e.name); return `<tr class="${fk ? 'fl' : ''}"><td>${i + 1}</td><td>${emb({ ...e, key: fk }, 'sm')}${teamBtn(D.l, { name: e.name, key: fk, id: e.id })}</td>${cells(e).map(c => `<td>${c ?? '–'}</td>`).join('')}</tr>`; }).join('') +
     '</tbody></table></div>';
 }
 
@@ -123,9 +123,9 @@ export function renderHero() {
   const big = on ? `${g.hs ?? 0}–${g.as ?? 0}` : g.d.getTime() <= now ? 'Urmează să înceapă' : 'în ' + countdown(g.d.getTime() - now);
   $('hero').innerHTML = `<div data-gid="${esc(g.id)}">
       <div class="k">${mine[0] === g ? 'Echipa ta · ' + esc(TEAMS[g.teams.find(k => favs.includes(k))].s) : on ? 'În desfășurare' : 'Următorul meci'} · ${g.l}</div>
-      <div class="duo">${emb(g.H, '', true)}<span class="at">vs</span>${emb(g.A, '', true)}</div>
+      <div class="duo">${teamEmbBtn(g.l, g.H, '', true)}<span class="at">vs</span>${teamEmbBtn(g.l, g.A, '', true)}</div>
       <div class="cd">${big}</div>
-      <div class="m">${esc(g.h)} – ${esc(g.a)}${on && g.detail ? ` <span class="tag live">LIVE · ${esc(detailRo(g.detail, g.l))}</span>` : ''}</div>
+      <div class="m">${teamBtn(g.l, g.H)} – ${teamBtn(g.l, g.A)}${on && g.detail ? ` <span class="tag live">LIVE · ${esc(detailRo(g.detail, g.l))}</span>` : ''}</div>
       <div class="w">${dayLabel(k)}, ${fmtTime[state.tz].format(g.d)} ${TZNAME[state.tz]} · ${g.v ? esc(g.v) + ', ' : ''}${esc(g.city)}${g.tv ? ' · ' + esc(g.tv) : ''}</div>
       <button class="go" type="button" data-game="${g.id}">Detalii meci</button>
     </div>
@@ -199,7 +199,7 @@ export function weekHtml(list, busy) {
 /* ================= render: agenda ================= */
 export function tn(g, side) {
   const k = side.key;
-  return `${emb(side, 'sm')}${k && TEAMS[k] ? `<button class="tname" type="button" data-team="${k}">${esc(side.name)}</button>` : esc(side.name)}`;
+  return `${emb(side, 'sm')}${teamBtn(g.l, side)}`;
 }
 export function card(g) {
   const other = state.tz === 'ro' ? 'fl' : 'ro', done = played(g), on = isLive(g);

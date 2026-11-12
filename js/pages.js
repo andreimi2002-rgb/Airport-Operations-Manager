@@ -11,7 +11,7 @@ import { watchLine } from './guide.js';
 import { teamTabsHtml, seasonChartHtml, leadersHtml, rosterHtml, newsHtml } from './teamx.js';
 import { N, refreshNotify, notifyHtml } from './notify.js';
 import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, cityHtml, venueHtml, placeWeatherHtml, floridaClock, AMERICA, loadAmerica, getVenue, getCity, venueOfClub, cityLiteHtml, venueLiteHtml, clockIn, hoursBehindRomania } from './places.js';
-import { DATA, GAMES, OUT, OUTL, REC_LABEL, TEAMINFO, TZNAME, col, confShort, countdown, dayLabel, flKey, flSide, fmtShort, fmtTime, formChips, gameById, getJSON, isLive, keepExtra, keyOf, lastGames, oppInfo, outcome, played, recordOf, state, store, streakRo, tShort, teamStats } from './core.js';
+import { teamBtn, teamEmbBtn, DATA, GAMES, OUT, OUTL, REC_LABEL, TEAMINFO, TZNAME, col, confShort, countdown, dayLabel, flKey, flSide, fmtShort, fmtTime, formChips, gameById, getJSON, isLive, keepExtra, keyOf, lastGames, oppInfo, outcome, played, recordOf, state, store, streakRo, tShort, teamStats } from './core.js';
 import { card, tableHtml } from './home.js';
 import { LG, lgCtx, loadScores, setView, usKey } from './views.js';
 
@@ -355,9 +355,9 @@ export function openGame(id, keep) {
       <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
     <div class="pbody">
     <div class="duel">
-      <div class="side">${emb(g.H, 'lg')}<span>${esc(g.h)}</span>${sideInfo(g, g.H)}</div>
+      <div class="side">${teamEmbBtn(g.l, g.H, 'lg')}<span>${teamBtn(g.l, g.H)}</span>${sideInfo(g, g.H)}</div>
       <div class="mid${on ? ' on' : ''}" id="gscore" aria-live="polite">${midScore(g)}<small>${esc(gameStatus(g))}</small></div>
-      <div class="side">${emb(g.A, 'lg')}<span>${esc(g.a)}</span>${sideInfo(g, g.A)}</div>
+      <div class="side">${teamEmbBtn(g.l, g.A, 'lg')}<span>${teamBtn(g.l, g.A)}</span>${sideInfo(g, g.A)}</div>
     </div>
     <div id="gtabs">${tabsHtml(g, s, gameView.tab)}</div>
     <div id="gdetail" role="tabpanel">${gameView.tab === 'rezumat' || !s ? summaryTop(g, ctx, k, other, done, on) : ''}${s ? panelHtml(g, s, viewFor()) : canFetch ? '<div class="skeleton" style="height:70px"></div>' : '<div class="fn">Detaliile meciului (statistici, jucători, faze) apar când sursa live răspunde.</div>'}</div>

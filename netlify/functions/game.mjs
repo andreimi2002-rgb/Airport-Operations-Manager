@@ -9,8 +9,9 @@ export default async req => {
   if (!LEAGUES[l] || !/^\d{1,12}$/.test(id)) return json({ error: 'bad request' }, { browser: 0, cdn: 0, status: 400 });
   try {
     const s = await summary(l, id);
-    // A finished game no longer changes: cache it for a day.
-    return json(s, s.state === 'post' ? { browser: 3600, cdn: 86400 } : s.state === 'in' ? { browser: 15, cdn: 30 } : { browser: 300, cdn: 900 });
+    // A finished game no longer changes: a day in the cache. Without its recap yet (ESPN posts it a little
+    // after the end), a quarter of an hour, so the recap shows up when it is out.
+    return json(s, s.state === 'post' ? (s.recap ? { browser: 3600, cdn: 86400 } : { browser: 300, cdn: 900 }) : s.state === 'in' ? { browser: 15, cdn: 30 } : { browser: 300, cdn: 900 });
   } catch (e) {
     return json({ error: String(e.message || e) }, { browser: 0, cdn: 30, status: 502 });
   }

@@ -1,6 +1,6 @@
 // Shared data and state: the games and standings, the viewer's filters, dates and times, storage.
 import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm } from './teams.js';
-import { $, theme } from './ui.js';
+import { $, esc, emb, theme } from './ui.js';
 
 /* ================= data loading ================= */
 export const CACHE_KEY = 'flcal-cache-v1';
@@ -58,6 +58,17 @@ export function toGame(x) {
   g.aw = awake(d);
   g.end = d.getTime() + LEAGUES[g.l].dur * 6e4;
   return g;
+}
+// Any team as a link: a Florida team opens its full profile, any other its club page (#club/NBA/2).
+export const teamAttr = (l, side) => side?.key && TEAMS[side.key] ? `data-team="${side.key}"` : side?.id ? `data-club="${l}|${esc(side.id)}"` : '';
+export function teamBtn(l, side, label = side.name) {
+  const a = teamAttr(l, side);
+  return a ? `<button class="tname" type="button" ${a}>${esc(label)}</button>` : esc(label);
+}
+// The emblem, as a button to the team when it has a page.
+export function teamEmbBtn(l, side, cls = '', onWhite = false) {
+  const a = teamAttr(l, side), e = emb(side, cls, onWhite);
+  return a ? `<button class="embtn" type="button" ${a} aria-label="${esc(side.name)}">${e}</button>` : e;
 }
 // Games of other teams (day scores, a team's season): opened on the same game page.
 export const EXTRA = new Map();
