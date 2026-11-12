@@ -27,25 +27,56 @@ export async function blobStore(name) {
 }
 export const storeName = (kind, context) => (context === 'production' ? kind : kind + '-test');
 
-export const KINDS = ['acasa', 'ligi', 'ghid', 'meci', 'echipa', 'club', 'oras', 'stadion', 'calendar', 'notificari', 'parere'];
+export const KINDS = ['acasa', 'ligi', 'ghid', 'meci', 'echipa', 'club', 'oras', 'stadion', 'calendar', 'notificari', 'parere', 'confidentialitate'];
 export const EVENTS = ['install', 'notify-on', 'calendar', 'follow', 'share', 'feedback'];
 export const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|headless|lighthouse/i;
 export const roDay = (now = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(now);
 
-// A valid hit from the page, or null: { k: page kind, f: first view today, n: first visit ever, a: in the app }
-// or { e: event }.
+// What is counted besides pages and actions, each as { value: count } per day. Visitor facts (where they
+// came from, the device, the system, an in-app browser) count once per visitor and day; the rest each time.
+export const COUNTS = {
+  src: 'de unde vin', dev: 'dispozitiv', os: 'sistem', inapp: 'browser în aplicație', dur: 'cât stau',
+  sec: 'secțiuni văzute', team: 'echipe deschise', game: 'meciuri, pe ligă', click: 'clicuri', watch: 'streaming',
+  search: 'căutări alese', err: 'erori'
+};
+const VISITOR = ['src', 'dev', 'os', 'inapp'];
+const VALUE = /^[\p{L}\p{N} .,'&()+:/-]{1,40}$/u;
+const MAX_KEYS = 300;   // per kind and day, so junk cannot grow a day's record without end
+const val = v => (typeof v === 'string' && VALUE.test(v.trim()) ? v.trim() : null);
+
+// A valid hit from the page, or null:
+//   a view   { k: page kind, f: first view today, n: first visit ever, a: in the app, + on f: src, dev, os, inapp }
+//   an event { e }      a count { c: one of COUNTS, v: value }
 export function cleanHit(b) {
   if (!b || typeof b !== 'object') return null;
   if (b.e != null) return EVENTS.includes(b.e) ? { e: b.e } : null;
-  return KINDS.includes(b.k) ? { k: b.k, f: !!b.f, n: !!b.n, a: !!b.a } : null;
+  if (b.c != null) { const v = val(b.v); return COUNTS[b.c] && !VISITOR.includes(b.c) && v ? { c: b.c, v } : null; }
+  if (!KINDS.includes(b.k)) return null;
+  const h = { k: b.k, f: !!b.f, n: !!b.n, a: !!b.a };
+  if (h.f) for (const c of VISITOR) { const v = val(b[c]); if (v) h[c] = v; }
+  return h;
 }
+// The page sends what it gathered in one request: { b: [hits] } (at most 60), or a single hit.
+export function cleanBatch(body) {
+  const list = Array.isArray(body?.b) ? body.b.slice(0, 60) : [body];
+  return list.map(cleanHit).filter(Boolean);
+}
+const bump = (r, c, v) => {
+  const m = (r.counts[c] = { ...(r.counts[c] || {}) });
+  if (m[v] == null && Object.keys(m).length >= MAX_KEYS) return;
+  m[v] = (m[v] || 0) + 1;
+};
 // One day's counts with this hit added (pure).
 export function addHit(rec, h) {
-  const r = { views: 0, visitors: 0, fresh: 0, back: 0, app: 0, pages: {}, events: {}, ...(rec || {}) };
-  r.pages = { ...r.pages }; r.events = { ...r.events };
+  const r = { views: 0, visitors: 0, fresh: 0, back: 0, app: 0, pages: {}, events: {}, counts: {}, ...(rec || {}) };
+  r.pages = { ...r.pages }; r.events = { ...r.events }; r.counts = { ...(r.counts || {}) };
   if (h.e) { r.events[h.e] = (r.events[h.e] || 0) + 1; return r; }
+  if (h.c) { bump(r, h.c, h.v); return r; }
   r.views++;
   r.pages[h.k] = (r.pages[h.k] || 0) + 1;
-  if (h.f) { r.visitors++; h.n ? r.fresh++ : r.back++; if (h.a) r.app++; }
+  if (h.f) {
+    r.visitors++; h.n ? r.fresh++ : r.back++; if (h.a) r.app++;
+    for (const c of VISITOR) if (h[c]) bump(r, c, h[c]);
+  }
   return r;
 }

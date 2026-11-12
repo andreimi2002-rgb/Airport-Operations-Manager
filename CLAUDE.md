@@ -111,7 +111,7 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     și se reîncarcă (cel mult o dată la 10 minute pe versiune). Subsolul arată „Versiunea N” și butonul
     „Caută actualizare”. Numele și iconița de pe ecranul iPhone-ului nu se schimbă niciodată singure: iOS
     le păstrează de la adăugare.
-12. **Beta publică** (în lucru, branch `stage-12-beta`). Site-ul se deschide gratuit, fără reclame, ca beta,
+12. **Beta publică** (în producție, PR #13). Site-ul se deschide gratuit, fără reclame, ca beta,
     cât timp datele sunt încă de la ESPN. Măsurarea vizitelor fără cookie-uri și fără nimic personal
     (`js/track.js` → `/api/hit`, pe zile în Netlify Blobs `stats`): vizitatori noi și care revin, pagini,
     deschideri din aplicație, acțiuni (instalare, notificări, calendar, urmărire, distribuire, păreri).
@@ -121,6 +121,12 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     distribuire (`og:` și `icons/og.png`), `robots.txt`, `sitemap.xml`, eticheta „Beta”.
     În paralel: testul BALLDONTLIE (cheia doar local, apoi `BDL_KEY` în Netlify), vezi documentul despre
     monetizare. Adresele reale și indexarea complete vin în etapa „Pregătit pentru public”.
+13. **Activitatea pe site** (în lucru, branch `stage-13-activitate`). Tot ce se întâmplă, numărat pe zile,
+    niciodată pe persoană: sursa vizitei (`?sursa=instagram`, `utm_source`, browserul din Instagram sau
+    Facebook, pagina de dinainte), dispozitivul, sistemul, cât durează o vizită, secțiunile văzute pe pagina
+    de start, echipele și meciurile deschise, clicurile, alegerile din căutare, serviciile de streaming din
+    ghid, erorile. Pagina trimite pachete (`{ b: [...] }`) la 4 secunde și la ieșire. Pagina
+    „Confidențialitate” (`#confidentialitate`) spune ce se numără. Statisticile au un tabel pe categorie.
 
 ## Structura
 
