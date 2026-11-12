@@ -12,7 +12,7 @@ import { teamTabsHtml, seasonChartHtml, leadersHtml, rosterHtml, newsHtml } from
 import { N, refreshNotify, notifyHtml } from './notify.js';
 import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, cityHtml, venueHtml, placeWeatherHtml, floridaClock, AMERICA, loadAmerica, getVenue, getCity, venueOfClub, cityLiteHtml, venueLiteHtml, clockIn, hoursBehindRomania } from './places.js';
 import { teamBtn, teamEmbBtn, DATA, GAMES, OUT, OUTL, REC_LABEL, TEAMINFO, TZNAME, col, confShort, countdown, dayLabel, flKey, flSide, fmtShort, fmtTime, formChips, gameById, getJSON, isLive, keepExtra, keyOf, lastGames, oppInfo, outcome, played, recordOf, state, store, streakRo, tShort, teamStats } from './core.js';
-import { card, tableHtml } from './home.js';
+import { card, tableHtml, allTeamsList } from './home.js';
 import { LG, lgCtx, loadScores, setView, usKey } from './views.js';
 import { trackView, trackEvent } from './track.js';
 
@@ -236,6 +236,12 @@ export function clubSide(cid) {
 }
 // The teams from outside Florida on the calendar / notifications pages: the followed ones and any chosen.
 export function pickerClubs(sel) { return [...new Set([...mineClubs().map(x => x.id), ...sel.filter(k => parseClub(k))])].map(clubSide); }
+// A list of every team not already shown, to add one to the notifications or the calendar.
+export function addTeamSelect(id, shown) {
+  const have = new Set(shown), byL = {};
+  for (const t of allTeamsList()) if (!have.has(t.id)) (byL[t.l] ||= []).push(t);
+  return `<label class="addteam" for="${id}">Adaugă altă echipă <select id="${id}"><option value="">Alege o echipă…</option>${Object.entries(byL).map(([l, list]) => `<optgroup label="${l}">${list.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</optgroup>`).join('')}</select></label>`;
+}
 export function teamEmb(id) { return emb(TEAMS[id] ? flSide(id) : clubSide(id), 'sm'); }
 // V / I / E for the team with ESPN id id in a finished game.
 export function outcomeOf(g, id) { const home = g.H.id === String(id), a = home ? g.hs : g.as, b = home ? g.as : g.hs; return a > b ? 'V' : a < b ? 'I' : 'E'; }
@@ -360,13 +366,15 @@ export const cal = { teams: [], alarm: 60 };
 export const saveCal = () => store.set('flgames-cal', JSON.stringify(cal));
 export function openCalendar(keep) {
   OV.game = null; OV.place = null;
-  show(calendarHtml(cal.teams, cal.alarm, teamEmb, pickerClubs(cal.teams)), keep);
+  const clubs = pickerClubs(cal.teams);
+  show(calendarHtml(cal.teams, cal.alarm, teamEmb, clubs, addTeamSelect('caladd', [...Object.keys(TEAMS), ...clubs.map(c => c.id)])), keep);
 }
 /* ----- notifications page ----- */
 export let notifyOpen = false, notifyChecked = false;
 export function openNotify(keep) {
   OV.game = null; OV.place = null; notifyOpen = true;
-  show(notifyHtml(teamEmb, pickerClubs(N.teams)), keep);
+  const clubs = pickerClubs(N.teams);
+  show(notifyHtml(teamEmb, clubs, addTeamSelect('ntfadd', [...Object.keys(TEAMS), ...clubs.map(c => c.id)])), keep);
   if (!notifyChecked) { notifyChecked = true; refreshNotify(MINE.list.length ? mineIds() : Object.keys(TEAMS)); }
 }
 

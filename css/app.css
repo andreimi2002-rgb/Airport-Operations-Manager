@@ -796,3 +796,6 @@ svg.cl .hit{fill:transparent;cursor:pointer}
 .fbform .btns{margin-top:6px}
 #appver{cursor:default;-webkit-user-select:none;user-select:none}
 .fbform .nmsg.ok{color:var(--good);font-weight:600}
+/* notifications and calendar: add any team */
+.addteam{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-weight:600;font-size:13.5px}
+.addteam select{max-width:100%}

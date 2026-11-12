@@ -7,7 +7,7 @@ import { calendar } from './ics.js';
 /* ================= offline ================= */
 // The version of this page. It must equal VERSION in sw.js (tools/test.mjs checks): the page compares
 // it with the published sw.js to know that a newer version is out.
-export const APP_VERSION = 'v16';
+export const APP_VERSION = 'v17';
 
 // The published version, read from sw.js past every cache.
 async function latestVersion() {
@@ -116,7 +116,7 @@ export function calendarLinks(url, name) {
 }
 // The page content; `sel` = chosen teams (Florida keys, 'NBA-2'), `alarm` = minutes, `emb(id)` draws a
 // team emblem, `clubs` = the followed teams from outside Florida: [{ id, l, name }].
-export function calendarHtml(sel, alarm, emb, clubs = []) {
+export function calendarHtml(sel, alarm, emb, clubs = [], addHtml = '') {
   const url = sel.length ? feedUrl(sel, alarm) : '';
   const nameOf = k => TEAMS[k]?.s || clubs.find(c => c.id === k)?.name || k;
   const name = sel.length === Object.keys(TEAMS).length && sel.every(k => TEAMS[k]) ? 'American Sports Hub' : 'American Sports Hub: ' + sel.map(nameOf).join(', ');
@@ -129,6 +129,7 @@ export function calendarHtml(sel, alarm, emb, clubs = []) {
     <p class="lead">Meciurile echipelor alese apar singure în calendarul tău (Google, iPhone, Outlook), la ora ta, și se actualizează când se schimbă ora sau se termină un meci.</p>
     <section><h3>1. Alege echipele</h3>
       <div class="calteams">${Object.entries(byL).map(([l, ks]) => `<div class="calgrp"><b>${l}</b>${ks.map(k => `<label class="calteam"><input type="checkbox" data-calteam="${k}" ${sel.includes(k) ? 'checked' : ''}>${emb(k)}<span>${esc(TEAMS[k].espn)}</span></label>`).join('')}</div>`).join('')}${clubs.length ? `<div class="calgrp"><b>Din alte orașe</b>${clubs.map(c => `<label class="calteam"><input type="checkbox" data-calteam="${esc(c.id)}" ${sel.includes(c.id) ? 'checked' : ''}>${emb(c.id)}<span>${esc(c.name)} <small>${esc(c.l)}</small></span></label>`).join('')}</div>` : ''}</div>
+      ${addHtml}
       <div class="btns"><button class="ghost" type="button" data-calall="1">Toate</button><button class="ghost" type="button" data-calall="0">Niciuna</button></div>
     </section>
     <section><h3>2. Amintire</h3>
