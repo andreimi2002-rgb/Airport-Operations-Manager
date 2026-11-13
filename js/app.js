@@ -8,7 +8,7 @@ import { registerSW, onInstallChange, install, downloadGame, APP_VERSION, checkU
 import { seasonHover } from './teamx.js';
 import { N, setNotifyRender, enableNotify, saveNotify, testNotify, disableNotify } from './notify.js';
 import { PLACES, loadPlaces, climateHover, AMERICA, loadAmerica } from './places.js';
-import { CACHE_KEY, DATA, GAMES, addDays, awake, build, gameById, getJSON, isLive, parts, played, state, store, weekStart, CLUB_RAW, addClubGames, refreshMineGames } from './core.js';
+import { CACHE_KEY, DATA, GAMES, addDays, awake, build, gameById, getJSON, isLive, parts, played, state, store, weekStart, CLUB_RAW, addClubGames, refreshMineGames, noteLive } from './core.js';
 import { PLAYOFFS, PO, minePick, render, renderHero, renderMap, renderMine, renderPhone, renderPlayoffs, renderSources, renderStatic, renderStatus, renderStrip } from './home.js';
 import { OV, cal, closeOv, clubSide, clubView, gameView, go, loadGame, notifyOpen, openCalendar, openClub, openTeam, pickerClubs, refreshGame, route, saveCal, setTeamTab, share, openNotify } from './pages.js';
 import { LG, navView, renderLeagues, renderTodayStrip, setLgHash, setupJump, usKey } from './views.js';
@@ -228,14 +228,17 @@ document.addEventListener('pointerleave', e => { if (e.target.matches && e.targe
 
 /* ================= loading, refresh, live scores ================= */
 // The seasons of the followed teams from elsewhere (/api/teamgames, cached on the CDN): their games join
-// the home page. Fetched once per team and page load, kept across the 15-minute reloads.
-async function loadMineClubs() {
-  const want = mineClubs().map(x => x.id).filter(id => !CLUB_RAW.has(id) && parseClub(id));
+// the home page. Asked again at every fresh load (15 minutes), so a finished game does not stay "live".
+async function loadMineClubs(again) {
+  const want = mineClubs().map(x => x.id).filter(id => (again || !CLUB_RAW.has(id)) && parseClub(id));
   refreshMineGames();
   if (!want.length || DATA.mode === 'snapshot') return;
-  const lists = await Promise.all(want.map(id => { const c = parseClub(id); return getJSON(`/api/teamgames?l=${c.l}&id=${c.id}`, 12000).then(j => (CLUB_RAW.set(id, j.games || []), j.games || [])).catch(() => []); }));
-  addClubGames(lists.flat());
+  const lists = await Promise.all(want.map(id => { const c = parseClub(id); return getJSON(`/api/teamgames?l=${c.l}&id=${c.id}`, 12000).then(j => (CLUB_RAW.set(id, j.games || []), true)).catch(() => false); }));
+  if (!lists.some(Boolean)) return;
+  // Rebuilt from the schedule and the new seasons, so updated club games replace the old ones.
+  build(DATA.raw);
   render(); scheduleLive();
+  if (!$('ov').hidden) { const g = gameById(OV.game); if (g) refreshGame(g); }
 }
 function apply(raw, mode) {
   DATA.raw = raw; DATA.mode = mode; DATA.loadedAt = mode === 'live' ? Date.now() : new Date(raw.updated).getTime();
@@ -243,7 +246,7 @@ function apply(raw, mode) {
   $('banner').hidden = true;
   renderStatic(); render();
   scheduleLive();
-  loadMineClubs();
+  loadMineClubs(mode === 'live');
   PLAYOFFS.clear(); renderPlayoffs();
   if (mode !== 'snapshot') renderTodayStrip();
   // The rest of America's stadiums: links on away games, weather for Florida's away games.
@@ -307,6 +310,7 @@ async function pollLive(leagues) {
     const scored = [];
     for (const x of r.games || []) {
       const g = gameById(x.id); if (!g) continue;
+      noteLive({ ...g, ...x });
       if (g.state !== x.state || g.hs !== x.hs || g.as !== x.as || g.detail !== x.detail) {
         if (x.state === 'post' && g.state !== 'post') finished = true;
         if ((x.hs ?? 0) !== (g.hs ?? 0) || (x.as ?? 0) !== (g.as ?? 0)) scored.push(g.id);

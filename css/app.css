@@ -256,6 +256,9 @@ tr.fl td:first-child{color:var(--ink)}
 .form i{font-style:normal;font-weight:700;font-size:12px;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;color:var(--surface)}
 .form .V{background:var(--good)} .form .I{background:var(--bad)} .form .E{background:var(--muted)}
 .form span{font-size:12px;color:var(--muted)}
+/* In the game header the five chips stay on one line. */
+.form.sm{flex-wrap:nowrap;gap:3px}
+.form.sm i{width:20px;height:20px;font-size:11px;border-radius:5px}
 dl.facts{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 dl.facts dt{color:var(--muted)}
 dl.facts dd{margin:0}
@@ -416,7 +419,8 @@ svg.wp [hidden]{display:none}
 .cbar i.a{background:var(--wp-a);border-radius:0 4px 4px 0}
 /* plays */
 .row.play{grid-template-columns:52px 1fr auto;align-items:start}
-.row.play>span:nth-child(2){display:block;line-height:1.4}
+.row.play>span:nth-child(2){display:flex;gap:8px;align-items:flex-start;line-height:1.4;min-width:0}
+.row.play .pw{min-width:0}
 .row.play .emb.sm{vertical-align:-7px}
 .row.play small{color:var(--muted);font-size:12.5px}
 .row.play small.blk{display:block}

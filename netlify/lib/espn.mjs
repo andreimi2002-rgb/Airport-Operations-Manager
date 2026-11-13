@@ -425,11 +425,18 @@ export async function scoresDay(ymd, leagues = Object.keys(LEAGUES)) {
 // A team's season games, for the page of any team (Florida teams already have theirs in /api/schedule).
 export async function teamGames(l, id) {
   const qs = l === 'MLS' ? ['', 'fixture=true'] : l === 'NFL' ? ['', 'seasontype=3'] : [''];
-  const lists = await Promise.all(qs.map(q => teamSchedule(l, id, q).catch(() => ({ events: [], team: {} }))));
+  // MLS team schedules leave out the playoffs: they come from the league's playoff games.
+  const [lists, po] = await Promise.all([
+    Promise.all(qs.map(q => teamSchedule(l, id, q).catch(() => ({ events: [], team: {} })))),
+    l === 'MLS' ? playoffs(l).then(p => p.games, () => []) : []
+  ]);
   const seen = new Set(), games = [];
   for (const { events } of lists) for (const ev of events) {
     const g = normalizeEvent(ev, l);
     if (g && !seen.has(g.id)) { seen.add(g.id); games.push(g); }
+  }
+  for (const { round, ...g } of po) {
+    if ((g.home?.id === String(id) || g.away?.id === String(id)) && !seen.has(g.id)) { seen.add(g.id); games.push(g); }
   }
   games.sort((a, b) => String(a.date).localeCompare(String(b.date)));
   const team = lists[0].team || {};

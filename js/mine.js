@@ -2,18 +2,27 @@
 // By default the eleven Florida teams; the viewer can take any out and add any team of the five leagues.
 // A Florida team by its key ('heat'); any other team as 'NBA-2', with what the page needs to draw it
 // before its data loads (name, logo, colours). Replaces the old single "echipa mea" (flgames-fav).
-import { TEAMS, parseClub } from './teams.js';
+import { TEAMS, PACK, PACKS, parseClub } from './teams.js';
 import { trackEvent } from './track.js';
 
-const KEY = 'flgames-mine';
+// One list per pack: the owner's device can switch between Florida and New York (when its mark is lost or
+// set again) without the other pack's teams being dropped from the saved list.
+const OLD = 'flgames-mine', KEY = PACK === 'fl' ? OLD : OLD + '-' + PACK;
 const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const set = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) { /* private mode */ } };
 const defaults = () => Object.keys(TEAMS).map(id => ({ id }));
 
+// Lists saved before there was one per pack (all under the old name): a New York list moves over; the
+// owner's Florida list (it has Florida teams) stays Florida's.
+function oldList() {
+  if (PACK === 'fl') return null;
+  const s = get(OLD);
+  try { return JSON.parse(s || 'null')?.some?.(x => PACKS.fl.keys.includes(x?.id)) ? null : s; } catch (e) { return null; }
+}
 export const MINE = { list: defaults(), custom: false };
 {
   try {
-    const a = JSON.parse(get(KEY) || 'null');
+    const a = JSON.parse(get(KEY) || oldList() || 'null');
     if (Array.isArray(a)) { MINE.list = a.filter(x => x && (TEAMS[x.id] || parseClub(x.id))); MINE.custom = true; }
   } catch (e) { /* ignore */ }
   set('flgames-fav', null);   // the old single favourite: the list replaces it

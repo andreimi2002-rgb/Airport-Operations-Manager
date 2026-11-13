@@ -48,6 +48,9 @@ export function teamSide(t, l) {
 export function toGame(x) {
   const d = new Date(x.date);
   if (isNaN(d) || !LEAGUES[x.l]) return null;
+  // A playoff opponent not yet known comes from ESPN as "TBD Away" / "TBD Home".
+  const tbd = s => /^TBD\b/i.test(s?.name || '') ? { ...s, name: 'Adversar de stabilit', abbr: '?' } : s;
+  x = { ...x, home: tbd(x.home), away: tbd(x.away) };
   const H = teamSide(x.home, x.l), A = teamSide(x.away, x.l);
   const g = {
     id: String(x.id), l: x.l, d, tbd: x.tbd, state: x.state, detail: x.detail,
@@ -58,7 +61,18 @@ export function toGame(x) {
   g.derby = g.teams.length === 2;
   g.aw = awake(d);
   g.end = d.getTime() + LEAGUES[g.l].dur * 6e4;
+  patchLive(g);
   return g;
+}
+// The last live scores (/api/live, every 30 s). The schedule and a team's season are cached for up to
+// 15 minutes, so a reload must not put an older score or state back over a newer one.
+const LIVE = new Map(), RANK = { pre: 0, in: 1, post: 2 };
+export function noteLive(g) { LIVE.set(g.id, { state: g.state, hs: g.hs, as: g.as, detail: g.detail, at: Date.now() }); }
+function patchLive(g) {
+  const p = LIVE.get(g.id);
+  // A finished game stays finished; a live score is trusted for 20 minutes.
+  if (!p || (p.state !== 'post' && Date.now() - p.at > 20 * 60e3) || (RANK[p.state] ?? 0) < (RANK[g.state] ?? 0)) return;
+  Object.assign(g, { state: p.state, hs: p.hs, as: p.as, detail: p.detail });
 }
 // Any team as a link: a Florida team opens its full profile, any other its club page (#club/NBA/2).
 export const teamAttr = (l, side) => side?.key && TEAMS[side.key] ? `data-team="${side.key}"` : side?.id ? `data-club="${l}|${esc(side.id)}"` : '';

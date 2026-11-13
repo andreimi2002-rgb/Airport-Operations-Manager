@@ -7,7 +7,10 @@ export default async req => {
   const l = (q.get('l') || '').toUpperCase(), id = q.get('id') || '';
   if (!LEAGUES[l] || !/^\d{1,8}$/.test(id)) return json({ error: 'bad request' }, { browser: 0, cdn: 0, status: 400 });
   try {
-    return json(await teamGames(l, id), { browser: 300, cdn: 1800, swr: 86400 });
+    // A game on now or within a few hours: short cache, so its state is not kept "live" after the end.
+    const data = await teamGames(l, id), now = Date.now();
+    const busy = (data.games || []).some(g => g.state === 'in' || (g.state !== 'post' && Math.abs(new Date(g.date) - now) < 6 * 36e5));
+    return json(data, busy ? { browser: 0, cdn: 60, swr: 60 } : { browser: 300, cdn: 1800, swr: 3600 });
   } catch (e) {
     return json({ error: String(e.message || e) }, { browser: 0, cdn: 60, status: 502 });
   }
