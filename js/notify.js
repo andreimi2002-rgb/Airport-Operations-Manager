@@ -3,7 +3,7 @@
 import { TEAMS, parseClub } from './teams.js';
 import { esc } from './ui.js';
 import { isStandalone } from './phone.js';
-import { trackEvent } from './track.js';
+import { trackEvent, count } from './track.js';
 
 export const N = { status: 'unknown', teams: [], lead: 60, final: true, morning: true, night: false, weekly: true, msg: '', busy: false, key: null };
 let onChange = () => {};
@@ -39,13 +39,31 @@ async function run(fn, ok) {
   try { await fn(); if (ok) N.msg = ok; } catch (e) { N.msg = String(e.message || e); }
   N.busy = false; onChange();
 }
+// The browser's push service (Windows: WNS, through Edge; Android: Google's) sometimes refuses the first try
+// ("Registration failed - push service error"): a stale subscription is dropped and it is asked once more;
+// if it still refuses, the viewer gets the steps in Romanian instead of the browser's English error.
+async function subscribe(r) {
+  const opts = { userVisibleOnly: true, applicationServerKey: keyBytes(N.key) };
+  const old = await r.pushManager.getSubscription();
+  if (old) return old;
+  try { return await r.pushManager.subscribe(opts); } catch (e) {
+    if (e?.name === 'NotAllowedError') throw e;
+    await new Promise(ok => setTimeout(ok, 1500));
+    try { return await r.pushManager.subscribe(opts); } catch (e2) {
+      count('err', 'push: ' + (e2?.message || e2?.name || 'subscribe').slice(0, 30));
+      const win = /Windows/.test(navigator.userAgent);
+      throw new Error(win
+        ? 'Serviciul de notificări al Windows nu a răspuns. Verifică: Setări Windows → Sistem → Notificări pornite (și pentru American Sports Hub și Microsoft Edge), apoi încearcă din nou. Dacă folosești VPN sau un program care blochează conexiuni, oprește-l o clipă.'
+        : 'Serviciul de notificări al browserului nu a răspuns. Încearcă din nou peste un minut; dacă tot nu merge, repornește browserul.');
+    }
+  }
+}
 const prefs = () => ({ teams: N.teams, lead: N.lead, final: N.final, morning: N.morning, night: N.night, weekly: N.weekly });
 // Turning on must start from a tap: browsers only show the permission question after one.
 export const enableNotify = () => run(async () => {
   const p = await Notification.requestPermission();
   if (p !== 'granted') { N.status = p === 'denied' ? 'denied' : 'off'; throw new Error('Notificările nu au fost permise.'); }
-  const r = await reg();
-  const s = (await r.pushManager.getSubscription()) || await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(N.key) });
+  const s = await subscribe(await reg());
   await post({ action: 'save', subscription: s.toJSON(), prefs: prefs() });
   N.status = 'on';
   trackEvent('notify-on');
