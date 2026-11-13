@@ -111,7 +111,7 @@ export function openTerms(keep) {
 export const CONTACT = 'andreimi1308@gmail.com';
 // "Susține proiectul": a voluntary donation through Revolut.me or Ko-fi (the owner's links; empty = hidden).
 // Not in the Microsoft Store app (its payment rules are checked first).
-export const DONATE = { revolut: 'https://revolut.me/mihalam98n', kofi: 'https://ko-fi.com/andreimihalache71873' };
+export const DONATE = { revolut: 'https://revolut.me/mihalam98n', kofi: '' };
 export const canDonate = () => !STORE && !!(DONATE.revolut || DONATE.kofi);
 export function openDonate(keep) {
   OV.game = null; OV.place = null;
@@ -120,12 +120,12 @@ export function openDonate(keep) {
     <div class="pbody">
       <p class="lead">American Sports Hub e făcut de o singură persoană, din pasiune, și rămâne gratuit. Dacă îți e de folos, o cafea ajută la ce urmează: pagina de jucător, varianta în engleză, o adresă proprie.</p>
       <div class="donbtns">
-        ${DONATE.revolut ? `<a class="primary" href="${esc(DONATE.revolut)}" target="_blank" rel="noopener" data-donate="revolut">Revolut</a>` : ''}
+        ${DONATE.revolut ? `<a class="primary" href="${esc(DONATE.revolut)}" target="_blank" rel="noopener" data-donate="revolut">Donează prin Revolut</a>` : ''}
         ${DONATE.kofi ? `<a class="ghost" href="${esc(DONATE.kofi)}" target="_blank" rel="noopener" data-donate="kofi">Ko-fi · card sau PayPal</a>` : ''}
       </div>
       <ul class="notes">
         <li>Orice sumă, o singură dată; nu e un abonament și nu primești nimic în schimb, doar mulțumirile noastre.</li>
-        <li>Plata se face pe Revolut sau pe Ko-fi, după regulile lor; noi nu vedem datele cardului tău.</li>
+        <li>Plata se face pe pagina Revolut, cu Revolut sau cu cardul, după regulile lor; noi nu vedem datele cardului tău.</li>
         <li>Site-ul rămâne la fel pentru toată lumea, cu sau fără donație.</li>
       </ul>
     </div>`, keep);
