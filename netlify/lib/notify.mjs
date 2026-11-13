@@ -1,6 +1,7 @@
 // Which notifications a subscriber is due, and their Romanian text. Pure functions: tested offline.
 // A subscription: { id, endpoint, keys, teams: ['heat', 'NBA-2'], lead: 60 (minutes, 0 = none), final: true,
-//                   morning: true (absent = true), morningDay: '2026-11-12' (last morning summary, Romanian date),
+//                   morning: true (absent = true), night: false (the morning summary also tells the whole night),
+//                   morningDay: '2026-11-12' (last morning summary, Romanian date),
 //                   created (ms), sent: { [gameId]: { p: ms, f: ms } } }
 import { LEAGUES, ALL_TEAMS as TEAMS, sideIn } from '../../js/teams.js';
 import { detailRo } from '../../js/ro.js';
@@ -57,29 +58,64 @@ const resultLine = (g, want) => {
   if (mine.length === 1) { const my = mine[0] === g.home ? hs : as, th = mine[0] === g.home ? as : hs; mark = my > th ? ' ✓' : my < th ? ' ✗' : ' ='; }
   return `${short(g.home)} ${hs}–${as} ${short(g.away)}${mark}`;
 };
-export function morningMessage(results, next, teams, site) {
+// The whole night (subscribers who tick "toată noaptea"): every finished game of every league. The most
+// gripping ones (overtime, a close score) are named; the notification opens the day's scores.
+const TWO = /\s(Trail Blazers|Maple Leafs|Golden Knights|Red Wings|Blue Jackets|Red Sox|White Sox|Blue Jays)$/;
+const nick = s => (s.key && TEAMS[s.key] ? TEAMS[s.key].s : (TWO.exec(s.name || '')?.[1] || String(s.name || '').split(' ').pop()));
+const extraTime = g => /OT|SO|\/\d+/.test(g.detail || '');
+const CLOSE = { NBA: 5, NFL: 7 };
+export function nightPicks(night, n = 3) {
+  const margin = g => Math.abs((g.home.score ?? 0) - (g.away.score ?? 0));
+  const grip = g => (extraTime(g) ? 2 : 0) + (margin(g) <= (CLOSE[g.l] || 1) ? 2 : 0);
+  return night.slice().sort((a, b) => grip(b) - grip(a) || margin(a) / (CLOSE[a.l] || 1) - margin(b) / (CLOSE[b.l] || 1)).slice(0, n);
+}
+const nightLine = g => `${nick(g.home)} ${g.home.score ?? 0}–${g.away.score ?? 0} ${nick(g.away)}${extraTime(g) ? ' (prel.)' : ''}`;
+// The US date of the night's games (New York), for the link to that day's scores.
+const usDate = g => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date(g.date));
+
+export function morningMessage(results, next, teams, site, night = null) {
   const want = new Set(teams), lines = results.map(g => resultLine(g, want));
+  const nextLine = next ? `Urmează: ${short(next.home)} – ${short(next.away)}, ${fmtRO.format(new Date(next.date))}` : '';
+  if (night?.length) {
+    const ids = new Set(results.map(g => g.id)), picks = nightPicks(night.filter(g => !ids.has(g.id)));
+    const leagues = [...new Set(night.map(g => g.l))].join(', ');
+    const url = `${site}/#ligi/scoruri/${usDate(night[0])}`;
+    if (!results.length) return { title: `☀️ Azi-noapte: ${night.length} meciuri în ${leagues}`, body: [...picks.map(nightLine), nextLine].filter(Boolean).join('\n'), url, tag: 'morning' };
+    return {
+      title: results.length === 1 ? `☀️ Azi-noapte: ${lines[0]}` : `☀️ Azi-noapte: ${results.length} meciuri ale echipelor tale`,
+      body: [...(results.length === 1 ? [] : lines), `Toată noaptea: ${night.length} meciuri${picks.length ? ' · ' + picks.map(nightLine).join(' · ') : ''}`, nextLine].filter(Boolean).join('\n'),
+      url, tag: 'morning'
+    };
+  }
   return {
     title: results.length === 1 ? `☀️ Azi-noapte: ${lines[0]}` : `☀️ Azi-noapte: ${results.length} meciuri ale echipelor tale`,
-    body: [...(results.length === 1 ? [] : lines), next ? `Urmează: ${short(next.home)} – ${short(next.away)}, ${fmtRO.format(new Date(next.date))}` : ''].filter(Boolean).join('\n'),
+    body: [...(results.length === 1 ? [] : lines), nextLine].filter(Boolean).join('\n'),
     url: site + '/', tag: 'morning'
   };
 }
-export function morningDue(sub, games, now, site) {
-  if (sub.morning === false) return null;
+// The Romanian date when a morning summary may go out now (8:00–12:00), else null.
+export function morningWindow(now) {
   const { day, hour } = roParts(now);
-  if (hour < MORNING.from || hour >= MORNING.to || sub.morningDay === day) return null;
+  return hour >= MORNING.from && hour < MORNING.to ? day : null;
+}
+// `night`: every game of the night in all leagues (only fetched when a subscriber wants it), or null.
+export function morningDue(sub, games, now, site, night = null) {
+  if (sub.morning === false) return null;
+  const day = morningWindow(now);
+  if (!day || sub.morningDay === day) return null;
   const want = new Set(sub.teams || []);
   const mine = games.filter(g => sideIn(want, g.l, g.home) || sideIn(want, g.l, g.away));
   const t = g => new Date(g.date).getTime();
-  const results = mine.filter(g => g.state === 'post' && t(g) < now && now - t(g) < 24 * 36e5).sort((a, b) => t(a) - t(b));
-  if (!results.length) return null;
+  const recent = g => g.state === 'post' && t(g) < now && now - t(g) < 24 * 36e5;
+  const results = mine.filter(recent).sort((a, b) => t(a) - t(b));
+  const all = sub.night ? (night || []).filter(recent) : [];
+  if (!results.length && !all.length) return null;
   const next = mine.filter(g => g.state === 'pre' && !g.tbd && t(g) > now && t(g) - now < 24 * 36e5).sort((a, b) => t(a) - t(b))[0];
-  return { kind: 'm', day, game: null, message: morningMessage(results, next, [...want], site) };
+  return { kind: 'm', day, game: null, message: morningMessage(results, next, [...want], site, all) };
 }
 
 // The notifications due now for one subscriber: [{ kind: 'p'|'f'|'m', game, message }].
-export function due(sub, games, now, site) {
+export function due(sub, games, now, site, night = null) {
   const out = [], want = new Set(sub.teams || []), sent = sub.sent || {};
   for (const g of games) {
     if (!(sideIn(want, g.l, g.home) || sideIn(want, g.l, g.away))) continue;
@@ -95,7 +131,7 @@ export function due(sub, games, now, site) {
       if (now - start < 10 * 36e5 && end > (sub.created || 0)) out.push({ kind: 'f', game: g, message: finalMessage(g, [...want], site) });
     }
   }
-  const m = morningDue(sub, games, now, site);
+  const m = morningDue(sub, games, now, site, night);
   if (m) out.push(m);
   return out;
 }

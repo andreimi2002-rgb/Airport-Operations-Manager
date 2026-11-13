@@ -348,26 +348,63 @@ export function venueHtml(v, ctx) {
     </div>`;
 }
 /* ================= the rest of America: plain facts ================= */
+// Big metropolitan areas: the main city's page also shows the stadiums and teams of the towns around it
+// (New York: 11 teams, not only the 2 of Madison Square Garden). Ids of data/america.json; written by hand.
+// `image`: a photo of the city (Wikimedia Commons) when the data file has none.
+export const AREAS = {
+  'new-york-ny': { name: 'New York', with: ['brooklyn-ny', 'new-york-city-ny', 'bronx-ny', 'queens-ny', 'elmont-ny', 'newark-nj', 'harrison-nj', 'east-rutherford-nj'],
+    image: { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Midtown_Manhattan_from_Jersey_City_September_2020_HDR.jpg/1280px-Midtown_Manhattan_from_Jersey_City_September_2020_HDR.jpg',
+      page: 'https://commons.wikimedia.org/wiki/File:Midtown_Manhattan_from_Jersey_City_September_2020_HDR.jpg', author: 'King of Hearts', license: 'CC BY-SA 4.0' } },
+  'los-angeles-ca': { name: 'Los Angeles', with: ['inglewood-ca', 'anaheim-ca', 'carson-ca'] },
+  'san-francisco-ca': { name: 'San Francisco', with: ['santa-clara-ca', 'san-jose-ca'] },
+  'dallas-tx': { name: 'Dallas', with: ['arlington-tx', 'frisco-tx'] },
+  'washington-dc': { name: 'Washington', with: ['washington-d-c-dc', 'landover-md'] },
+  'boston-ma': { name: 'Boston', with: ['foxborough-ma'] },
+  'philadelphia-pa': { name: 'Philadelphia', with: ['chester-pa'] },
+  'phoenix-az': { name: 'Phoenix', with: ['glendale-az'] },
+  'denver-co': { name: 'Denver', with: ['commerce-city-co'] },
+  'kansas-city-mo': { name: 'Kansas City', with: ['kansas-city-ks'] },
+  'minneapolis-mn': { name: 'Minneapolis', with: ['saint-paul-mn'] },
+  'salt-lake-city-ut': { name: 'Salt Lake City', with: ['sandy-ut'] },
+  'buffalo-ny': { name: 'Buffalo', with: ['orchard-park-ny'] }
+};
+// The metro area a town belongs to (its main city's id), or null.
+export const metroOf = id => AREAS[id] ? id : Object.keys(AREAS).find(k => AREAS[k].with.includes(id)) || null;
+// Every stadium of a city page: its own, plus the metro area's when it is the main city (each once).
+function cityVenueIds(c) {
+  const ids = [...c.venues];
+  for (const t of AREAS[c.id]?.with || []) for (const v of AMERICA.data.cities[t]?.venues || []) if (!ids.includes(v)) ids.push(v);
+  return ids;
+}
 const TZ_RO = { 'America/New_York': 'ora Coastei de Est', 'America/Toronto': 'ora Coastei de Est', 'America/Detroit': 'ora Coastei de Est', 'America/Chicago': 'ora Centrală', 'America/Winnipeg': 'ora Centrală', 'America/Denver': 'ora Munților Stâncoși', 'America/Edmonton': 'ora Munților Stâncoși', 'America/Phoenix': 'ora Munților Stâncoși (fără ora de vară)', 'America/Los_Angeles': 'ora Pacificului', 'America/Vancouver': 'ora Pacificului', 'America/Indiana/Indianapolis': 'ora Coastei de Est', 'America/Boise': 'ora Munților Stâncoși' };
 const litePhoto = (v, alt) => v.photo ? `<figure class="hero-ph"><img src="${esc(v.photo)}" alt="${esc(alt)}" loading="eager" decoding="async"><figcaption>Foto: ESPN</figcaption></figure>`
   : v.credit ? `<figure class="hero-ph"><img src="${esc(v.credit.url)}" alt="${esc(alt)}" loading="eager" decoding="async"><figcaption>Foto: ${esc(v.credit.author || '')}, <a href="${esc(v.credit.page)}" target="_blank" rel="noopener">${esc(v.credit.license || 'Wikimedia Commons')}</a></figcaption></figure>` : '';
 const clubBtn = (t, ctx) => `<button class="host" type="button" data-club="${esc(t.l)}|${esc(t.id)}">${ctx.clubEmb(t)}<span><b>${esc(t.name)}</b><small>${esc(t.l)}${ctx.clubRecord(t) ? ' · ' + esc(ctx.clubRecord(t)) : ''}</small></span></button>`;
 export function cityLiteHtml(c, ctx) {
-  const venues = c.venues.map(id => AMERICA.data.venues[id]).filter(Boolean);
+  const A = AMERICA.data, M = AREAS[c.id], area = metroOf(c.id), ids = cityVenueIds(c);
+  const venues = ids.map(id => A.venues[id]).filter(Boolean);
   const behind = hoursBehindRomania(new Date(), c.tz);
-  const img = c.image ? { photo: '', credit: c.image } : venues.find(v => v.photo) || { };
-  const games = ctx.gamesAt(c.venues);
+  const img = c.image ? { photo: '', credit: c.image } : M?.image ? { photo: '', credit: M.image } : venues.find(v => v.photo) || { };
+  const games = ctx.gamesAt(ids);
+  // Each team once (two venue entries can list the same one), in league order.
+  const seen = new Set(), teams = venues.flatMap(v => v.teams).filter(t => !seen.has(t.l + t.id) && seen.add(t.l + t.id))
+    .sort((a, b) => ['NBA', 'NHL', 'NFL', 'MLB', 'MLS'].indexOf(a.l) - ['NBA', 'NHL', 'NFL', 'MLB', 'MLS'].indexOf(b.l));
+  // In a metro area, a stadium outside the main city says where it is.
+  const town = v => M && v.city !== c.id && A.cities[v.city] && !A.cities[v.city].name.startsWith(c.name) ? ` · ${esc(A.cities[v.city].name)}` : '';
+  const zone = M ? ` din zona ${esc(M.name)}` : '';
   return `<div class="band photo">${litePhoto(img, c.name)}<div class="bandtxt"><div class="lgn">Oraș · ${esc(c.state)} · ${esc(c.country)}</div><h2 id="prof-name">${esc(c.name)}</h2></div>
       <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
     <div class="pbody">
     <div class="stats">
       <div class="stat"><div class="v" id="flclock" data-tz="${esc(c.tz)}">${clockIn(c.tz)}</div><div class="l">Ora acum în ${esc(c.name)}, cu ${behind} ore în urma României</div></div>
       ${c.pop ? `<div class="stat"><div class="v">${num(c.pop)}</div><div class="l">locuitori</div></div>` : ''}
+      ${M ? `<div class="stat"><div class="v">${teams.length}</div><div class="l">echipe în zona ${esc(M.name)}</div></div>` : ''}
       <div class="stat"><div class="v" style="font-size:17px">${esc(TZ_RO[c.tz] || c.tz)}</div><div class="l">fusul orar</div></div>
     </div>
+    ${area && !M ? `<div class="fn">${esc(c.name)} face parte din zona ${esc(AREAS[area].name)}. <button class="linkish" type="button" data-city="${esc(area)}">Toate echipele din zona ${esc(AREAS[area].name)}</button></div>` : ''}
     <section><h3>Vremea acum</h3><div id="pwx"><div class="skeleton" style="height:120px"></div></div></section>
-    <section><h3>${venues.length === 1 ? 'Stadionul' : 'Stadioanele'}</h3><div class="vcards">${venues.map(v => `<button class="vcard" type="button" data-venue="${esc(v.id)}">${v.photo || v.credit ? `<img src="${esc(v.photo || v.credit.url)}" alt="" loading="lazy">` : ''}<span class="vb"><b>${esc(v.name)}</b><small>${v.teams.map(t => esc(t.name)).join(' · ')}</small><small>${v.capacity ? num(v.capacity) + ' locuri · ' : ''}${roofWord(v)}</small></span></button>`).join('')}</div></section>
-    <section><h3>Echipe</h3><div class="hosts">${venues.flatMap(v => v.teams).map(t => clubBtn(t, ctx)).join('')}</div></section>
+    <section><h3>Echipe${zone}</h3><div class="hosts">${teams.map(t => clubBtn(t, ctx)).join('')}</div></section>
+    <section><h3>${venues.length === 1 ? 'Stadionul' : 'Stadioanele'}${zone}</h3><div class="vcards">${venues.map(v => `<button class="vcard" type="button" data-venue="${esc(v.id)}">${v.photo || v.credit ? `<img src="${esc(v.photo || v.credit.url)}" alt="" loading="lazy">` : ''}<span class="vb"><b>${esc(v.name)}</b><small>${v.teams.map(t => esc(t.name)).join(' · ')}</small><small>${v.capacity ? num(v.capacity) + ' locuri · ' : ''}${roofWord(v)}${town(v)}</small></span></button>`).join('')}</div></section>
     ${games.up.length ? `<section><h3>Echipele tale joacă aici</h3><div class="rows">${games.up.slice(0, 6).map(ctx.row).join('')}</div></section>` : ''}
     <div class="fn">Oraș din afara Floridei: pagina are faptele de bază (ora, vremea, echipele), fără textele în română de la orașele din Florida.</div>
     <div class="btns"><button class="ghost" type="button" data-share>Copiază linkul</button></div>

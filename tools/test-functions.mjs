@@ -117,7 +117,7 @@ await test('game: the recap among the clips; no recap keeps the clips, cached br
   assert.equal(j.recap, true); assert.equal(j.videos.length, 1);
   routes = [['summary?event', () => summaryJ('post', [shortClip('Bam dunks'), shortClip('Bad host', 'https://evil.example')])], ['/news?event', () => ({ articles: [] })]];
   const r = await game(req('/api/game?l=NBA&id=401'));
-  assert.match(r.headers.get('netlify-cdn-cache-control'), /s-maxage=900/);
+  assert.match(r.headers.get('netlify-cdn-cache-control'), /s-maxage=300/);   // asked again soon: the recap comes later
   j = await body(r);
   assert.equal(j.recap, undefined);
   assert.deepEqual(j.videos.map(v => v.title), ['Bam dunks'], 'only clips from ESPN servers');
@@ -188,10 +188,10 @@ await test('push: save, read, delete a subscription', async () => {
   assert.equal((await post({ action: 'save', subscription: { endpoint: 'https://evil.example/x', keys: subscription.keys } })).status, 400);
   assert.equal((await body(await post({ action: 'save', subscription, prefs: { teams: ['nope'] } }))).error, 'Alege cel puțin o echipă.');
   const saved = await body(await post({ action: 'save', subscription, prefs: { teams: ['heat', 'NBA-2', 'heat'], lead: 999, final: true } }));
-  assert.deepEqual(saved.prefs, { teams: ['heat', 'NBA-2'], lead: 60, final: true, morning: true });
-  const off = await body(await post({ action: 'save', subscription, prefs: { teams: ['heat'], lead: 30, final: false, morning: false } }));
+  assert.deepEqual(saved.prefs, { teams: ['heat', 'NBA-2'], lead: 60, final: true, morning: true, night: false });
+  const off = await body(await post({ action: 'save', subscription, prefs: { teams: ['heat'], lead: 30, final: false, morning: false, night: true } }));
   assert.equal(off.prefs.morning, false);
-  assert.deepEqual((await body(await post({ action: 'get', subscription }))).prefs, { teams: ['heat'], lead: 30, final: false, morning: false });
+  assert.deepEqual((await body(await post({ action: 'get', subscription }))).prefs, { teams: ['heat'], lead: 30, final: false, morning: false, night: true });
   assert.equal((await post({ action: 'delete', subscription })).status, 200);
   assert.equal((await body(await post({ action: 'get', subscription }))).prefs, null);
   delete process.env.VAPID_PUBLIC_KEY; delete process.env.VAPID_PRIVATE_KEY;

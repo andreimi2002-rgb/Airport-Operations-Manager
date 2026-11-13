@@ -286,6 +286,20 @@ assert.equal((await import('../js/teamx.js')).roNum('27.7'), '27,7');
   assert.deepEqual(nt.due({ ...sub, morning: false }, games, now, 'x'), [], 'switched off');
   assert.equal(nt.due({ ...sub, teams: ['heat'] }, games, now, 'x')[0].message.title, '☀️ Azi-noapte: Heat 112–104 Boston Celtics ✓');
   assert.deepEqual(nt.due({ ...sub, teams: ['NBA-2'] }, [g('a', -8 * 60)], now, 'x')[0].message.title, '☀️ Azi-noapte: Heat 112–104 Boston Celtics ✗');
+
+  // "Toată noaptea": every game of the night, the most gripping named, the link to the day's scores.
+  const n = (id, l, hn, hs, an, as, detail = 'Final') => ({ id, l, date: new Date(now - 7 * 36e5).toISOString(), state: 'post', detail, home: { name: hn, key: null, score: hs }, away: { name: an, key: null, score: as } });
+  const night = [n('x1', 'NBA', 'Detroit Pistons', 144, 'Washington Wizards', 140, 'Final/OT'), n('x2', 'NBA', 'Dallas Mavericks', 94, 'Minnesota Timberwolves', 133),
+    n('x3', 'NHL', 'Toronto Maple Leafs', 2, 'Minnesota Wild', 3), n('x4', 'NBA', 'Phoenix Suns', 101, 'Charlotte Hornets', 96), g('a', -8 * 60)];
+  assert.deepEqual(nt.nightPicks(night.slice(0, 4)).map(x => x.id), ['x1', 'x3', 'x4']);
+  const only = nt.due({ teams: ['marlins'], night: true, lead: 0, final: false, sent: {} }, games, now, 'https://x', night)[0].message;
+  assert.equal(only.title, '☀️ Azi-noapte: 5 meciuri în NBA, NHL');
+  assert.equal(only.body, 'Pistons 144–140 Wizards (prel.)\nMaple Leafs 2–3 Wild\nSuns 101–96 Hornets');
+  assert.equal(only.url, 'https://x/#ligi/scoruri/2026-11-14');
+  const both = nt.due({ ...sub, teams: ['heat'], night: true }, games, now, 'https://x', night)[0].message;
+  assert.equal(both.title, '☀️ Azi-noapte: Heat 112–104 Boston Celtics ✓');
+  assert.equal(both.body, 'Toată noaptea: 5 meciuri · Pistons 144–140 Wizards (prel.) · Maple Leafs 2–3 Wild · Suns 101–96 Hornets');
+  assert.deepEqual(nt.due({ teams: ['marlins'], lead: 0, final: false, sent: {} }, games, now, 'x', night), [], 'not asked for: no summary');
 }
 
 // Ghid: every league has a way to watch it, the explanations follow the chosen leagues.

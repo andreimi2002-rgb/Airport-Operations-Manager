@@ -48,6 +48,22 @@ export function toggleMine(id, meta = {}) {
 }
 // Back to the eleven Florida teams.
 export function resetMine() { MINE.list = defaults(); MINE.custom = false; set(KEY, null); }
+
+/* ----- the first visit: "Ce echipe urmărești?" ----- */
+// A new visitor (the public pack, nothing chosen yet, never asked) is asked for their teams on the home page.
+// The owner's devices (Florida) are never asked. Answered or put off ("Mai târziu"), it does not come back.
+const WELCOMED = 'flgames-welcome';
+export const welcomeDue = () => PACK !== 'fl' && !MINE.custom && !get(WELCOMED);
+export const setWelcomed = () => set(WELCOMED, '1');
+// The chosen teams replace the list. `metaOf(id)`: name, logo and colours of a team outside the pack.
+export function setMine(ids, metaOf) {
+  MINE.list = [];
+  for (const id of ids) {
+    const c = parseClub(id), m = c ? metaOf(id) || {} : {};
+    MINE.list.push(c ? { id, l: c.l, eid: c.id, name: m.name || id, abbr: m.abbr || '', logo: m.logo || '', logoDark: m.logoDark || '', color: m.color || '', alt: m.alt || '' } : { id });
+  }
+  save(); setWelcomed();
+}
 // Keeps the saved name and logo of a followed team up to date (teams get renamed, logos change).
 export function refreshMine(id, meta) {
   const x = MINE.list.find(t => t.id === id);

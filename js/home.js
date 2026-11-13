@@ -1,7 +1,7 @@
 // The home page: status line, "Echipele mele", the next game, highlights, calendar, agenda, map,
 // playoff bracket, weather strip and the phone section.
 import { LEAGUES, TEAMS, DIVISIONS, METROS, norm, HOME } from './teams.js';
-import { MINE, isMine, mineFL, clubId, mineIds } from './mine.js';
+import { MINE, isMine, mineFL, clubId, mineIds, welcomeDue } from './mine.js';
 import { esc, $, emb } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
 import { installHtml, canInstall } from './phone.js';
@@ -86,8 +86,49 @@ export function minePickHtml() {
     <div class="mplist">${Object.entries(byL).map(([l, ts]) => `<div class="mpgrp"><b><span class="ldot" style="--c:${col(l)}"></span>${l}</b>${ts.map(t => { const on = isMine(t.id); return `<button class="mpteam${on ? ' on' : ''}" type="button" data-mine-toggle="${esc(t.id)}" aria-pressed="${on}">${emb(t.side, 'sm')}<span class="nm">${esc(t.name)}</span><i>${on ? '★' : '+'}</i></button>`; }).join('')}</div>`).join('') || `<div class="empty">Nicio echipă pentru „${esc(minePick.q)}”.</div>`}</div>
     ${MINE.custom ? '<button class="link" type="button" data-mine-reset>Înapoi la echipele implicite</button>' : ''}</div>`;
 }
+/* ----- the first visit: "Ce echipe urmărești?" instead of the list, until answered or put off ----- */
+export const WELCOME = { on: welcomeDue(), picked: [], q: '' };
+// The best-known teams of each league, offered first (ESPN names); the search finds any other.
+const KNOWN = {
+  NBA: ['Los Angeles Lakers', 'Boston Celtics', 'Golden State Warriors', 'New York Knicks', 'Chicago Bulls', 'Miami Heat'],
+  NFL: ['Kansas City Chiefs', 'Dallas Cowboys', 'Philadelphia Eagles', 'San Francisco 49ers', 'Green Bay Packers', 'New England Patriots'],
+  NHL: ['New York Rangers', 'Toronto Maple Leafs', 'Boston Bruins', 'Edmonton Oilers'],
+  MLB: ['New York Yankees', 'Los Angeles Dodgers', 'Boston Red Sox'],
+  MLS: ['Inter Miami CF', 'LA Galaxy', 'LAFC']
+};
+function welcomeGridHtml() {
+  const all = allTeamsList(), q = norm(WELCOME.q);
+  const chip = t => { const on = WELCOME.picked.includes(t.id); return `<button class="wteam" type="button" data-welcome-pick="${esc(t.id)}" aria-pressed="${on}">${emb(t.side, 'sm')}<span>${esc(t.name)}</span><i aria-hidden="true">${on ? '✓' : '+'}</i></button>`; };
+  if (q) {
+    const hits = all.filter(t => norm(t.name + ' ' + t.l).includes(q)).slice(0, 24);
+    return `<div class="wgrid">${hits.length ? `<div class="wgrp">${hits.map(chip).join('')}</div>` : `<div class="empty">Nicio echipă pentru „${esc(WELCOME.q)}”.</div>`}</div>`;
+  }
+  // The known teams, plus any picked from the search, by league.
+  const want = new Set(Object.values(KNOWN).flat().map(norm));
+  const shown = all.filter(t => want.has(norm(t.name)) || WELCOME.picked.includes(t.id));
+  return `<div class="wgrid">${['NBA', 'NFL', 'NHL', 'MLB', 'MLS'].map(l => { const ts = shown.filter(t => t.l === l); return ts.length ? `<div class="wgrp"><b><span class="ldot" style="--c:${col(l)}"></span>${l}</b>${ts.map(chip).join('')}</div>` : ''; }).join('')}</div>`;
+}
+const welcomeDoneHtml = () => { const n = WELCOME.picked.length; return `<button class="primary" type="button" data-welcome-done ${n ? '' : 'disabled'}>${n ? `Gata · ${n} ${n === 1 ? 'echipă' : 'echipe'}` : 'Alege cel puțin o echipă'}</button>`; };
+export function welcomeHtml() {
+  return `<div class="welcome"><h3>Bun venit! Ce echipe urmărești?</h3>
+    <p>Alege-le și pagina devine a ta: următorul meci cu ora României, rezultatele, clasamentele și, dacă vrei, notificări. Le poți schimba oricând.</p>
+    <input id="welcomefilter" type="search" autocomplete="off" placeholder="Caută orice echipă (ex. Celtics, Real Salt Lake)" aria-label="Caută echipa" value="${esc(WELCOME.q)}">
+    ${welcomeGridHtml()}
+    <div class="wbtns"><span class="wdone">${welcomeDoneHtml()}</span><button class="link" type="button" data-welcome-skip>Mai târziu: arată-mi ${esc(HOME.name)}</button></div></div>`;
+}
+// Typing or ticking: redraw only the list and the button, so the search field keeps the focus.
+export function renderWelcomeList() {
+  const box = document.querySelector('#teams .welcome'); if (!box) return;
+  const tmp = document.createElement('div'); tmp.innerHTML = welcomeGridHtml();
+  box.querySelector('.wgrid').replaceWith(tmp.firstElementChild);
+  box.querySelector('.wdone').innerHTML = welcomeDoneHtml();
+}
 export function renderMine() {
   const el = $('teams'); if (!el) return;
+  // The question comes first on the page (above "Urmează"); answered, the section goes back to its place.
+  const sec = $('echipe'), hero = $('hero');
+  if (sec && hero) { if (WELCOME.on && sec.nextElementSibling !== hero) hero.before(sec); else if (!WELCOME.on && hero.nextElementSibling !== sec) hero.after(sec); }
+  if (WELCOME.on) { el.innerHTML = welcomeHtml(); return; }
   el.innerHTML = `<div class="teams">${MINE.list.map(mineCardHtml).join('')}
       <button class="tbtn add" type="button" data-mine-add aria-expanded="${minePick.open}"><span class="plus" aria-hidden="true">+</span><span><b>Adaugă o echipă</b><small>din oricare ligă</small></span></button></div>
     ${MINE.list.length ? '' : '<div class="fn">Nu urmărești nicio echipă. Adaugă una sau revino la echipele implicite.</div>'}

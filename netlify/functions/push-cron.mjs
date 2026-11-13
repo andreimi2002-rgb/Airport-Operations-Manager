@@ -2,7 +2,7 @@
 // Netlify runs scheduled functions only on the production deploy, never on previews.
 import { sendPush } from '../lib/webpush.mjs';
 import { subsStore, vapid, env } from '../lib/subs.mjs';
-import { due, markSent } from '../lib/notify.mjs';
+import { due, markSent, morningWindow } from '../lib/notify.mjs';
 import { buildSchedule } from './schedule.mjs';
 import { packOf } from '../../js/teams.js';
 import { clubGames, mergeGames } from '../lib/clubs.mjs';
@@ -37,6 +37,19 @@ export async function currentGames(site, now = Date.now(), clubs = []) {
   return games;
 }
 
+// Every finished game of the night in all leagues, for the morning summaries that tell the whole night.
+// Asked only in the morning window and only when such a summary is still due (one /api/scores call, cached).
+export async function nightGames(site, now, subs) {
+  const day = morningWindow(now);
+  if (!day || !subs.some(s => s.night && s.morning !== false && s.morningDay !== day)) return null;
+  // The night's US date: New York, 12 hours ago (at 8:00 in Romania it is just past midnight there).
+  const d = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date(now - 12 * 36e5)).replace(/-/g, '');
+  try {
+    const j = await getJSON(`${site}/api/scores?d=${d}`);
+    return Object.values(j.leagues || {}).flat().filter(g => g.state === 'post');
+  } catch (e) { return null; }
+}
+
 export default async () => {
   const v = vapid();
   if (!v) return new Response('notifications not configured');
@@ -48,9 +61,10 @@ export default async () => {
   const siteOf = sub => (!sub.site || sub.site.includes('florida-sp-calendar') ? site : sub.site);
   const now = Date.now();
   const games = await currentGames(site, now, subs.flatMap(s => s.teams || []));
+  const night = await nightGames(site, now, subs);
   let sent = 0, removed = 0;
   for (const sub of subs) {
-    const items = due(sub, games, now, siteOf(sub));
+    const items = due(sub, games, now, siteOf(sub), night);
     if (!items.length) continue;
     const done = [];
     for (const it of items) {

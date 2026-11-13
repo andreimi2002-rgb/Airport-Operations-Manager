@@ -3,7 +3,7 @@ import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, parseClub, HOME } from '.
 import { MINE, mineIds, isMine, mineClubs, clubId, refreshMine } from './mine.js';
 import { esc, $, emb, pickInk } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
-import { tabsHtml, panelHtml } from './game.js';
+import { tabsHtml, panelHtml, setStandingsSource } from './game.js';
 import { install, calendarHtml } from './phone.js';
 import { groupTableHtml as groupTbl } from './leagues.js';
 import { CLUBS, loadClubs, clubInfo, aboutHtml, infoFactsHtml } from './clubinfo.js';
@@ -432,6 +432,8 @@ export function gameContext(g) {
   return ctx;
 }
 export const viewFor = () => ({ ...gameView, known: id => !!gameById(id) });
+// The game page's "Clasament" tab: the league's standings from the loaded season.
+setStandingsSource(l => DATA.raw?.standings?.[l] || []);
 export function summaryTop(g, ctx, k, other, done, on) {
   return `<dl class="facts">
       ${g.tbd ? '' : `<dt>Start</dt><dd>${fmtTime[state.tz].format(g.d)} ${TZNAME[state.tz]} · ${fmtTime[other].format(g.d)} ${TZNAME[other]} (${fmtShort[other].format(g.d).replace('.', '')})</dd>`}
@@ -466,12 +468,13 @@ export function refreshGame(g) {
   // A clip being watched (playing, paused part-way, full screen) is not replaced by a live update, which
   // would stop it: the tab is drawn again when the clip ends. Switching tabs still redraws at once.
   const d = $('gdetail'), fs = document.fullscreenElement || document.webkitFullscreenElement;
-  const busy = d.dataset.tab === gameView.tab && [...d.querySelectorAll('video')].find(v => !v.ended && (!v.paused || v.currentTime > 0 || v.webkitDisplayingFullscreen || (fs && (fs === v || fs.contains(v)))));
+  // (data-shown, not data-tab: a click inside would be taken for a tab button.)
+  const busy = d.dataset.shown === gameView.tab && [...d.querySelectorAll('video')].find(v => !v.ended && (!v.paused || v.currentTime > 0 || v.webkitDisplayingFullscreen || (fs && (fs === v || fs.contains(v)))));
   if (busy) {
     if (!busy.dataset.later) { busy.dataset.later = '1'; busy.addEventListener('ended', () => { const x = gameById(OV.game); if (x && x.id === g.id) refreshGame(x); }, { once: true }); }
     return;
   }
-  d.dataset.tab = gameView.tab;
+  d.dataset.shown = gameView.tab;
   const other = state.tz === 'ro' ? 'fl' : 'ro';
   const top = gameView.tab === 'rezumat' ? summaryTop(g, gameContext(g), keyOf(g.d, state.tz), other, played(g), isLive(g)) : '';
   $('gdetail').innerHTML = top + (s ? (panelHtml(g, s, viewFor()) || '') : '');

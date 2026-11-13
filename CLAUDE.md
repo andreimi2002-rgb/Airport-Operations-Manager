@@ -134,6 +134,12 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     (`/api/schedule?pack=ny`, cache separat), clasamentele diviziilor, „zi plină” (`busy`), derby-uri,
     orașele și stadioanele (Florida din places.json, New York din america.json); harta doar pentru Florida.
     Calendarul și notificările primesc chei din orice pachet.
+20. **Primii pași** (branch `stage-20-primii-pasi`), pentru vizitatorii aduși de promovare. La prima vizită
+    (pachetul public, nimic ales, nu proprietarul) „Echipele mele” urcă în capul paginii ca „Bun venit! Ce echipe
+    urmărești?” (`WELCOME` în `js/home.js`, `welcomeDue`/`setMine` în `js/mine.js`; „Mai târziu” păstrează pachetul,
+    `flgames-welcome`). Pagina unui oraș mare cuprinde toată zona (`AREAS` în `js/places.js`: New York 11 echipe,
+    Los Angeles 10…). TikTok recunoscut ca sursă (browserul din aplicație). Rezumatul de dimineață poate spune
+    toată noaptea (`night`: câte meciuri, cele mai strânse 3, linkul la scorurile zilei; `nightGames` în `push-cron`).
 
 ## Structura
 

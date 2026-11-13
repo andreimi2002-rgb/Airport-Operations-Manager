@@ -3,7 +3,7 @@ import { TEAMS, norm } from './teams.js';
 import { esc, $, emb } from './ui.js';
 import { PLACES, loadPlaces, AMERICA, loadAmerica, allPlaces } from './places.js';
 import { DATA, GAMES, flKey, flSide, played, recordOf, tShort } from './core.js';
-import { minePick, renderMinePickList } from './home.js';
+import { minePick, renderMinePickList, WELCOME, renderWelcomeList } from './home.js';
 import { gameView, go } from './pages.js';
 
 /* ================= search ================= */
@@ -60,7 +60,10 @@ export function pickSearch(i) {
   go(x.hash);
 }
 $('q').addEventListener('input', runSearch);
-document.addEventListener('input', e => { if (e.target.id === 'minefilter') { minePick.q = e.target.value; renderMinePickList(); } });
+document.addEventListener('input', e => {
+  if (e.target.id === 'minefilter') { minePick.q = e.target.value; renderMinePickList(); }
+  if (e.target.id === 'welcomefilter') { WELCOME.q = e.target.value; renderWelcomeList(); }
+});
 $('q').addEventListener('focus', () => {
   runSearch();
   for (const p of [!PLACES.data && loadPlaces(), !AMERICA.data && loadAmerica()]) p?.then?.(() => { if (document.activeElement === $('q')) runSearch(); });

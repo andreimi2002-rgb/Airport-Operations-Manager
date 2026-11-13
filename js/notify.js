@@ -5,7 +5,7 @@ import { esc } from './ui.js';
 import { isStandalone } from './phone.js';
 import { trackEvent } from './track.js';
 
-export const N = { status: 'unknown', teams: [], lead: 60, final: true, morning: true, msg: '', busy: false, key: null };
+export const N = { status: 'unknown', teams: [], lead: 60, final: true, morning: true, night: false, msg: '', busy: false, key: null };
 let onChange = () => {};
 export const setNotifyRender = fn => { onChange = fn; };
 const LEADS = [[15, 'cu 15 minute înainte'], [30, 'cu 30 de minute înainte'], [60, 'cu o oră înainte'], [120, 'cu 2 ore înainte'], [180, 'cu 3 ore înainte'], [0, 'fără anunț înainte']];
@@ -39,7 +39,7 @@ async function run(fn, ok) {
   try { await fn(); if (ok) N.msg = ok; } catch (e) { N.msg = String(e.message || e); }
   N.busy = false; onChange();
 }
-const prefs = () => ({ teams: N.teams, lead: N.lead, final: N.final, morning: N.morning });
+const prefs = () => ({ teams: N.teams, lead: N.lead, final: N.final, morning: N.morning, night: N.night });
 // Turning on must start from a tap: browsers only show the permission question after one.
 export const enableNotify = () => run(async () => {
   const p = await Notification.requestPermission();
@@ -97,6 +97,7 @@ export function notifyHtml(emb, clubs = [], addHtml = '') {
       <select id="ntflead" aria-label="Cu cât timp înainte de meci">${LEADS.map(([m, t]) => `<option value="${m}" ${m === N.lead ? 'selected' : ''}>${t}</option>`).join('')}</select>
       <label class="check" style="margin-top:8px"><input type="checkbox" id="ntffinal" ${N.final ? 'checked' : ''}> Și rezultatul final, când se termină meciul</label>
       <label class="check" style="margin-top:8px"><input type="checkbox" id="ntfmorning" ${N.morning ? 'checked' : ''}> Rezumatul de dimineață, la 8:00: rezultatele de azi-noapte și meciul următor</label>
+      <label class="check" style="margin:6px 0 0 26px"><input type="checkbox" id="ntfnight" ${N.night ? 'checked' : ''} ${N.morning ? '' : 'disabled'}> Și toată noaptea: câte meciuri au fost în toate ligile și cele mai strânse; atingi și vezi toate scorurile</label>
     </section>
     <div class="btns">${on
       ? `<button class="primary" type="button" data-ntf="save" ${N.busy ? 'disabled' : ''}>Salvează alegerile</button><button class="ghost" type="button" data-ntf="test" ${N.busy ? 'disabled' : ''}>Trimite o notificare de test</button><button class="ghost" type="button" data-ntf="off" ${N.busy ? 'disabled' : ''}>Oprește notificările</button>`
@@ -106,7 +107,7 @@ export function notifyHtml(emb, clubs = [], addHtml = '') {
       <li>Anunțurile pleacă de pe server la fiecare 15 minute, deci pot veni cu câteva minute mai devreme sau mai târziu.</li>
       <li>Setările sunt pe fiecare dispozitiv în parte: pe telefon și pe calculator le pornești separat.</li>
       <li>Pentru meciurile fără oră anunțată nu vine anunț înainte; rezultatul final vine.</li>
-      <li>Rezumatul de dimineață vine doar în zilele în care echipele tale au jucat: ✓ înseamnă victorie, ✗ înfrângere.</li>
+      <li>Rezumatul de dimineață vine doar în zilele în care echipele tale au jucat (✓ înseamnă victorie, ✗ înfrângere); cu „toată noaptea” bifat, vine în orice zi cu meciuri.</li>
     </ul></section>
     </div>`;
 }
