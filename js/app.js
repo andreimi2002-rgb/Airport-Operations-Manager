@@ -1,7 +1,7 @@
 // Entry point: theme, the page events, loading the season (live, then cached, then the snapshot),
 // live scores. The rest is in core.js (data, state), home.js, pages.js (overlays, router), views.js, search.js.
 import { LEAGUES, TEAMS, parseClub, HOME, PACK } from './teams.js';
-import { toggleMine, resetMine, mineClubs } from './mine.js';
+import { toggleMine, resetMine, mineClubs, setMine, setWelcomed } from './mine.js';
 import { $, theme, isDark, onSystemTheme } from './ui.js';
 import { wpHover } from './game.js';
 import { registerSW, onInstallChange, install, downloadGame, APP_VERSION, checkUpdate } from './phone.js';
@@ -9,7 +9,7 @@ import { seasonHover } from './teamx.js';
 import { N, setNotifyRender, enableNotify, saveNotify, testNotify, disableNotify } from './notify.js';
 import { PLACES, loadPlaces, climateHover, AMERICA, loadAmerica } from './places.js';
 import { CACHE_KEY, DATA, GAMES, addDays, awake, build, gameById, getJSON, isLive, parts, played, state, store, weekStart, CLUB_RAW, addClubGames, refreshMineGames, noteLive } from './core.js';
-import { PLAYOFFS, PO, minePick, render, renderHero, renderMap, renderMine, renderPhone, renderPlayoffs, renderSources, renderStatic, renderStatus, renderStrip } from './home.js';
+import { PLAYOFFS, PO, minePick, WELCOME, renderWelcomeList, render, renderHero, renderMap, renderMine, renderPhone, renderPlayoffs, renderSources, renderStatic, renderStatus, renderStrip } from './home.js';
 import { OV, cal, closeOv, clubSide, clubView, gameView, go, loadGame, notifyOpen, openCalendar, openClub, openTeam, pickerClubs, refreshGame, route, saveCal, setTeamTab, share, openNotify } from './pages.js';
 import { LG, navView, renderLeagues, renderTodayStrip, setLgHash, setupJump, usKey } from './views.js';
 import { pickSearch } from './search.js';
@@ -145,6 +145,24 @@ function handle(e) {
     (inPick ? document.querySelector(`.minepick [data-mine-toggle="${CSS.escape(id)}"]`) : document.querySelector('[data-mine-add]'))?.focus({ preventScroll: true });
     return;
   }
+  // The first visit: tick teams, then "Gata" (they become "Echipele mele") or "Mai târziu" (the pack's teams).
+  if ((el = q('[data-welcome-pick]'))) {
+    const id = el.dataset.welcomePick;
+    WELCOME.picked = WELCOME.picked.includes(id) ? WELCOME.picked.filter(x => x !== id) : [...WELCOME.picked, id];
+    renderWelcomeList();
+    document.querySelector(`.welcome [data-welcome-pick="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
+    return;
+  }
+  if ((el = q('[data-welcome-done]'))) {
+    setMine(WELCOME.picked, id => clubSide(id));
+    // The calendar page offers the same teams (when nothing was saved there yet).
+    if (!store.get('flgames-cal')) cal.teams = WELCOME.picked.slice();
+    WELCOME.on = false; WELCOME.q = '';
+    refreshMineGames(); loadMineClubs(); render(); renderMine();
+    document.querySelector('[data-mine-add]')?.focus({ preventScroll: true });
+    return;
+  }
+  if ((el = q('[data-welcome-skip]'))) { setWelcomed(); WELCOME.on = false; renderMine(); return; }
   if ((el = q('[data-mine-add]'))) { minePick.open = !minePick.open; renderMine(); if (minePick.open) $('minefilter')?.focus({ preventScroll: true }); return; }
   if ((el = q('[data-mine-close]'))) { minePick.open = false; minePick.q = ''; renderMine(); document.querySelector('[data-mine-add]')?.focus({ preventScroll: true }); return; }
   if ((el = q('[data-mine-reset]'))) { resetMine(); refreshMineGames(); render(); renderMine(); return; }
@@ -180,11 +198,12 @@ document.addEventListener('click', handle);
 document.addEventListener('change', e => {
   const t = e.target;
   // Notifications page: choices change in place; "Salvează" sends them.
-  if (t.dataset?.ntfteam || t.id === 'ntflead' || t.id === 'ntffinal' || t.id === 'ntfmorning') {
+  if (t.dataset?.ntfteam || t.id === 'ntflead' || t.id === 'ntffinal' || t.id === 'ntfmorning' || t.id === 'ntfnight') {
     if (t.dataset.ntfteam) { const k = t.dataset.ntfteam; N.teams = t.checked ? [...new Set([...N.teams, k])] : N.teams.filter(x => x !== k); }
     if (t.id === 'ntflead') N.lead = +t.value;
     if (t.id === 'ntffinal') N.final = t.checked;
     if (t.id === 'ntfmorning') N.morning = t.checked;
+    if (t.id === 'ntfnight') N.night = t.checked;
     N.msg = N.status === 'on' ? 'Apasă „Salvează alegerile” ca să se aplice.' : '';
     openNotify(true);
     const again = t.id ? $(t.id) : document.querySelector(`[data-ntfteam="${t.dataset.ntfteam}"]`);

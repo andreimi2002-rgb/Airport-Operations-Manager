@@ -188,10 +188,10 @@ await test('push: save, read, delete a subscription', async () => {
   assert.equal((await post({ action: 'save', subscription: { endpoint: 'https://evil.example/x', keys: subscription.keys } })).status, 400);
   assert.equal((await body(await post({ action: 'save', subscription, prefs: { teams: ['nope'] } }))).error, 'Alege cel puțin o echipă.');
   const saved = await body(await post({ action: 'save', subscription, prefs: { teams: ['heat', 'NBA-2', 'heat'], lead: 999, final: true } }));
-  assert.deepEqual(saved.prefs, { teams: ['heat', 'NBA-2'], lead: 60, final: true, morning: true });
-  const off = await body(await post({ action: 'save', subscription, prefs: { teams: ['heat'], lead: 30, final: false, morning: false } }));
+  assert.deepEqual(saved.prefs, { teams: ['heat', 'NBA-2'], lead: 60, final: true, morning: true, night: false });
+  const off = await body(await post({ action: 'save', subscription, prefs: { teams: ['heat'], lead: 30, final: false, morning: false, night: true } }));
   assert.equal(off.prefs.morning, false);
-  assert.deepEqual((await body(await post({ action: 'get', subscription }))).prefs, { teams: ['heat'], lead: 30, final: false, morning: false });
+  assert.deepEqual((await body(await post({ action: 'get', subscription }))).prefs, { teams: ['heat'], lead: 30, final: false, morning: false, night: true });
   assert.equal((await post({ action: 'delete', subscription })).status, 200);
   assert.equal((await body(await post({ action: 'get', subscription }))).prefs, null);
   delete process.env.VAPID_PUBLIC_KEY; delete process.env.VAPID_PRIVATE_KEY;

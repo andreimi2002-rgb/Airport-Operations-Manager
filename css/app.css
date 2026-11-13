@@ -99,6 +99,21 @@ button,select{font:inherit;color:inherit}
 .mpteam i{font-style:normal;font-weight:700;color:var(--muted);width:18px;text-align:center}
 .mpteam.on i{color:var(--accent)}
 .mpteam:hover{background:var(--soft)}
+/* the first visit: "Ce echipe urmărești?" in place of the list */
+.welcome{margin-top:10px;border:2px solid var(--accent);background:var(--surface);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.welcome h3{margin:0;font-size:18px}
+.welcome p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
+.welcome input{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--bg);color:var(--ink);font:inherit;min-width:0}
+.wgrid{display:flex;flex-direction:column;gap:10px}
+.wgrp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.wgrp>b{width:100%;display:flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.wteam{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 10px 4px 4px;font:inherit;font-size:13.5px;cursor:pointer;max-width:100%}
+.wteam span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wteam i{font-style:normal;font-weight:800;color:var(--muted)}
+.wteam[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--accent)}
+.wteam[aria-pressed="true"] i{color:var(--accent)}
+.wbtns{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;position:sticky;bottom:0;background:var(--surface);padding:10px 0 calc(4px + env(safe-area-inset-bottom));margin-bottom:-4px;z-index:2}
+.wbtns .primary[disabled]{opacity:.55;cursor:default}
 /* team pages: the Wikipedia text and photo, the team's own row in a table */
 .tabout .about{margin:0 0 4px;line-height:1.55}
 .tphoto{margin:0 0 10px;position:relative;border-radius:10px;overflow:hidden;background:var(--soft)}

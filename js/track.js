@@ -24,6 +24,8 @@ const LANDING = (() => {
   const s = (Q.get('sursa') || Q.get('utm_source') || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30);
   if (s) return s;
   if (/Instagram/i.test(UA)) return 'instagram';
+  // TikTok's in-app browser (it sends no referrer): "musical_ly", "BytedanceWebview", "TikTok", "trill".
+  if (/musical_ly|Bytedance|TikTok|\btrill_/i.test(UA)) return 'tiktok';
   if (/FBAN|FBAV|FB_IAB/i.test(UA)) return 'facebook';
   let h = '';
   try { h = new URL(document.referrer).hostname; } catch (e) { /* none */ }
@@ -101,6 +103,8 @@ const CLICKS = [
   ['.ytbtn', () => 'rezumat YouTube'],
   ['a[href*="espn.com"]', () => 'cronica ESPN'],
   ['[data-lgguide]', () => 'ghid din meci'],
+  ['[data-welcome-done]', () => 'prima vizită: echipe alese'],
+  ['[data-welcome-skip]', () => 'prima vizită: mai târziu'],
   ['[data-mine-add]', () => 'adaugă echipă'],
   ['[data-mine-toggle]', () => 'modifică echipele mele'],
   ['[data-install]', () => 'instalează'],
