@@ -127,28 +127,45 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     de start, echipele și meciurile deschise, clicurile, alegerile din căutare, serviciile de streaming din
     ghid, erorile. Pagina trimite pachete (`{ b: [...] }`) la 4 secunde și la ieșire. Pagina
     „Confidențialitate” (`#confidentialitate`) spune ce se numără. Statisticile au un tabel pe categorie.
-15. **Varianta publică** (în lucru, branch `stage-15-public`). Două pachete de echipe implicite în
+15. **Varianta publică** (în producție, PR #16; continuată în PR #19–#20: „Echipele mele” pe pachet, orice echipă pe Acasă). Două pachete de echipe implicite în
     `js/teams.js` (`PACKS`): Florida (11 echipe) pe dispozitivele proprietarului, marcate cu `?eu=1`, și
     New York (Knicks, Rangers, Giants, NYCFC, Yankees) pentru toți ceilalți. `TEAMS` e pachetul activ,
     `ALL_TEAMS` toate cheile (serverul le recunoaște pe toate). Pagina de start urmează pachetul: program
     (`/api/schedule?pack=ny`, cache separat), clasamentele diviziilor, „zi plină” (`busy`), derby-uri,
     orașele și stadioanele (Florida din places.json, New York din america.json); harta doar pentru Florida.
     Calendarul și notificările primesc chei din orice pachet.
-20. **Primii pași** (branch `stage-20-primii-pasi`), pentru vizitatorii aduși de promovare. La prima vizită
+20. **Primii pași** (în producție, PR #21, v24), pentru vizitatorii aduși de promovare. Tot aici: fila
+    „Clasament” pe pagina de meci, a doua echipă la „Jucători” (marcajul zonei e `data-shown`, nu `data-tab`),
+    rezumatul video cerut din nou la 5 minute până îl publică ESPN. La prima vizită
     (pachetul public, nimic ales, nu proprietarul) „Echipele mele” urcă în capul paginii ca „Bun venit! Ce echipe
     urmărești?” (`WELCOME` în `js/home.js`, `welcomeDue`/`setMine` în `js/mine.js`; „Mai târziu” păstrează pachetul,
     `flgames-welcome`). Pagina unui oraș mare cuprinde toată zona (`AREAS` în `js/places.js`: New York 11 echipe,
     Los Angeles 10…). TikTok recunoscut ca sursă (browserul din aplicație). Rezumatul de dimineață poate spune
     toată noaptea (`night`: câte meciuri, cele mai strânse 3, linkul la scorurile zilei; `nightGames` în `push-cron`).
-21. **Microsoft Store** (branch `stage-21-magazin`, pregătit, netrimis). Aplicația din magazin e site-ul pornit la
+21. **Microsoft Store** (în producție, PR #22, v25; aplicația trimisă la verificare pe 13 noiembrie 2026, Store ID
+    `9MVZCGB9LB9V`, identitate `SportsHub.AmericanSportsHub`, publicare manuală după aprobare). Pachetul se face cu
+    PWABuilder de la adresa `/?app=store&sursa=msstore` (PWABuilder n-are câmp de adresă de start); se încarcă doar
+    `.msixbundle`. Aplicația din magazin e site-ul pornit la
     `/?app=store` (ținut minte, `flgames-store`; `?app=web` îl oprește): `STORE` și `okImg` în `js/teams.js`.
     În modul magazin: emblemele noastre în locul siglelor (culorile din `js/colors.js`, generat de
     `tools/build-colors.mjs`), fără poze ESPN (stadioane, jucători, știri), fără clipuri ESPN (rezumatul pe
     YouTube la orice ligă, `recapUrl`), cronica doar ca link. Pentru toate: pagina „Termeni” (`#termeni`),
     confidențialitatea completată (contact, cine primește date, păstrare, drepturi), nota „neafiliată” în subsol,
     manifestul cu `id`, categorii și capturi (`icons/screens/`). Ghidul de trimitere, textele și capturile sunt în
-    `Downloads\american-sports-hub-magazin\` (în afara repo-ului). Politicile Microsoft Store 7.20: editorul pe
-    numele proprietarului (cont individual), notificările fără promoții, orice sursă nouă de imagini trece prin `okImg`.
+    `Downloads\AMERICAN SPORTS HUB\american-sports-hub-magazin\` (în afara repo-ului). Politicile Microsoft Store 7.20:
+    editorul a rămas „Sports Hub” (decizia proprietarului, riscul 10.14 asumat), notificările fără promoții, orice
+    sursă nouă de imagini trece prin `okImg`.
+22. **Motive să revii** (următoarea, branch `stage-22-motive`): Meciul zilei pentru România, Fără spoilere, Pagina de
+    jucător, Meciurile din Europa; după aprobarea Microsoft, butonul „Descarcă din Microsoft Store”.
+
+## Promovare (în afara repo-ului)
+
+Totul stă pe laptop, în `C:\Users\stroe\Downloads\AMERICAN SPORTS HUB\`: `instagram-american-sports-hub\`
+(generatoarele „Azi-noapte” / „Diseară” = `generator\azi-noapte.mjs [diseara]`, „The City” = `generator\the-city.mjs`
+cu datele în `orase.mjs`), `tiktok-american-sports-hub\` (`generator\tiktok.mjs` face din orice postare de Instagram
+imagini 9:16 pentru TikTok), `american-sports-hub-magazin\` (Microsoft Store), `American-Sports-Hub-functii.pdf`
+(catalogul de funcții) și `American Sports Hub linkuri si stare.pdf`. Linkurile spre site poartă sursa
+(`?sursa=instagram`, `?sursa=tiktok`), ca să apară separat în statistici. TikTok: `@american_sports_h`.
 
 ## Structura
 
