@@ -29,7 +29,7 @@ export async function blobStore(name) {
 }
 export const storeName = (kind, context) => (context === 'production' ? kind : kind + '-test');
 
-export const KINDS = ['acasa', 'ligi', 'ghid', 'meci', 'echipa', 'club', 'oras', 'stadion', 'calendar', 'notificari', 'parere', 'confidentialitate'];
+export const KINDS = ['acasa', 'ligi', 'ghid', 'meci', 'echipa', 'club', 'oras', 'stadion', 'calendar', 'notificari', 'parere', 'confidentialitate', 'termeni'];
 export const EVENTS = ['install', 'notify-on', 'calendar', 'follow', 'share', 'feedback'];
 export const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|headless|lighthouse/i;
 export const roDay = (now = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(now);

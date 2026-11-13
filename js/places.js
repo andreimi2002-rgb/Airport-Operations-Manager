@@ -1,7 +1,7 @@
 // Cities, stadiums and weather: the data file (data/places.json), the /api/weather calls,
 // and the HTML for the city and stadium pages, the weather strip and the game-page weather card.
 // app.js owns routing and the overlay; it passes a small `ctx` with the game helpers it has.
-import { TEAMS } from './teams.js';
+import { TEAMS, okImg } from './teams.js';
 import { esc } from './ui.js';
 
 export const PLACES = { data: null, ready: null };
@@ -17,7 +17,12 @@ export const AMERICA = { data: null, ready: null };
 export function loadAmerica() {
   AMERICA.ready ||= fetch('data/america.json', { signal: AbortSignal.timeout(12000) })
     .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(j => { for (const v of Object.values(j.venues)) v.lite = true; for (const c of Object.values(j.cities)) c.lite = true; return (AMERICA.data = j); })
+    .then(j => {
+      // The store app shows no ESPN photo: those stadiums keep their Wikimedia photo (credit) or none.
+      for (const v of Object.values(j.venues)) { v.lite = true; if (!okImg(v.photo)) v.photo = ''; }
+      for (const c of Object.values(j.cities)) c.lite = true;
+      return (AMERICA.data = j);
+    })
     .catch(() => (AMERICA.ready = null, null));
   return AMERICA.ready;
 }

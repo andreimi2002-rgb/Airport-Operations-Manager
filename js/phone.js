@@ -1,13 +1,13 @@
 // The phone side: offline support (service worker), installing the app, the calendar subscription page
 // and the "add this game to my calendar" download.
-import { TEAMS, parseClub } from './teams.js';
+import { TEAMS, parseClub, STORE } from './teams.js';
 import { esc } from './ui.js';
 import { calendar } from './ics.js';
 
 /* ================= offline ================= */
 // The version of this page. It must equal VERSION in sw.js (tools/test.mjs checks): the page compares
 // it with the published sw.js to know that a newer version is out.
-export const APP_VERSION = 'v24';
+export const APP_VERSION = 'v25';
 
 // The published version, read from sw.js past every cache.
 async function latestVersion() {
@@ -81,7 +81,7 @@ const listeners = new Set();
 export const onInstallChange = fn => listeners.add(fn);
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; listeners.forEach(f => f()); });
 window.addEventListener('appinstalled', () => { deferred = null; listeners.forEach(f => f()); });
-export const canInstall = () => !!deferred;
+export const canInstall = () => !STORE && !!deferred;
 export const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 export async function install() {
@@ -93,6 +93,7 @@ export async function install() {
 }
 const SHARE = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px"><path d="M12 3v12M7.5 7.5L12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
 export function installHtml() {
+  if (STORE) return '<p class="ok">Folosești aplicația din Microsoft Store. Se actualizează singură și merge și fără internet, cu datele salvate la ultima deschidere.</p>';
   if (isStandalone()) return '<p class="ok">Folosești aplicația instalată. Merge și fără internet, cu datele salvate la ultima deschidere.</p>';
   if (deferred) return '<p>Pune American Sports Hub pe ecranul principal: se deschide ca o aplicație, fără bara browserului, și merge și fără internet.</p><button class="primary" type="button" data-install>Instalează aplicația</button>';
   if (isIOS()) return `<p>Pe iPhone, din Safari: apasă <b>Partajează</b> ${SHARE}, apoi <b>Adaugă pe ecranul principal</b>. Aplicația se deschide fără bara browserului și merge și fără internet.</p>`;

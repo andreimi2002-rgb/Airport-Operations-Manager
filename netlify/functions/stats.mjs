@@ -10,7 +10,7 @@ import { env } from '../lib/subs.mjs';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const same = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 const page = (body, status = 200) => new Response(body, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
-const KIND_RO = { confidentialitate: 'Confidențialitate', acasa: 'Acasă', ligi: 'Ligile', ghid: 'Ghid', meci: 'Meciuri', echipa: 'Echipele implicite', club: 'Alte echipe', oras: 'Orașe', stadion: 'Stadioane', calendar: 'Calendar', notificari: 'Notificări', parere: 'Părere' };
+const KIND_RO = { confidentialitate: 'Confidențialitate', termeni: 'Termeni', acasa: 'Acasă', ligi: 'Ligile', ghid: 'Ghid', meci: 'Meciuri', echipa: 'Echipele implicite', club: 'Alte echipe', oras: 'Orașe', stadion: 'Stadioane', calendar: 'Calendar', notificari: 'Notificări', parere: 'Părere' };
 const EVENT_RO = { install: 'Instalări', 'notify-on': 'Notificări pornite', calendar: 'Abonări la calendar', follow: 'Echipe urmărite', share: 'Distribuiri', feedback: 'Păreri trimise' };
 
 export default async (req, context) => {

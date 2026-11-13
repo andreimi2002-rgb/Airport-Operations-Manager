@@ -85,7 +85,7 @@ const NEW_YORK = {
   knicks: {
     l: 'NBA', espn: 'New York Knicks', s: 'Knicks', ab: 'NY', col: ['#006BB6', '#F58426'], metro: 'nyc', st: 'NY',
     city: 'New York (Manhattan)', arena: 'Madison Square Garden', cap: 'aprox. 19.800', since: '1946',
-    titles: '2 titluri NBA (1970, 1973)', rivals: 'Brooklyn Nets, Boston Celtics, Miami Heat',
+    titles: '3 titluri NBA (1970, 1973, 2026)', rivals: 'Brooklyn Nets, Boston Celtics, Miami Heat',
     fact: 'Madison Square Garden, „cea mai faimoasă arenă din lume”, e construită chiar deasupra gării Penn Station.'
   },
   rangers: {
@@ -131,6 +131,20 @@ export const PACK = (() => {
   return 'ny';
 })();
 export const HOME = PACKS[PACK];
+// The app from the Microsoft Store (it starts at /?app=store, remembered on the device): only content we may
+// show in a store app, so no official team logos, ESPN photos or ESPN video (Store Policy 11.2); the rest is
+// the same site. ?app=web turns it off again (for testing).
+export const STORE = (() => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const a = new URLSearchParams(location.search).get('app');
+    if (a === 'store') localStorage.setItem('flgames-store', '1');
+    if (a === 'web') localStorage.removeItem('flgames-store');
+    return localStorage.getItem('flgames-store') === '1' || a === 'store';
+  } catch (e) { return new URLSearchParams(location.search).get('app') === 'store'; }
+})();
+// May this picture be shown? In the store app, not when it comes from ESPN (logos, players, stadiums, news).
+export const okImg = url => !(STORE && /(^|\.)espn(cdn)?\.com\//i.test(String(url || '').replace(/^https?:\/\//, '')));
 export const TEAMS = Object.fromEntries(HOME.keys.map(k => [k, ALL_TEAMS[k]]));
 
 // Division tables shown on the page. Members are ESPN display names.

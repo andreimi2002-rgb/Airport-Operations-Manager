@@ -1,6 +1,7 @@
 // Team page tabs beyond the summary: the season chart and leaders, the roster, ESPN news.
 // Pure rendering; app.js owns the overlay and passes the games it has.
 import { esc } from './ui.js';
+import { okImg } from './teams.js';
 
 export const TEAM_TABS = [['rezumat', 'Rezumat'], ['sezon', 'Sezon'], ['lot', 'Lot'], ['stiri', 'Știri']];
 export function teamTabsHtml(tab) {
@@ -74,7 +75,7 @@ export function roNum(v) {
 }
 export function leadersHtml(x) {
   if (!x?.leaders?.length) return '';
-  return `<section><h3>Liderii echipei în sezon</h3><div class="tleaders">${x.leaders.map(p => `<div class="tlead">${p.head ? `<img src="${esc(p.head)}" alt="" loading="lazy">` : '<span class="ph"></span>'}<span><small>${esc(LEAD_RO[p.cat] || p.label)}</small><b>${esc(p.who)}</b></span><span class="v">${esc(roNum(p.val))}</span></div>`).join('')}</div></section>`;
+  return `<section><h3>Liderii echipei în sezon</h3><div class="tleaders">${x.leaders.map(p => `<div class="tlead">${p.head && okImg(p.head) ? `<img src="${esc(p.head)}" alt="" loading="lazy">` : '<span class="ph"></span>'}<span><small>${esc(LEAD_RO[p.cat] || p.label)}</small><b>${esc(p.who)}</b></span><span class="v">${esc(roNum(p.val))}</span></div>`).join('')}</div></section>`;
 }
 
 /* ---------- roster ---------- */
@@ -96,7 +97,7 @@ export function rosterHtml(x, l) {
     const rest = all.filter(q => !groups.some(g => g.players.includes(q)));
     if (rest.length) groups.push({ name: 'Alții', players: rest });
   }
-  return groups.map((g, gi) => `<details class="rgrp" ${gi < 2 ? 'open' : ''}><summary>${esc(GROUP_RO[g.name] || g.name || 'Jucători')} <span>${g.players.length}</span></summary><div class="rlist">${g.players.slice().sort((a, b) => (+a.j || 99) - (+b.j || 99)).map(p => `<div class="rp">${p.head ? `<img src="${esc(p.head)}" alt="" loading="lazy">` : '<span class="ph"></span>'}<span><b>${esc(p.n)}</b><small>${[p.j ? '#' + esc(p.j) : '', esc(p.pos), p.age ? p.age + ' ani' : '', p.cm ? p.cm + ' cm' : '', p.born ? esc(p.born) : ''].filter(Boolean).join(' · ')}</small></span>${p.out ? '<span class="tag out">indisponibil</span>' : ''}</div>`).join('')}</div></details>`).join('')
+  return groups.map((g, gi) => `<details class="rgrp" ${gi < 2 ? 'open' : ''}><summary>${esc(GROUP_RO[g.name] || g.name || 'Jucători')} <span>${g.players.length}</span></summary><div class="rlist">${g.players.slice().sort((a, b) => (+a.j || 99) - (+b.j || 99)).map(p => `<div class="rp">${p.head && okImg(p.head) ? `<img src="${esc(p.head)}" alt="" loading="lazy">` : '<span class="ph"></span>'}<span><b>${esc(p.n)}</b><small>${[p.j ? '#' + esc(p.j) : '', esc(p.pos), p.age ? p.age + ' ani' : '', p.cm ? p.cm + ' cm' : '', p.born ? esc(p.born) : ''].filter(Boolean).join(' · ')}</small></span>${p.out ? '<span class="tag out">indisponibil</span>' : ''}</div>`).join('')}</div></details>`).join('')
     + '<div class="fn">Lotul vine de la ESPN; înălțimea e convertită în centimetri.</div>';
 }
 
@@ -105,6 +106,6 @@ const fmtNews = new Intl.DateTimeFormat('ro-RO', { timeZone: 'Europe/Bucharest',
 const TYPE_RO = { Recap: 'Cronică', Preview: 'Înainte de meci', Story: 'Articol', HeadlineNews: 'Știre', Media: 'Video' };
 export function newsHtml(x) {
   if (!x?.news?.length) return '<div class="fn">Nicio știre ESPN acum.</div>';
-  return `<div class="news">${x.news.map(a => `<a class="nw" href="${esc(a.link)}" target="_blank" rel="noopener">${a.img ? `<img src="${esc(a.img)}" alt="" loading="lazy">` : ''}<span><small>${esc(TYPE_RO[a.type] || 'Știre')}${a.date ? ' · ' + esc(fmtNews.format(new Date(a.date))) : ''}</small><b>${esc(a.h)}</b>${a.d ? `<span class="dsc">${esc(a.d)}</span>` : ''}</span></a>`).join('')}</div>
+  return `<div class="news">${x.news.map(a => `<a class="nw" href="${esc(a.link)}" target="_blank" rel="noopener">${a.img && okImg(a.img) ? `<img src="${esc(a.img)}" alt="" loading="lazy">` : ''}<span><small>${esc(TYPE_RO[a.type] || 'Știre')}${a.date ? ' · ' + esc(fmtNews.format(new Date(a.date))) : ''}</small><b>${esc(a.h)}</b>${a.d ? `<span class="dsc">${esc(a.d)}</span>` : ''}</span></a>`).join('')}</div>
     <div class="fn">Știrile sunt de pe ESPN, în engleză; se deschid pe site-ul lor.</div>`;
 }

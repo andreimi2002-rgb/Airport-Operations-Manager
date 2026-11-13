@@ -64,7 +64,7 @@ const countOnce = (c, v) => { const k = c + '|' + v; if (!once.has(k)) { once.ad
 
 /* ----- pages ----- */
 // "#meci/NBA/1" -> 'meci'; "#ligi/ghid" -> 'ghid'; no hash -> 'acasa'.
-const PAGES = ['meci', 'echipa', 'club', 'oras', 'stadion', 'calendar', 'notificari', 'parere', 'confidentialitate'];
+const PAGES = ['meci', 'echipa', 'club', 'oras', 'stadion', 'calendar', 'notificari', 'parere', 'confidentialitate', 'termeni'];
 export function kindOf(hash) {
   const [a, b] = String(hash || '').replace(/^#/, '').split('/');
   if (!a) return 'acasa';

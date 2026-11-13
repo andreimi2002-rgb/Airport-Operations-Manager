@@ -1,20 +1,33 @@
 {
+  "id": "/?sursa=aplicatie",
   "name": "American Sports Hub",
   "short_name": "Sports Hub",
-  "description": "Sportul american pe românește: echipele tale, cu ora României, scor live, clasamente și calendar.",
+  "description": "Sportul american pe românește: echipele tale din NBA, NHL, NFL, MLB și MLS, cu ora României, scor live, clasamente, notificări și calendar.",
   "lang": "ro",
+  "dir": "ltr",
   "start_url": "/?sursa=aplicatie",
   "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#0e1f3d",
   "theme_color": "#0e1f3d",
+  "categories": ["sports", "news"],
+  "prefer_related_applications": false,
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
     { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
+  "screenshots": [
+    { "src": "/icons/screens/telefon-1.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Echipele tale și următorul meci, cu ora României" },
+    { "src": "/icons/screens/telefon-2.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Pagina meciului: scorul, șansele de victorie, cei mai buni jucători" },
+    { "src": "/icons/screens/desktop-1.png", "sizes": "2732x1536", "type": "image/png", "form_factor": "wide", "label": "Pagina de start pe calculator" },
+    { "src": "/icons/screens/desktop-2.png", "sizes": "2732x1536", "type": "image/png", "form_factor": "wide", "label": "Pagina meciului pe calculator" }
+  ],
   "shortcuts": [
+    { "name": "Scorurile zilei", "url": "/#ligi/scoruri", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Notificări", "url": "/#notificari", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Abonare la calendar", "url": "/#calendar", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

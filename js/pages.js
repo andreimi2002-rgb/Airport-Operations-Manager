@@ -64,8 +64,51 @@ export function openPrivacy(keep) {
         <li>Mesajele din „Spune-ne ce crezi”, cu contactul doar dacă îl scrii.</li>
       </ul></section>
       <section><h3>Nu vrei să fii numărat?</h3><p>Activează „Do Not Track” în browser și nu mai numărăm nimic de pe dispozitivul tău.</p></section>
+      <section><h3>Cine mai primește date</h3><ul class="notes">
+        <li><b>Netlify</b>, unde e găzduit site-ul: primește cererile paginii, ca orice gazdă web, și păstrează numerele de mai sus, abonamentele la notificări și mesajele.</li>
+        <li><b>Serviciul de notificări al browserului tău</b> (Google, Apple, Microsoft sau Mozilla), care livrează anunțurile; primește doar textul lor.</li>
+        <li><b>Serverele de unde vin imaginile și datele</b> afișate (ESPN, Wikimedia, Open-Meteo): browserul tău le cere direct, deci ele văd adresa ta IP, ca la orice site.</li>
+        <li>Nu vindem și nu dăm date nimănui altcuiva. Nu avem reclame.</li>
+      </ul></section>
+      <section><h3>Cât păstrăm și cum ștergi</h3><ul class="notes">
+        <li>Abonamentul la notificări: până apeși „Oprește notificările” (se șterge atunci de pe server) sau până browserul îl anulează.</li>
+        <li>Mesajele din „Spune-ne ce crezi”: cel mult 12 luni.</li>
+        <li>Echipele, tema și ora din browser: le ștergi ștergând datele site-ului din setările browserului.</li>
+        <li>Poți cere oricând ce știm despre tine, corectarea sau ștergerea, scriind la <a href="mailto:${CONTACT}">${CONTACT}</a>. Ai și dreptul să te plângi la ANSPDCP (dataprotection.ro).</li>
+      </ul></section>
+      <p class="fn">American Sports Hub e un proiect independent, administrat de o persoană fizică din România. Contact: <a href="mailto:${CONTACT}">${CONTACT}</a>. Actualizat la 13 noiembrie 2026. <a href="#termeni" data-terms>Termeni de folosire</a></p>
     </div>`, keep);
 }
+// The terms of use: an independent, free beta; data from public sources, without guarantees.
+export function openTerms(keep) {
+  OV.game = null; OV.place = null;
+  show(`<div class="band plain"><div><div class="lgn" style="color:var(--accent)">Pe scurt</div><h2 id="prof-name" style="font-size:24px">Termeni de folosire</h2></div>
+      <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
+    <div class="pbody">
+      <p class="lead">American Sports Hub e gratuit și în versiune beta. Folosindu-l, ești de acord cu cele de mai jos.</p>
+      <section><h3>Ce este</h3><ul class="notes">
+        <li>Un proiect independent, administrat de o persoană fizică din România.</li>
+        <li><b>Nu e afiliat</b> NBA, NHL, NFL, MLB, MLS, ESPN sau vreunei echipe. Numele, siglele și mărcile ligilor și echipelor aparțin proprietarilor lor și apar doar ca să arate despre ce echipă e vorba.</li>
+      </ul></section>
+      <section><h3>Datele</h3><ul class="notes">
+        <li>Programul, scorurile, clasamentele și statisticile vin din surse publice (ESPN), vremea de la Open-Meteo, textele și pozele de pe Wikipedia și Wikimedia Commons, cu autorii și licențele lor.</li>
+        <li>Pot avea întârzieri sau greșeli, iar orele meciurilor se pot schimba, mai ales la NFL. Nu garantăm că sunt exacte sau complete și <b>nu sunt potrivite pentru pariuri</b>.</li>
+        <li>Notificările pleacă la fiecare 15 minute și pot întârzia sau lipsi.</li>
+      </ul></section>
+      <section><h3>Folosirea</h3><ul class="notes">
+        <li>Pentru uz personal. Nu copia automat conținutul și nu folosi site-ul ca să-l încarci excesiv.</li>
+        <li>Legăturile spre alte site-uri (YouTube, ESPN, servicii de streaming) duc la conținutul lor, cu regulile lor; nu răspundem de el.</li>
+        <li>Site-ul e oferit „așa cum este”. În limitele legii, nu răspundem pentru pierderi venite din folosirea lui.</li>
+      </ul></section>
+      <section><h3>Schimbări și contact</h3><ul class="notes">
+        <li>Termenii se pot schimba; versiunea de aici e cea valabilă. Se aplică legea română.</li>
+        <li>Întrebări sau probleme: <a href="mailto:${CONTACT}">${CONTACT}</a> sau „Spune-ne ce crezi”.</li>
+      </ul></section>
+      <p class="fn">Actualizat la 13 noiembrie 2026. <a href="#confidentialitate" data-privacy>Confidențialitate</a></p>
+    </div>`, keep);
+}
+// The address for privacy and terms questions (Microsoft Store and the privacy law ask for one).
+export const CONTACT = 'andreimi1308@gmail.com';
 // "Spune-ne ce crezi": a short message to the owner (beta).
 export function openFeedback(keep) {
   OV.game = null; OV.place = null;
@@ -92,6 +135,7 @@ export function route(keep) {
   const h = decodeURIComponent(location.hash.slice(1)).split('/');
   if (h[0] === 'parere') { openFeedback(keep); return; }
   if (h[0] === 'confidentialitate') { openPrivacy(keep); return; }
+  if (h[0] === 'termeni') { openTerms(keep); return; }
   if (h[0] === 'meci' && gameById(h[2])) { const t = h[3] || 'rezumat'; if (OV.game !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
   if (h[0] === 'echipa' && TEAMS[h[1]]) { teamView.tab = ['sezon', 'lot', 'stiri'].includes(h[2]) ? h[2] : 'rezumat'; openTeam(h[1], keep); return; }
   if (h[0] === 'notificari') {
