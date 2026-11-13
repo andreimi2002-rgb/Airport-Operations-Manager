@@ -309,6 +309,8 @@ footer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padd
 .emb:has(img){background:none;box-shadow:none}
 .emb:has(img) b{visibility:hidden}
 .emb b{font:inherit}
+/* The abbreviation keeps the emblem's colours wherever it sits (a row's own "b" styles, like a score, must not reach it). */
+span.emb>b{font:inherit;color:inherit;font-variant-numeric:normal}
 .emb.xl{min-width:76px;height:76px;font-size:24px}
 .band .emb:has(img){background:rgba(255,255,255,.92);border-radius:14px}
 .hero .emb:has(img){background:rgba(255,255,255,.92)}
@@ -793,6 +795,7 @@ svg.cl .hit{fill:transparent;cursor:pointer}
 .status .srcwarn{color:var(--bad);font-weight:600}
 /* ---- every team is a link: emblem buttons, names on the dark hero and the game page ---- */
 .embtn{border:0;background:none;padding:0;cursor:pointer;border-radius:999px;line-height:0}
+.embtn .emb b{line-height:1}   /* the abbreviation (no logo: the store app, or a logo that did not load) */
 .embtn:hover .emb{box-shadow:0 0 0 2px var(--accent)}
 .hero .tname{color:inherit;font-weight:inherit;text-decoration-color:rgba(128,128,128,.55)}
 .hero .tname:hover{color:inherit;text-decoration-color:currentColor}

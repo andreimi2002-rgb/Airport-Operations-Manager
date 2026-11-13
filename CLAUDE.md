@@ -140,6 +140,15 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     `flgames-welcome`). Pagina unui oraș mare cuprinde toată zona (`AREAS` în `js/places.js`: New York 11 echipe,
     Los Angeles 10…). TikTok recunoscut ca sursă (browserul din aplicație). Rezumatul de dimineață poate spune
     toată noaptea (`night`: câte meciuri, cele mai strânse 3, linkul la scorurile zilei; `nightGames` în `push-cron`).
+21. **Microsoft Store** (branch `stage-21-magazin`, pregătit, netrimis). Aplicația din magazin e site-ul pornit la
+    `/?app=store` (ținut minte, `flgames-store`; `?app=web` îl oprește): `STORE` și `okImg` în `js/teams.js`.
+    În modul magazin: emblemele noastre în locul siglelor (culorile din `js/colors.js`, generat de
+    `tools/build-colors.mjs`), fără poze ESPN (stadioane, jucători, știri), fără clipuri ESPN (rezumatul pe
+    YouTube la orice ligă, `recapUrl`), cronica doar ca link. Pentru toate: pagina „Termeni” (`#termeni`),
+    confidențialitatea completată (contact, cine primește date, păstrare, drepturi), nota „neafiliată” în subsol,
+    manifestul cu `id`, categorii și capturi (`icons/screens/`). Ghidul de trimitere, textele și capturile sunt în
+    `Downloads\american-sports-hub-magazin\` (în afara repo-ului). Politicile Microsoft Store 7.20: editorul pe
+    numele proprietarului (cont individual), notificările fără promoții, orice sursă nouă de imagini trece prin `okImg`.
 
 ## Structura
 
@@ -158,6 +167,7 @@ js/health.js                starea surselor (/api/health): rândul „Surse” �
 js/game.js                  pagina de meci: filele Rezumat, Jucători, Statistici, Faze, Absenți; graficul de șanse
 js/ro.js                    traducerea textelor ESPN (stare meci, note, statistici, accidentări); fără DOM
 js/ui.js                    funcții comune: esc, temă (auto/luminoasă/întunecată), embleme cu logo
+js/colors.js                culorile și abrevierile tuturor echipelor, GENERAT de tools/build-colors.mjs
 js/places.js                orașe și stadioane: pagini, vremea, banda cu vremea, graficul de climă
 js/phone.js                 service worker, instalarea aplicației, pagina de abonare la calendar
 js/ics.js                   fișiere .ics (iCalendar), folosit de pagină și de funcția de calendar; fără DOM

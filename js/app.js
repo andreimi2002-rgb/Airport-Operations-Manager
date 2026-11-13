@@ -98,6 +98,7 @@ function handle(e) {
   if (e.target.closest('a[href^="webcal:"], a[href*="calendar.google.com"], [data-copycal]')) trackEvent('calendar');
   if ((el = q('[data-feedback]'))) { e.preventDefault(); go('#parere'); return; }
   if ((el = q('[data-privacy]'))) { e.preventDefault(); go('#confidentialitate'); return; }
+  if ((el = q('[data-terms]'))) { e.preventDefault(); go('#termeni'); return; }
   if ((el = q('[data-fb-send]'))) {
     const text = $('fbtext').value.trim(), contact = $('fbcontact').value.trim(), msg = $('fbmsg');
     if (text.length < 3) { msg.textContent = 'Scrie câteva cuvinte.'; return; }
