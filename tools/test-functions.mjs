@@ -117,7 +117,7 @@ await test('game: the recap among the clips; no recap keeps the clips, cached br
   assert.equal(j.recap, true); assert.equal(j.videos.length, 1);
   routes = [['summary?event', () => summaryJ('post', [shortClip('Bam dunks'), shortClip('Bad host', 'https://evil.example')])], ['/news?event', () => ({ articles: [] })]];
   const r = await game(req('/api/game?l=NBA&id=401'));
-  assert.match(r.headers.get('netlify-cdn-cache-control'), /s-maxage=900/);
+  assert.match(r.headers.get('netlify-cdn-cache-control'), /s-maxage=300/);   // asked again soon: the recap comes later
   j = await body(r);
   assert.equal(j.recap, undefined);
   assert.deepEqual(j.videos.map(v => v.title), ['Bam dunks'], 'only clips from ESPN servers');

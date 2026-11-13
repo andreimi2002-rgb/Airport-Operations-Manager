@@ -37,6 +37,14 @@ function periodTitle(l, n) {
 const periodShort = (l, n) => (l === 'NHL' ? (n <= 3 ? 'R' + n : 'Prel.') : l === 'MLS' ? (n <= 2 ? 'R' + n : 'Prel.') : (n <= 4 ? 'S' + n : 'Prel.'));
 
 /* ================= tabs ================= */
+// The league's standings (from /api/schedule), given by pages.js: l -> [{ name, entries: [...] }].
+let standingsOf = () => [];
+export const setStandingsSource = fn => { standingsOf = fn; };
+const normName = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const isSide = (e, x) => (x.id && e.id && String(e.id) === String(x.id)) || normName(e.name) === normName(x.name || '');
+// The groups (conference, league) the two teams are in: one when they share it, else both.
+const tableGroups = g => (standingsOf(g.l) || []).filter(gr => gr.entries?.some(e => isSide(e, g.H) || isSide(e, g.A)));
+
 export function gameTabs(g, s) {
   const t = [['rezumat', 'Rezumat']];
   if (!s) return t;
@@ -44,7 +52,28 @@ export function gameTabs(g, s) {
   if (cmpRows(g, s).length) t.push(['statistici', played(g) || isLive(g) ? 'Statistici' : 'Comparație']);
   if (s.plays?.length) t.push(['faze', g.l === 'MLS' ? 'Goluri și cartonașe' : g.l === 'NFL' ? 'Puncte marcate' : 'Goluri']);
   if (s.injuries?.length) t.push(['absenti', 'Absenți']);
+  if (tableGroups(g).length) t.push(['clasament', 'Clasament']);
   return t;
+}
+
+/* ================= standings ================= */
+function standHtml(g) {
+  const l = g.l;
+  const cols = l === 'NHL' ? ['V', 'Î', 'Îp', 'Pct'] : l === 'MLS' ? ['V', 'Î', 'E', 'Pct'] : l === 'NFL' ? ['V', 'Î', 'E', '%'] : ['V', 'Î', '%'];
+  const share = e => { const n = (e.w || 0) + (e.l || 0) + (e.t || 0); return n ? ((e.w || 0) + (e.t || 0) / 2) / n : 0; };
+  const pct = e => (e.w || e.l || e.t) ? share(e).toFixed(3).replace(/^0/, '') : '–';
+  const pts = e => e.pts ?? (l === 'NHL' ? 2 * (e.w || 0) + (e.otl || 0) : 3 * (e.w || 0) + (e.t || 0));
+  const cells = e => l === 'NHL' ? [e.w, e.l, e.otl ?? 0, pts(e)] : l === 'MLS' ? [e.w, e.l, e.t ?? 0, pts(e)] : l === 'NFL' ? [e.w, e.l, e.t ?? 0, pct(e)] : [e.w, e.l, pct(e)];
+  // A row opens the team: a pack team's profile, any other its club page.
+  const attr = e => { const k = Object.keys(TEAMS).find(x => TEAMS[x].l === l && normName(TEAMS[x].espn) === normName(e.name)); return k ? `data-team="${k}"` : e.id ? `data-club="${l}|${esc(e.id)}"` : ''; };
+  const GROUP_RO = { 'Eastern Conference': 'Conferința de Est', 'Western Conference': 'Conferința de Vest', 'American Football Conference': 'Conferința AFC',
+    'National Football Conference': 'Conferința NFC', 'American League': 'Liga Americană', 'National League': 'Liga Națională' };
+  return tableGroups(g).map(gr => `<section><h3>${esc(GROUP_RO[gr.name] || gr.name || 'Clasament')}</h3><div class="tbl gstand"><table><thead><tr><th></th><th>Echipă</th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>` +
+    // By place (ESPN does not always send them in order): the seed, which in MLB is only the playoff
+    // places, so baseball goes by the share of wins.
+    gr.entries.slice().sort((a, b) => l === 'MLB' ? share(b) - share(a) || (b.w || 0) - (a.w || 0) : (a.seed ?? a.order ?? 99) - (b.seed ?? b.order ?? 99)).map((e, i) => { const mine = isSide(e, g.H) || isSide(e, g.A), a = attr(e);
+      return `<tr class="${mine ? 'fl' : ''}"><td>${l === 'MLB' ? i + 1 : e.seed ?? i + 1}</td><td>${emb(e, 'sm')}${a ? `<button class="tname" type="button" ${a}>${esc(e.name)}</button>` : esc(e.name)}</td>${cells(e).map(c => `<td>${c ?? '–'}</td>`).join('')}</tr>`; }).join('') +
+    `</tbody></table></div></section>`).join('') + `<div class="fn">Echipele din acest meci sunt evidențiate. Atinge o echipă pentru pagina ei.</div>`;
 }
 export function tabsHtml(g, s, tab) {
   const t = gameTabs(g, s);
@@ -58,6 +87,7 @@ export function panelHtml(g, s, view) {
   if (tab === 'statistici') return cmpHtml(g, s);
   if (tab === 'faze') return playsHtml(g, s);
   if (tab === 'absenti') return injHtml(g, s);
+  if (tab === 'clasament') return standHtml(g);
   return summaryHtml(g, s, view.known || (() => false));
 }
 
@@ -85,7 +115,7 @@ function summaryHtml(g, s, known) {
   }
   if (s.goalies?.length && !played(g)) html += `<section><h3>Portari probabili</h3><ul class="notes">${s.goalies.map(x => `<li>${esc(shortOf(g, x.side))}: <b>${esc(x.n)}</b>${x.j ? ` (#${esc(x.j)})` : ''}</li>`).join('')}</ul></section>`;
   if (s.leaders?.length) html += `<section><h3>${played(g) || isLive(g) ? 'Cei mai buni jucători' : 'Liderii echipelor în sezon'}</h3><div class="leaders">${s.leaders.map(t => `<div class="tbl"><h4>${t.side ? emb(sideOf(g, t.side), 'sm') : ''}${esc(t.side ? shortOf(g, t.side) : t.team)}</h4><ul>${t.items.map(i => `<li><span class="c">${esc(catRo(i.cat))}</span> ${esc(i.who)} · <b>${esc(leaderValRo(i.val))}</b></li>`).join('')}</ul></div>`).join('')}</div></section>`;
-  if (s.videos?.length) html += `<section><h3>${s.recap ? 'Rezumatul meciului' : 'Faze video'}</h3><div class="vids${s.recap ? ' one' : ''}">${s.videos.map(v => `<figure><video controls preload="none" playsinline src="${esc(v.mp4)}"${v.thumb ? ` poster="${esc(v.thumb)}"` : ''}></video><figcaption>${esc(v.title)}${v.dur ? ` <span>· ${Math.floor(v.dur / 60)}:${String(v.dur % 60).padStart(2, '0')}</span>` : ''}</figcaption></figure>`).join('')}</div><div class="fn">Clipuri ESPN, în engleză.</div></section>`;
+  if (s.videos?.length) html += `<section><h3>${s.recap ? 'Rezumatul meciului' : 'Faze video'}</h3><div class="vids${s.recap ? ' one' : ''}">${s.videos.map(v => `<figure><video controls preload="none" playsinline src="${esc(v.mp4)}"${v.thumb ? ` poster="${esc(v.thumb)}"` : ''}></video><figcaption>${esc(v.title)}${v.dur ? ` <span>· ${Math.floor(v.dur / 60)}:${String(v.dur % 60).padStart(2, '0')}</span>` : ''}</figcaption></figure>`).join('')}</div><div class="fn">Clipuri ESPN, în engleză.${played(g) && !s.recap && g.l !== 'NFL' ? ' Rezumatul oficial al meciului apare de obicei la scurt timp după final și ia locul acestor faze.' : ''}</div></section>`;
   // NFL: ESPN has no video rights; the league's own recap is on YouTube.
   if (played(g) && g.l === 'NFL' && !s.videos?.length) html += `<section><h3>Rezumatul meciului</h3><a class="ytbtn" href="${esc(nflRecapUrl(g))}" target="_blank" rel="noopener"><span aria-hidden="true">▶</span> Rezumatul pe YouTube</a><div class="fn">Video oficial NFL, se deschide pe YouTube. ESPN nu are drepturi video pentru NFL.</div></section>`;
   if (s.article && played(g)) html += `<section><h3>Cronica meciului</h3><div class="recap" lang="en"><b>${esc(s.article.title)}</b>${s.article.text.map(p => `<p>${esc(p)}</p>`).join('')}</div><div class="fn">Text ESPN, în engleză.${s.article.url ? ` <a href="${esc(s.article.url)}" target="_blank" rel="noopener">Citește tot pe ESPN ›</a>` : ''}</div></section>`;
