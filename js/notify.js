@@ -1,6 +1,6 @@
 // Notifications page (#notificari): permission, push subscription, the viewer's choices.
 // The server side is netlify/functions/push.mjs; the sending, every 15 minutes, push-cron.mjs.
-import { TEAMS, parseClub } from './teams.js';
+import { TEAMS, parseClub, STORE } from './teams.js';
 import { esc } from './ui.js';
 import { isStandalone } from './phone.js';
 import { trackEvent, count } from './track.js';
@@ -51,6 +51,9 @@ async function subscribe(r) {
     await new Promise(ok => setTimeout(ok, 1500));
     try { return await r.pushManager.subscribe(opts); } catch (e2) {
       count('err', 'push: ' + (e2?.message || e2?.name || 'subscribe').slice(0, 30));
+      // The Microsoft Store app: Windows may refuse its own registration while Edge itself works; the same
+      // notifications can then be turned on from the browser.
+      if (STORE) { N.viaBrowser = true; throw new Error('În aplicația din Microsoft Store, Windows nu a înregistrat notificările. Le poți porni din Edge: vin la fel, cu aceleași echipe.'); }
       const win = /Windows/.test(navigator.userAgent);
       throw new Error(win
         ? 'Serviciul de notificări al Windows nu a răspuns. Verifică: Setări Windows → Sistem → Notificări pornite (și pentru American Sports Hub și Microsoft Edge), apoi încearcă din nou. Dacă folosești VPN sau un program care blochează conexiuni, oprește-l o clipă.'
@@ -122,6 +125,7 @@ export function notifyHtml(emb, clubs = [], addHtml = '') {
       ? `<button class="primary" type="button" data-ntf="save" ${N.busy ? 'disabled' : ''}>Salvează alegerile</button><button class="ghost" type="button" data-ntf="test" ${N.busy ? 'disabled' : ''}>Trimite o notificare de test</button><button class="ghost" type="button" data-ntf="off" ${N.busy ? 'disabled' : ''}>Oprește notificările</button>`
       : `<button class="primary" type="button" data-ntf="on" ${N.busy || !N.teams.length ? 'disabled' : ''}>Pornește notificările</button>`}</div>` : ''}
     ${N.msg ? `<p class="nmsg" role="status">${esc(N.msg)}</p>` : ''}
+    ${N.viaBrowser ? '<p><a class="primary" href="https://americansportshub.netlify.app/?sursa=msstore-notificari#notificari" target="_blank" rel="noopener">Pornește-le din browser</a></p>' : ''}
     <section><h3>De știut</h3><ul class="notes">
       <li>Anunțurile pleacă de pe server la fiecare 15 minute, deci pot veni cu câteva minute mai devreme sau mai târziu.</li>
       <li>Setările sunt pe fiecare dispozitiv în parte: pe telefon și pe calculator le pornești separat.</li>
