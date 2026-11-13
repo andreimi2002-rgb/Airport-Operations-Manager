@@ -127,7 +127,10 @@ export const packOf = k => Object.values(PACKS).find(p => p.keys.includes(k))?.i
 // Florida; everyone else gets New York. The Netlify functions (no browser) start from Florida.
 export const PACK = (() => {
   if (typeof window === 'undefined') return 'fl';
-  try { if (new URLSearchParams(location.search).get('eu') === '1' || localStorage.getItem('flgames-notrack') === '1') return 'fl'; } catch (e) { /* storage blocked */ }
+  try {
+    const eu = new URLSearchParams(location.search).get('eu');
+    if (eu === '1' || (eu !== '0' && localStorage.getItem('flgames-notrack') === '1')) return 'fl';
+  } catch (e) { /* storage blocked */ }
   return 'ny';
 })();
 export const HOME = PACKS[PACK];

@@ -119,6 +119,7 @@ function handle(e) {
   if ((el = q('[data-feedback]'))) { e.preventDefault(); go('#parere'); return; }
   if ((el = q('[data-privacy]'))) { e.preventDefault(); go('#confidentialitate'); return; }
   if ((el = q('[data-terms]'))) { e.preventDefault(); go('#termeni'); return; }
+  if ((el = q('[data-donate-open]'))) { e.preventDefault(); go('#sustine'); return; }
   if ((el = q('[data-fb-send]'))) {
     const text = $('fbtext').value.trim(), contact = $('fbcontact').value.trim(), msg = $('fbmsg');
     if (text.length < 3) { msg.textContent = 'Scrie câteva cuvinte.'; return; }
@@ -131,9 +132,16 @@ function handle(e) {
     return;
   }
   if ((el = q('#appver'))) {
-    // Five taps on the version: this device's visits are (no longer) counted. For the owner.
+    // Five taps on the version: this is the owner's device (visits not counted, the Florida pack). Only ever
+    // marks: an accidental second round of taps must not take the mark away (?eu=0 does that).
     vtaps = Date.now() - vtapAt < 1500 ? vtaps + 1 : 1; vtapAt = Date.now();
-    if (vtaps >= 5) { vtaps = 0; setNotCounted(!notCounted()); el.textContent = notCounted() ? 'Vizitele de pe acest dispozitiv nu se numără' : 'Vizitele de pe acest dispozitiv se numără'; }
+    if (vtaps >= 5) {
+      vtaps = 0;
+      const was = notCounted();
+      setNotCounted(true);
+      el.textContent = 'Dispozitivul tău: vizitele nu se numără';
+      if (!was && PACK !== 'fl') setTimeout(() => location.reload(), 1200);   // the Florida pack comes with a reload
+    }
     return;
   }
   // Footer: look for a newer version now (the installed app also does it on every return).

@@ -867,3 +867,8 @@ html.nospoil .spbody:not(.open)>.spcover{display:flex;flex-direction:column;alig
 .evcard p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5}
 .hlc.world{text-decoration:none;color:inherit}
 .hlc.world .k{color:var(--accent)}
+
+/* ---- "Susține proiectul" ---- */
+.donbtns{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 14px}
+.donbtns a{text-decoration:none}
+a.link.donate{color:var(--accent)}
