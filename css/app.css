@@ -310,7 +310,7 @@ footer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padd
 .emb:has(img) b{visibility:hidden}
 .emb b{font:inherit}
 /* The abbreviation keeps the emblem's colours wherever it sits (a row's own "b" styles, like a score, must not reach it). */
-span.emb>b{font:inherit;color:inherit;font-variant-numeric:normal}
+span.emb.emb>b{font:inherit;color:inherit;font-variant-numeric:normal}   /* doubled class: beats ".gsd.win b" too */
 .emb.xl{min-width:76px;height:76px;font-size:24px}
 .band .emb:has(img){background:rgba(255,255,255,.92);border-radius:14px}
 .hero .emb:has(img){background:rgba(255,255,255,.92)}
