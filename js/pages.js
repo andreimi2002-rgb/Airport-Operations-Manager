@@ -111,7 +111,7 @@ export function openTerms(keep) {
 export const CONTACT = 'andreimi1308@gmail.com';
 // "Susține proiectul": a voluntary donation through Revolut.me or Ko-fi (the owner's links; empty = hidden).
 // Not in the Microsoft Store app (its payment rules are checked first).
-export const DONATE = { revolut: '', kofi: '' };
+export const DONATE = { revolut: 'https://revolut.me/mihalam98n', kofi: 'https://ko-fi.com/andreimihalache71873' };
 export const canDonate = () => !STORE && !!(DONATE.revolut || DONATE.kofi);
 export function openDonate(keep) {
   OV.game = null; OV.place = null;
