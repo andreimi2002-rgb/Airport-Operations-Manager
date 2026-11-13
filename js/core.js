@@ -24,6 +24,26 @@ export const AW = { good: 'Oră bună în RO', late: 'Târziu în RO', night: 'N
 export const played = g => g.state === 'post';
 export const isLive = g => g.state === 'in';
 
+/* ================= "Fără spoilere" ================= */
+// On, every score and result (finished or live) is covered until tapped; a tap shows that one game
+// everywhere (kept for the last 200 games shown). The <html> element carries the class, so CSS does the hiding.
+export const SPOIL = {
+  on: store.get('flgames-nospoil') === '1',
+  open: new Set((() => { try { return JSON.parse(store.get('flgames-spopen') || '[]'); } catch (e) { return []; } })())
+};
+export function setNoSpoil(on) {
+  SPOIL.on = on; store.set('flgames-nospoil', on ? '1' : '0');
+  document.documentElement.classList.toggle('nospoil', on);
+}
+export function revealGame(id) {
+  id = String(id); SPOIL.open.add(id);
+  store.set('flgames-spopen', JSON.stringify([...SPOIL.open].slice(-200)));
+  document.querySelectorAll(`[data-sp="${CSS.escape(id)}"]`).forEach(el => el.classList.add('open'));
+}
+// A score or a result of game `id`, to be covered when "Fără spoilere" is on.
+export const sp = (id, html) => `<span class="sp${SPOIL.open.has(String(id)) ? ' open' : ''}" data-sp="${esc(id)}">${html}</span>`;
+export const spOpen = id => !SPOIL.on || SPOIL.open.has(String(id));
+
 export const fmtRoH = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Bucharest', hour: '2-digit', minute: '2-digit', hour12: false });
 export function awake(d) {
   const [h, m] = fmtRoH.format(d).split(':').map(Number); const t = (h % 24) * 60 + m;
@@ -271,4 +291,4 @@ export function outcome(g, k) {
   const home = g.H.key === k, mine = home ? g.hs : g.as, their = home ? g.as : g.hs;
   return mine > their ? 'V' : mine < their ? 'I' : 'E';
 }
-export function formChips(k) { return lastGames(k).map(g => { const o = outcome(g, k); return `<i class="${o}" title="${OUT[o]}">${OUTL[o]}</i>`; }).join(''); }
+export function formChips(k) { return lastGames(k).map(g => { const o = outcome(g, k); return sp(g.id, `<i class="${o}" title="${OUT[o]}">${OUTL[o]}</i>`); }).join(''); }

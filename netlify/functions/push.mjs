@@ -1,6 +1,6 @@
 // /api/push — notifications before the games of the chosen teams.
 //   GET                          -> { publicKey } (null when notifications are not set up on this site)
-//   POST { action: 'save', subscription, prefs: { teams, lead, final, morning, night } }   save or update
+//   POST { action: 'save', subscription, prefs: { teams, lead, final, morning, night, weekly } }   save or update
 //   POST { action: 'get', subscription }      the saved settings of this browser, or null
 //   POST { action: 'test', subscription }     send a test notification now
 //   POST { action: 'delete', subscription }   stop
@@ -25,7 +25,7 @@ export default async (req, context) => {
   const id = subId(sub.endpoint);
   const old = await store.get(id);
 
-  if (body.action === 'get') return json({ prefs: old ? { teams: old.teams, lead: old.lead, final: old.final, morning: old.morning !== false, night: !!old.night } : null });
+  if (body.action === 'get') return json({ prefs: old ? { teams: old.teams, lead: old.lead, final: old.final, morning: old.morning !== false, night: !!old.night, weekly: old.weekly !== false } : null });
   if (body.action === 'delete') { await store.del(id); return json({ ok: true }); }
   if (body.action === 'save') {
     const p = body.prefs || {};
@@ -34,11 +34,11 @@ export default async (req, context) => {
     if (!teams.length) return json({ error: 'Alege cel puțin o echipă.' }, 400);
     const rec = {
       id, endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
-      teams, lead, final: !!p.final, morning: p.morning !== false, night: !!p.night, morningDay: old?.morningDay, site: new URL(req.url).origin,
+      teams, lead, final: !!p.final, morning: p.morning !== false, night: !!p.night, weekly: p.weekly !== false, morningDay: old?.morningDay, weekDay: old?.weekDay, site: new URL(req.url).origin,
       created: old?.created || Date.now(), updated: Date.now(), sent: old?.sent || {}, lastTest: old?.lastTest || 0
     };
     await store.set(id, rec);
-    return json({ ok: true, prefs: { teams, lead, final: rec.final, morning: rec.morning, night: rec.night } });
+    return json({ ok: true, prefs: { teams, lead, final: rec.final, morning: rec.morning, night: rec.night, weekly: rec.weekly } });
   }
   if (body.action === 'test') {
     if (!old) return json({ error: 'Salvează întâi setările.' }, 400);

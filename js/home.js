@@ -4,12 +4,13 @@ import { LEAGUES, TEAMS, DIVISIONS, METROS, norm, HOME } from './teams.js';
 import { MINE, isMine, mineFL, clubId, mineIds, welcomeDue } from './mine.js';
 import { esc, $, emb } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
-import { installHtml, canInstall } from './phone.js';
+import { installHtml, canInstall, isWindows, isStandalone, offerStore } from './phone.js';
 import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
 import { PLACES, venueByName, cityOf, getWeather, stripHtml, STRIP, cityCard, roofWord, AMERICA, loadAmerica } from './places.js';
-import { teamBtn, teamEmbBtn, AW, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters, myShort, outcomeFor, keepExtra, gameById } from './core.js';
+import { teamBtn, teamEmbBtn, AW, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters, myShort, outcomeFor, keepExtra, gameById, sp } from './core.js';
 import { cal, clubSide, entryById, go } from './pages.js';
 import { HEALTH, healthNote, sourcesHtml } from './health.js';
+import { WORLD, loadWorld, worldCardsHtml } from './views.js';
 
 /* ================= render: header & static ================= */
 export function renderStatus() {
@@ -160,7 +161,7 @@ export function renderHero() {
   if (!g) { $('hero').innerHTML = '<div><div class="k">Urmează</div><div class="m">Niciun meci programat în datele curente.</div></div>'; return; }
   const k = keyOf(g.d, state.tz), on = isLive(g);
   const soon = ups.filter(x => x !== g && x.d.getTime() - now < 864e5).slice(0, 6);
-  const big = on ? `${g.hs ?? 0}–${g.as ?? 0}` : g.d.getTime() <= now ? 'Urmează să înceapă' : 'în ' + countdown(g.d.getTime() - now);
+  const big = on ? sp(g.id, `${g.hs ?? 0}–${g.as ?? 0}`) : g.d.getTime() <= now ? 'Urmează să înceapă' : 'în ' + countdown(g.d.getTime() - now);
   $('hero').innerHTML = `<div data-gid="${esc(g.id)}">
       <div class="k">${mine[0] === g ? 'Echipa ta · ' + esc(myShort(g.mine[0], g)) : on ? 'În desfășurare' : 'Următorul meci'} · ${g.l}</div>
       <div class="duo">${teamEmbBtn(g.l, g.H, '', true)}<span class="at">vs</span>${teamEmbBtn(g.l, g.A, '', true)}</div>
@@ -169,7 +170,7 @@ export function renderHero() {
       <div class="w">${dayLabel(k)}, ${fmtTime[state.tz].format(g.d)} ${TZNAME[state.tz]} · ${g.v ? esc(g.v) + ', ' : ''}${esc(g.city)}${g.tv ? ' · ' + esc(g.tv) : ''}</div>
       <button class="go" type="button" data-game="${g.id}">Detalii meci</button>
     </div>
-    <div class="soon"><div class="k">În următoarele 24 de ore</div>${soon.length ? soon.map(x => `<button class="srow" type="button" data-game="${x.id}"><b>${isLive(x) ? `${x.hs}–${x.as}` : fmtTime[state.tz].format(x.d)}</b><span>${esc(x.h)} – ${esc(x.a)} <span style="opacity:.7">· ${x.l}${isLive(x) ? ' · LIVE' : ''}</span></span></button>`).join('') : '<div class="w">Niciun alt meci în următoarele 24 de ore.</div>'}</div>`;
+    <div class="soon"><div class="k">În următoarele 24 de ore</div>${soon.length ? soon.map(x => `<button class="srow" type="button" data-game="${x.id}"><b>${isLive(x) ? sp(x.id, `${x.hs}–${x.as}`) : fmtTime[state.tz].format(x.d)}</b><span>${esc(x.h)} – ${esc(x.a)} <span style="opacity:.7">· ${x.l}${isLive(x) ? ' · LIVE' : ''}</span></span></button>`).join('') : '<div class="w">Niciun alt meci în următoarele 24 de ore.</div>'}</div>`;
 }
 
 export function renderHighlights(busy) {
@@ -184,6 +185,9 @@ export function renderHighlights(busy) {
     .forEach(k => {
       html += `<button class="hlc" type="button" data-day="${k}" data-jump="1"><span class="k">Zi plină</span><span class="t">${dayLabel(k)}</span><span class="d">${busy[k].teams.size} echipe din ${esc(HOME.name)} · ${[...busy[k].leagues].join(', ')}</span></button>`;
     });
+  // The next game in Europe and the next big day of the season (loaded once, then drawn again).
+  if (!WORLD.data) loadWorld().then(() => renderHighlights(busyMap()));
+  html += worldCardsHtml();
   $('hl').innerHTML = html || '<div class="empty">Nimic special în următoarele zile.</div>';
 }
 
@@ -248,9 +252,9 @@ export function card(g) {
   const alt = g.tbd ? '' : `<small>${fmtTime[other].format(g.d)} ${TZNAME[other]}<br>${fmtShort[other].format(g.d)}</small>`;
   let extra = '';
   if (on) extra = `<span class="tag live">LIVE${g.detail ? ' · ' + esc(detailRo(g.detail, g.l)) : ''}</span>`;
-  else if (done) { const o = outcomeFor(g, g.mine?.[0] || g.teams[0]); extra = `<span class="tag r-${o}">${OUT[o]}</span>`; }
+  else if (done) { const o = outcomeFor(g, g.mine?.[0] || g.teams[0]); extra = sp(g.id, `<span class="tag r-${o}">${OUT[o]}</span>`); }
   else if (!g.tbd) extra = `<span class="tag aw-${g.aw}">${AW[g.aw]}</span>`;
-  const mid = done || on ? `<span class="sc">${g.hs ?? 0}–${g.as ?? 0}</span>` : '<span class="vs">vs</span>';
+  const mid = done || on ? `<span class="sc">${sp(g.id, `${g.hs ?? 0}–${g.as ?? 0}`)}</span>` : '<span class="vs">vs</span>';
   return `<article class="game${g.derby ? ' derby' : ''}${on ? ' live' : ''}" style="--c:${col(g.l)}" data-gid="${esc(g.id)}">
     <div class="time">${time}${alt}</div>
     <div><div class="tags"><span class="tag lg">${g.l}</span>${where}${extra}${g.note ? `<span class="tag note">${esc(noteRo(g.note))}</span>` : ''}</div>
@@ -408,8 +412,10 @@ export async function renderStrip() {
 
 export function renderPhone() {
   // The header "Instalează" button appears only when the browser can install the app right away.
-  $('hinstall').hidden = !canInstall();
-  $('phone').innerHTML = `<div class="phcard"><h3>Aplicația pe telefon</h3>${installHtml()}</div>
+  // On Windows the Microsoft Store app is offered instead.
+  $('hstore').hidden = !offerStore();
+  $('hinstall').hidden = !canInstall() || offerStore();
+  $('phone').innerHTML = `<div class="phcard"><h3>${isWindows() && !isStandalone() ? 'Aplicația pe calculator' : 'Aplicația pe telefon'}</h3>${installHtml()}</div>
     <div class="phcard"><h3>Meciurile în calendarul tău</h3><p>Abonează-te o dată și meciurile echipelor alese apar singure în Google Calendar, pe iPhone sau în Outlook, cu ora ta și cu amintire.</p><button class="primary" type="button" data-team-cal="">Abonare la calendar</button></div>
     <div class="phcard"><h3>Notificări</h3><p>Un anunț înainte de meciurile echipelor tale și rezultatul final, chiar cu aplicația închisă.</p><button class="primary" type="button" data-team-ntf="">Setează notificările</button></div>`;
 }

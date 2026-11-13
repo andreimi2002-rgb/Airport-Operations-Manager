@@ -114,7 +114,49 @@ export function morningDue(sub, games, now, site, night = null) {
   return { kind: 'm', day, game: null, message: morningMessage(results, next, [...want], site, all) };
 }
 
-// The notifications due now for one subscriber: [{ kind: 'p'|'f'|'m', game, message }].
+// The week's summary: on Sunday evening (19:00–23:00 Romanian time, once), each of the subscriber's teams with
+// its week (wins and losses, ✓ ✗ in order) and what comes next week. `weekly: false` turns it off.
+export const WEEKLY = { from: 19, to: 23 };
+export function weeklyWindow(now) {
+  const { day, hour } = roParts(now);
+  const dow = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Bucharest', weekday: 'short' }).format(new Date(now));
+  return dow === 'Sun' && hour >= WEEKLY.from && hour < WEEKLY.to ? day : null;
+}
+const fmtDayRO = new Intl.DateTimeFormat('ro-RO', { timeZone: 'Europe/Bucharest', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+export function weeklyDue(sub, games, now, site) {
+  if (sub.weekly === false) return null;
+  const day = weeklyWindow(now);
+  if (!day || sub.weekDay === day) return null;
+  const t = g => new Date(g.date).getTime();
+  const lines = [];
+  let total = 0;
+  for (const id of sub.teams || []) {
+    const one = new Set([id]), side = g => [g.home, g.away].find(s => sideIn(one, g.l, s));
+    const week = games.filter(g => side(g) && g.state === 'post' && t(g) < now && now - t(g) < 7 * 864e5).sort((a, b) => t(a) - t(b));
+    if (!week.length) continue;
+    total += week.length;
+    let w = 0, l = 0, e = 0;
+    const marks = week.map(g => {
+      const s = side(g), my = (s === g.home ? g.home.score : g.away.score) ?? 0, th = (s === g.home ? g.away.score : g.home.score) ?? 0;
+      return my > th ? (w++, '✓') : my < th ? (l++, '✗') : (e++, '=');
+    }).join('');
+    lines.push(`${short(side(week[0]))}: ${w}–${l}${e ? '–' + e : ''} ${marks}`);
+  }
+  if (!lines.length) return null;
+  const want = new Set(sub.teams || []);
+  const ahead = games.filter(g => (sideIn(want, g.l, g.home) || sideIn(want, g.l, g.away)) && g.state === 'pre' && !g.tbd && t(g) > now && t(g) - now < 7 * 864e5).sort((a, b) => t(a) - t(b));
+  const nextLine = ahead.length ? `Săptămâna viitoare: ${ahead.length} ${ahead.length === 1 ? 'meci' : 'meciuri'} · primul: ${short(ahead[0].home)} – ${short(ahead[0].away)}, ${fmtDayRO.format(new Date(ahead[0].date))}` : '';
+  return {
+    kind: 'w', day, game: null,
+    message: {
+      title: lines.length === 1 ? `📅 Săptămâna: ${lines[0].replace(/ [✓✗=]+$/, '')}` : `📅 Săptămâna echipelor tale: ${total} meciuri`,
+      body: [...(lines.length === 1 ? [lines[0].replace(/^.*?: [\d–]+ /, 'Meci cu meci: ')] : lines), nextLine].filter(Boolean).join('\n'),
+      url: site + '/', tag: 'weekly'
+    }
+  };
+}
+
+// The notifications due now for one subscriber: [{ kind: 'p'|'f'|'m'|'w', game, message }].
 export function due(sub, games, now, site, night = null) {
   const out = [], want = new Set(sub.teams || []), sent = sub.sent || {};
   for (const g of games) {
@@ -133,17 +175,23 @@ export function due(sub, games, now, site, night = null) {
   }
   const m = morningDue(sub, games, now, site, night);
   if (m) out.push(m);
+  const w = weeklyDue(sub, games, now, site);
+  if (w) out.push(w);
   return out;
 }
 
 // Remembers what was sent, and forgets games older than four days.
 export function markSent(sub, items, now) {
   const sent = { ...(sub.sent || {}) };
-  let morningDay = sub.morningDay;
+  let morningDay = sub.morningDay, weekDay = sub.weekDay;
   for (const it of items) {
     if (it.kind === 'm') { morningDay = it.day; continue; }
+    if (it.kind === 'w') { weekDay = it.day; continue; }
     sent[it.game.id] = { ...(sent[it.game.id] || {}), [it.kind]: now };
   }
   for (const [id, s] of Object.entries(sent)) if (now - Math.max(s.p || 0, s.f || 0) > 4 * 864e5) delete sent[id];
-  return morningDay ? { ...sub, sent, morningDay } : { ...sub, sent };
+  const out = { ...sub, sent };
+  if (morningDay) out.morningDay = morningDay;
+  if (weekDay) out.weekDay = weekDay;
+  return out;
 }

@@ -155,8 +155,22 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     `Downloads\AMERICAN SPORTS HUB\american-sports-hub-magazin\` (în afara repo-ului). Politicile Microsoft Store 7.20:
     editorul a rămas „Sports Hub” (decizia proprietarului, riscul 10.14 asumat), notificările fără promoții, orice
     sursă nouă de imagini trece prin `okImg`.
-22. **Motive să revii** (următoarea, branch `stage-22-motive`): Meciul zilei pentru România, Fără spoilere, Pagina de
-    jucător, Meciurile din Europa; după aprobarea Microsoft, butonul „Descarcă din Microsoft Store”.
+22. **Motive să revii** (branch `stage-22-motive`, v26; aplicația din Microsoft Store e publicată din 13 noiembrie 2026):
+    - **Microsoft Store:** butonul „Descarcă din Microsoft Store” (doar în browser, pe Windows: în bara de sus și la „Pe
+      telefon”, `offerStore` în `js/phone.js`); aplicația din magazin se numără separat (sursa `msstore`, evenimentul
+      `install-store`).
+    - **Fără spoilere** (ochiul din bara de sus, `flgames-nospoil`): scorurile și rezultatele (V/Î, forma, seria) se
+      acoperă până le atingi; atingerea arată meciul peste tot (`sp()`, `SPOIL`, `revealGame` în `js/core.js`; clasa
+      `nospoil` pe `<html>`). Pagina de meci ascunde filele sub „rezultatul e ascuns”.
+    - **Meciul zilei pentru România** (`js/motd.js`, pur, testat): din meciurile zilei (SUA) din toate ligile, după
+      forța echipelor, cât de apropiate sunt, echipele tale, playoff, rivalitate, TV național și ora României; cu motivele.
+    - **Europa și evenimente** (`/api/world`, `netlify/lib/world.mjs`): meciurile din afara SUA și Canadei și zilele
+      mari (Thanksgiving, Crăciun, Super Bowl, Winter Classic, All-Star…), găsite singure în programul ESPN pe 4 luni;
+      fila „Europa și evenimente” din Ligile și cardurile din „De urmărit”.
+    - **Liniile de playoff** în clasamentele de conferință (`CUTS` în `js/leagues.js`) și coloana „Dif.”.
+    - **Imagine de distribuit** (`js/sharecard.js`): pagina de meci face o imagine 4:5 cu emblemele noastre.
+    - **Rezumatul săptămânii:** duminică 19–23, ora României (`weeklyDue`, `weekDay`, bifa `weekly`).
+    Rămase pentru o etapă viitoare: Pagina de jucător.
 
 ## Promovare (în afara repo-ului)
 
@@ -194,7 +208,9 @@ js/bracket.js               tabloul de playoff: serii din meciurile de playoff; 
 js/mine.js                  „Echipele mele”: lista din browser (implicit Florida), `NBA-2` pentru restul
 js/clubinfo.js              faptele din data/clubs.json pe pagina echipei: Despre, palmares, nume vechi, legende
 js/guide.js                 fila „Ghid” din Ligile: unde vezi fiecare ligă din România (verificat de mână), explicații
-js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele, orașele și stadioanele; banda „Azi în ligi”
+js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete (cu liniile de playoff), toate echipele, Europa și evenimente, orașele și stadioanele; banda „Azi în ligi”
+js/motd.js                  „Meciul zilei pentru România”: alegerea și motivele; fără DOM
+js/sharecard.js             imaginea de distribuit a unui meci (canvas, emblemele noastre)
 sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
 manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
@@ -208,6 +224,8 @@ netlify/functions/team.mjs       GET /api/team?l=NBA&id=14  lot, liderii sezonul
 netlify/functions/playoffs.mjs   GET /api/playoffs?l=MLS  meciurile de playoff ale ligii, pentru tablou (cache 1 h)
 netlify/functions/scores.mjs     GET /api/scores?d=20261111  toate meciurile unei zile (SUA), din toate ligile
 netlify/functions/teamgames.mjs  GET /api/teamgames?l=NBA&id=2  sezonul oricărei echipe (pagina simplă de echipă)
+netlify/functions/world.mjs      GET /api/world  meciurile din afara SUA și Canadei și zilele mari, pe 4 luni (cache 12 h)
+netlify/lib/world.mjs       alegerea lor din programul ESPN (pură, testată)
 netlify/functions/health.mjs     GET /api/health  ESPN și Open-Meteo răspund, în formatul așteptat? (cache 5 min)
 netlify/functions/hit.mjs        POST /api/hit  o vizită sau o acțiune, numărată pe zi (fără date personale)
 netlify/functions/feedback.mjs   POST /api/feedback  un mesaj din „Spune-ne ce crezi”
@@ -265,7 +283,7 @@ doar rezumatul și `recap: true` (cache o zi; fără rezumat, 15 minute, până 
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
 `#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei), `#calendar/heat,NBA-2`, `#notificari/NBA-2`,
-`#ligi[/scoruri|clasamente|echipe|orase|ghid][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
+`#ligi[/scoruri|clasamente|echipe|evenimente|orase|ghid][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
 filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 
