@@ -8,6 +8,7 @@ const checks = [
   ['Pagina', '/', async r => (await r.text()).includes('American Sports Hub') || 'lipsește numele site-ului'],
   ['Sezonul (program, clasamente)', '/api/schedule', async r => { const j = await r.json(); return (j.games?.length > 0 && Object.keys(j.standings || {}).length > 0) || 'fără meciuri sau clasamente'; }],
   ['Scorurile zilei', `/api/scores?d=${usDay}`, async r => { const j = await r.json(); return !!j.leagues || 'răspuns fără ligi'; }],
+  ['Europa și evenimente', '/api/world', async r => { const j = await r.json(); return (Array.isArray(j.abroad) && Array.isArray(j.events)) || 'răspuns fără liste'; }],
   ['Scor live', '/api/live?l=NBA,NHL', async r => Array.isArray((await r.json()).games) || 'răspuns fără meciuri'],
   ['Sursele', '/api/health', async r => { const j = await r.json(); return j.ok || j.sources.filter(s => !s.ok).map(s => `${s.name} ${s.problem}`).join(', '); }],
   ['Vremea', '/api/weather?lat=25.78&lon=-80.19&brief=1', async r => (await r.json()).places?.[0]?.now?.temp != null || 'fără temperatură'],

@@ -246,6 +246,60 @@ assert.equal(normalizeStandings({ children: [{ name: 'Eastern Conference', stand
   const nhl = lg.orderEntries([{ name: 'A', pts: 20, w: 9 }, { name: 'B', pts: 24, w: 11 }, { name: 'C', pts: 24, w: 10 }], 'NHL').map(e => e.name);
   assert.deepEqual(nhl, ['B', 'C', 'A']);
   assert.deepEqual(lg.orderEntries([{ name: 'A', seed: 2, pct: 0.9 }, { name: 'B', seed: 1, pct: 0.5 }], 'NBA').map(e => e.name), ['B', 'A']);
+  // The playoff lines: games behind the last place still in (NBA), points behind (NHL).
+  assert.equal(lg.behind({ w: 4, l: 9 }, { w: 6, l: 6 }, 'NBA'), '2½ m');
+  assert.equal(lg.behind({ w: 5, l: 6 }, { w: 5, l: 6 }, 'NBA'), '=');
+  assert.equal(lg.behind({ pts: 20 }, { pts: 23 }, 'NHL'), '−3 p');
+  const ctx = { emb: () => '', flKey: () => null };
+  const conf = { name: 'Eastern Conference', entries: Array.from({ length: 15 }, (_, i) => ({ id: String(i), name: 'T' + i, w: 15 - i, l: i, pct: (15 - i) / 15 })) };
+  const html = lg.groupTableHtml(conf, 'NBA', ctx);
+  assert.equal((html.match(/class="cut"/g) || []).length, 1);
+  assert.equal((html.match(/class="cut2"/g) || []).length, 1);
+  assert.ok(!lg.groupTableHtml({ name: 'Southeast', entries: conf.entries.slice(0, 5) }, 'NBA', ctx).includes('cut'));   // a division: no lines
+}
+// "Europa și evenimente": games abroad, Thanksgiving / Christmas by date, named special games.
+{
+  const w = await import('../netlify/lib/world.mjs');
+  assert.deepEqual(w.bigDays(2026), { thanksgiving: '2026-11-26', christmas: '2026-12-25' });
+  assert.equal(w.bigDays(2027).thanksgiving, '2027-11-25');
+  const ev = (id, date, country, note = '', city = '') => ({ id, date, competitions: [{ venue: { fullName: 'V', address: { city, country } }, notes: note ? [{ headline: note }] : [],
+    competitors: [{ homeAway: 'home', team: { id: '1', displayName: 'Home Team' } }, { homeAway: 'away', team: { id: '2', displayName: 'Away Team' } }], status: { type: { state: 'pre' } } }] });
+  const now = Date.parse('2026-11-13T12:00:00Z');
+  const r = w.selectWorld([
+    { l: 'NFL', ev: ev('1', '2026-11-15T14:30Z', 'Germany', '', 'Munich') },
+    { l: 'NFL', ev: ev('2', '2026-11-23T01:15Z', 'Mexico') },
+    { l: 'NFL', ev: ev('3', '2026-11-26T18:00Z', 'USA') },                    // Thanksgiving
+    { l: 'NBA', ev: ev('4', '2026-12-25T17:00Z', 'USA') },                    // Christmas
+    { l: 'NFL', ev: ev('5', '2027-02-14T23:30Z', 'USA', 'Super Bowl LXI') },
+    { l: 'NHL', ev: ev('6', '2026-11-01T18:00Z', 'Finland') },                // past
+    { l: 'NFL', ev: ev('1', '2026-11-15T14:30Z', 'Germany') }                 // same game twice
+  ], now);
+  assert.deepEqual(r.abroad.map(g => [g.id, g.europe]), [['1', true], ['2', false]]);
+  assert.deepEqual(r.events.map(e => e.kind + ':' + e.day), ['thanksgiving:2026-11-26', 'christmas:2026-12-25', 'special:2027-02-14']);
+  assert.equal(r.events[2].title, 'Super Bowl LXI');
+  const lg = await import('../js/leagues.js');
+  assert.equal(lg.eventInfo(r.events[0]).title, 'Thanksgiving: NFL de Ziua Recunoștinței');
+  assert.equal(lg.countryRo('Germany'), 'Germania');
+}
+// "Meciul zilei": the evening game between strong teams wins over a night game and a weak one.
+{
+  const { pickMotd } = await import('../js/motd.js');
+  const at = iso => new Date(iso);
+  const g = (id, l, h, a, iso, extra) => ({ id, l, d: at(iso), state: 'pre', H: { name: h }, A: { name: a }, h, a, note: '', tv: '', mine: [], ...extra });
+  const E = { Top1: { w: 10, l: 2 }, Top2: { w: 9, l: 3 }, Low1: { w: 2, l: 10 }, Low2: { w: 3, l: 9 } };
+  const entry = (l, n) => E[n] || null;
+  const games = [
+    g('1', 'NBA', 'Low1', 'Low2', '2026-11-14T19:00:00Z'),   // 21:00 in Romania, weak teams
+    g('2', 'NBA', 'Top1', 'Top2', '2026-11-15T03:00:00Z'),   // 05:00 in Romania, strong teams, at night
+    g('3', 'NBA', 'Top2', 'Top1', '2026-11-14T20:30:00Z')    // 22:30, strong teams: the pick
+  ];
+  const m = pickMotd(games, { entry });
+  assert.equal(m.g.id, '3');
+  assert.equal(m.watch, 2);
+  assert.ok(m.reasons[0].startsWith('Două echipe de top'));
+  assert.equal(pickMotd([], { entry }), null);
+  // One of your teams counts.
+  assert.equal(pickMotd([games[0], { ...games[2], id: '4', d: at('2026-11-14T19:30:00Z'), H: { name: 'Low2' }, A: { name: 'Low1' }, mine: ['heat'] }], { entry }).g.id, '4');
 }
 assert.equal((await import('../js/teamx.js')).roNum('1,396'), '1.396');
 assert.equal((await import('../js/teamx.js')).roNum('.900'), '0,900');
@@ -266,6 +320,24 @@ assert.equal((await import('../js/teamx.js')).roNum('27.7'), '27,7');
   assert.deepEqual(items.map(i => i.kind + i.game.id), ['p1']);
 }
 
+// The week's summary: Sunday evening, once, each team's week and next week.
+{
+  const nt = await import('../netlify/lib/notify.mjs');
+  const now = Date.parse('2026-11-15T18:30:00Z');   // Sunday, 20:30 in Romania
+  const g = (id, dayAgo, hs, as, state = 'post') => ({ id, l: 'NBA', date: new Date(now - dayAgo * 864e5).toISOString(), tbd: false, state, detail: 'Final',
+    home: { name: 'Miami Heat', key: 'heat', score: hs }, away: { name: 'Boston Celtics', key: null, id: '2', score: as } });
+  const games = [g('1', 6, 100, 90), g('2', 4, 95, 99), g('3', 2, 110, 101), g('4', 9, 1, 0), g('5', -2, null, null, 'pre')];
+  const sub = { teams: ['heat'], lead: 0, final: false, morning: false, sent: {} };
+  const w = nt.weeklyDue(sub, games, now, 'https://x');
+  assert.equal(w.kind, 'w');
+  assert.equal(w.message.title, '📅 Săptămâna: Heat: 2–1');
+  assert.ok(w.message.body.startsWith('Meci cu meci: ✓✗✓'));
+  assert.ok(w.message.body.includes('Săptămâna viitoare: 1 meci'));
+  assert.equal(nt.weeklyDue({ ...sub, weekDay: w.day }, games, now, 'https://x'), null);               // once
+  assert.equal(nt.weeklyDue({ ...sub, weekly: false }, games, now, 'https://x'), null);                // turned off
+  assert.equal(nt.weeklyDue(sub, games, now - 864e5, 'https://x'), null);                              // Saturday
+  assert.equal(nt.markSent(sub, [w], now).weekDay, w.day);
+}
 // The morning summary: once a day, from 8:00 Romanian time, the results of the last 24 hours.
 {
   const nt = await import('../netlify/lib/notify.mjs');

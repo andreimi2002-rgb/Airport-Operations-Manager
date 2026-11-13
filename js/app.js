@@ -8,7 +8,7 @@ import { registerSW, onInstallChange, install, downloadGame, APP_VERSION, checkU
 import { seasonHover } from './teamx.js';
 import { N, setNotifyRender, enableNotify, saveNotify, testNotify, disableNotify } from './notify.js';
 import { PLACES, loadPlaces, climateHover, AMERICA, loadAmerica } from './places.js';
-import { CACHE_KEY, DATA, GAMES, addDays, awake, build, gameById, getJSON, isLive, parts, played, state, store, weekStart, CLUB_RAW, addClubGames, refreshMineGames, noteLive } from './core.js';
+import { CACHE_KEY, DATA, GAMES, addDays, awake, build, gameById, getJSON, isLive, parts, played, state, store, weekStart, CLUB_RAW, addClubGames, refreshMineGames, noteLive, SPOIL, setNoSpoil, revealGame } from './core.js';
 import { PLAYOFFS, PO, minePick, WELCOME, renderWelcomeList, render, renderHero, renderMap, renderMine, renderPhone, renderPlayoffs, renderSources, renderStatic, renderStatus, renderStrip } from './home.js';
 import { OV, cal, closeOv, clubSide, clubView, gameView, go, loadGame, notifyOpen, openCalendar, openClub, openTeam, pickerClubs, refreshGame, route, saveCal, setTeamTab, share, openNotify } from './pages.js';
 import { LG, navView, renderLeagues, renderTodayStrip, setLgHash, setupJump, usKey } from './views.js';
@@ -38,6 +38,19 @@ function rerenderAll() {
 }
 applyTheme();
 onSystemTheme(() => { applyTheme(); rerenderAll(); });
+
+/* ----- "Fără spoilere": scores covered until tapped ----- */
+const paintSpoil = () => document.querySelectorAll('[data-nospoil]').forEach(b => { b.setAttribute('aria-pressed', SPOIL.on); b.title = SPOIL.on ? 'Fără spoilere: pornit. Scorurile sunt ascunse până apeși pe ele' : 'Fără spoilere: ascunde scorurile până apeși pe ele'; });
+setNoSpoil(SPOIL.on); paintSpoil();
+// Before any other click handler: a tap on a covered score shows that game, instead of opening it.
+window.addEventListener('click', e => {
+  if (e.target.closest?.('[data-nospoil]')) { setNoSpoil(!SPOIL.on); paintSpoil(); return; }
+  if (!SPOIL.on) return;
+  const c = e.target.closest?.('[data-spshow], .sp:not(.open), .spbody:not(.open)');
+  if (!c) return;
+  e.preventDefault(); e.stopPropagation();
+  revealGame(c.dataset.spshow || c.dataset.sp);
+}, true);
 
 /* ================= events ================= */
 let vtaps = 0, vtapAt = 0;
@@ -72,6 +85,13 @@ function handle(e) {
   if (q('#prof-x') || e.target === $('ov')) { closeOv(); return; }
   if ((el = q('#reload'))) { load(true); return; }
   if ((el = q('[data-share]'))) { share(el); return; }
+  // The game as a picture to share (loaded only when asked).
+  if ((el = q('[data-sharecard]'))) {
+    const g = gameById(el.dataset.sharecard); if (!g || el.disabled) return;
+    el.disabled = true;
+    import('./sharecard.js').then(m => m.shareGame(g)).then(r => { if (r !== 'cancel') trackEvent('share'); }, () => {}).finally(() => { el.disabled = false; });
+    return;
+  }
   if ((el = q('[data-install]'))) { install(); return; }
   if ((el = q('[data-team-ntf]'))) { const k = el.dataset.teamNtf; go('#notificari' + (k ? '/' + k : '')); return; }
   if ((el = q('[data-ntf]'))) { ({ on: enableNotify, save: saveNotify, test: testNotify, off: disableNotify })[el.dataset.ntf]?.(); return; }
@@ -199,12 +219,13 @@ document.addEventListener('click', handle);
 document.addEventListener('change', e => {
   const t = e.target;
   // Notifications page: choices change in place; "Salvează" sends them.
-  if (t.dataset?.ntfteam || t.id === 'ntflead' || t.id === 'ntffinal' || t.id === 'ntfmorning' || t.id === 'ntfnight') {
+  if (t.dataset?.ntfteam || t.id === 'ntflead' || t.id === 'ntffinal' || t.id === 'ntfmorning' || t.id === 'ntfnight' || t.id === 'ntfweekly') {
     if (t.dataset.ntfteam) { const k = t.dataset.ntfteam; N.teams = t.checked ? [...new Set([...N.teams, k])] : N.teams.filter(x => x !== k); }
     if (t.id === 'ntflead') N.lead = +t.value;
     if (t.id === 'ntffinal') N.final = t.checked;
     if (t.id === 'ntfmorning') N.morning = t.checked;
     if (t.id === 'ntfnight') N.night = t.checked;
+    if (t.id === 'ntfweekly') N.weekly = t.checked;
     N.msg = N.status === 'on' ? 'Apasă „Salvează alegerile” ca să se aplice.' : '';
     openNotify(true);
     const again = t.id ? $(t.id) : document.querySelector(`[data-ntfteam="${t.dataset.ntfteam}"]`);

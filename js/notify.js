@@ -1,11 +1,11 @@
 // Notifications page (#notificari): permission, push subscription, the viewer's choices.
 // The server side is netlify/functions/push.mjs; the sending, every 15 minutes, push-cron.mjs.
-import { TEAMS, parseClub } from './teams.js';
+import { TEAMS, parseClub, STORE } from './teams.js';
 import { esc } from './ui.js';
 import { isStandalone } from './phone.js';
-import { trackEvent } from './track.js';
+import { trackEvent, count } from './track.js';
 
-export const N = { status: 'unknown', teams: [], lead: 60, final: true, morning: true, night: false, msg: '', busy: false, key: null };
+export const N = { status: 'unknown', teams: [], lead: 60, final: true, morning: true, night: false, weekly: true, msg: '', busy: false, key: null };
 let onChange = () => {};
 export const setNotifyRender = fn => { onChange = fn; };
 const LEADS = [[15, 'cu 15 minute înainte'], [30, 'cu 30 de minute înainte'], [60, 'cu o oră înainte'], [120, 'cu 2 ore înainte'], [180, 'cu 3 ore înainte'], [0, 'fără anunț înainte']];
@@ -39,13 +39,34 @@ async function run(fn, ok) {
   try { await fn(); if (ok) N.msg = ok; } catch (e) { N.msg = String(e.message || e); }
   N.busy = false; onChange();
 }
-const prefs = () => ({ teams: N.teams, lead: N.lead, final: N.final, morning: N.morning, night: N.night });
+// The browser's push service (Windows: WNS, through Edge; Android: Google's) sometimes refuses the first try
+// ("Registration failed - push service error"): a stale subscription is dropped and it is asked once more;
+// if it still refuses, the viewer gets the steps in Romanian instead of the browser's English error.
+async function subscribe(r) {
+  const opts = { userVisibleOnly: true, applicationServerKey: keyBytes(N.key) };
+  const old = await r.pushManager.getSubscription();
+  if (old) return old;
+  try { return await r.pushManager.subscribe(opts); } catch (e) {
+    if (e?.name === 'NotAllowedError') throw e;
+    await new Promise(ok => setTimeout(ok, 1500));
+    try { return await r.pushManager.subscribe(opts); } catch (e2) {
+      count('err', 'push: ' + (e2?.message || e2?.name || 'subscribe').slice(0, 30));
+      // The Microsoft Store app: Windows may refuse its own registration while Edge itself works; the same
+      // notifications can then be turned on from the browser.
+      if (STORE) { N.viaBrowser = true; throw new Error('În aplicația din Microsoft Store, Windows nu a înregistrat notificările. Le poți porni din Edge: vin la fel, cu aceleași echipe.'); }
+      const win = /Windows/.test(navigator.userAgent);
+      throw new Error(win
+        ? 'Serviciul de notificări al Windows nu a răspuns. Verifică: Setări Windows → Sistem → Notificări pornite (și pentru American Sports Hub și Microsoft Edge), apoi încearcă din nou. Dacă folosești VPN sau un program care blochează conexiuni, oprește-l o clipă.'
+        : 'Serviciul de notificări al browserului nu a răspuns. Încearcă din nou peste un minut; dacă tot nu merge, repornește browserul.');
+    }
+  }
+}
+const prefs = () => ({ teams: N.teams, lead: N.lead, final: N.final, morning: N.morning, night: N.night, weekly: N.weekly });
 // Turning on must start from a tap: browsers only show the permission question after one.
 export const enableNotify = () => run(async () => {
   const p = await Notification.requestPermission();
   if (p !== 'granted') { N.status = p === 'denied' ? 'denied' : 'off'; throw new Error('Notificările nu au fost permise.'); }
-  const r = await reg();
-  const s = (await r.pushManager.getSubscription()) || await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(N.key) });
+  const s = await subscribe(await reg());
   await post({ action: 'save', subscription: s.toJSON(), prefs: prefs() });
   N.status = 'on';
   trackEvent('notify-on');
@@ -98,11 +119,13 @@ export function notifyHtml(emb, clubs = [], addHtml = '') {
       <label class="check" style="margin-top:8px"><input type="checkbox" id="ntffinal" ${N.final ? 'checked' : ''}> Și rezultatul final, când se termină meciul</label>
       <label class="check" style="margin-top:8px"><input type="checkbox" id="ntfmorning" ${N.morning ? 'checked' : ''}> Rezumatul de dimineață, la 8:00: rezultatele de azi-noapte și meciul următor</label>
       <label class="check" style="margin:6px 0 0 26px"><input type="checkbox" id="ntfnight" ${N.night ? 'checked' : ''} ${N.morning ? '' : 'disabled'}> Și toată noaptea: câte meciuri au fost în toate ligile și cele mai strânse; atingi și vezi toate scorurile</label>
+      <label class="check" style="margin-top:8px"><input type="checkbox" id="ntfweekly" ${N.weekly ? 'checked' : ''}> Rezumatul săptămânii, duminică seara: cum au jucat echipele tale și ce urmează</label>
     </section>
     <div class="btns">${on
       ? `<button class="primary" type="button" data-ntf="save" ${N.busy ? 'disabled' : ''}>Salvează alegerile</button><button class="ghost" type="button" data-ntf="test" ${N.busy ? 'disabled' : ''}>Trimite o notificare de test</button><button class="ghost" type="button" data-ntf="off" ${N.busy ? 'disabled' : ''}>Oprește notificările</button>`
       : `<button class="primary" type="button" data-ntf="on" ${N.busy || !N.teams.length ? 'disabled' : ''}>Pornește notificările</button>`}</div>` : ''}
     ${N.msg ? `<p class="nmsg" role="status">${esc(N.msg)}</p>` : ''}
+    ${N.viaBrowser ? '<p><a class="primary" href="https://americansportshub.netlify.app/?sursa=msstore-notificari#notificari" target="_blank" rel="noopener">Pornește-le din browser</a></p>' : ''}
     <section><h3>De știut</h3><ul class="notes">
       <li>Anunțurile pleacă de pe server la fiecare 15 minute, deci pot veni cu câteva minute mai devreme sau mai târziu.</li>
       <li>Setările sunt pe fiecare dispozitiv în parte: pe telefon și pe calculator le pornești separat.</li>

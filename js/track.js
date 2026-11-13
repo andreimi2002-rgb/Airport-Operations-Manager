@@ -5,6 +5,7 @@
 // Not counted: "Do Not Track", and a device the owner switched off (?eu=1, or 5 taps on the version).
 // What is gathered goes out in one request every few seconds, and when the page is left.
 import { isStandalone } from './phone.js';
+import { STORE } from './teams.js';
 
 const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const set = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) { /* blocked */ } };
@@ -23,6 +24,8 @@ const clean = s => String(s || '').replace(/[^\p{L}\p{N} .,'&()+:/-]/gu, ' ').re
 const LANDING = (() => {
   const s = (Q.get('sursa') || Q.get('utm_source') || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30);
   if (s) return s;
+  // The Microsoft Store app starts at /?app=store (the packager dropped ?sursa from its start address).
+  if (STORE) return 'msstore';
   if (/Instagram/i.test(UA)) return 'instagram';
   // TikTok's in-app browser (it sends no referrer): "musical_ly", "BytedanceWebview", "TikTok", "trill".
   if (/musical_ly|Bytedance|TikTok|\btrill_/i.test(UA)) return 'tiktok';
@@ -108,6 +111,8 @@ const CLICKS = [
   ['[data-mine-add]', () => 'adaugă echipă'],
   ['[data-mine-toggle]', () => 'modifică echipele mele'],
   ['[data-install]', () => 'instalează'],
+  ['[data-msstore]', () => 'Microsoft Store'],
+  ['[data-nospoil]', () => 'fără spoilere'],
   ['[data-update]', () => 'caută actualizare'],
   ['[data-team-cal]', () => 'deschide calendar'],
   ['[data-team-ntf]', () => 'deschide notificări'],
@@ -115,10 +120,11 @@ const CLICKS = [
   ['[data-ttab]', el => 'echipă ' + el.dataset.ttab],
   ['[data-city]', () => 'oraș'], ['[data-venue]', () => 'stadion'],
   ['[data-share]', () => 'distribuie'],
+  ['[data-sharecard]', () => 'imagine de distribuit'],
   ['#prof-x', () => 'închide fereastra']
 ];
-const SECTIONS = ['hero', 'echipe', 'todaylg', 'orase', 'deurmarit', 'program', 'upwrap', 'reswrap', 'harta', 'clasamente', 'playoffs', 'telefon'];
-const SECTION_RO = { hero: 'urmează', echipe: 'echipele mele', todaylg: 'azi în ligi', orase: 'orașe', deurmarit: 'de urmărit', program: 'program',
+const SECTIONS = ['hero', 'echipe', 'motd', 'todaylg', 'orase', 'deurmarit', 'program', 'upwrap', 'reswrap', 'harta', 'clasamente', 'playoffs', 'telefon'];
+const SECTION_RO = { hero: 'urmează', echipe: 'echipele mele', motd: 'meciul zilei', todaylg: 'azi în ligi', orase: 'orașe', deurmarit: 'de urmărit', program: 'program',
   upwrap: 'următoarele meciuri', reswrap: 'rezultate', harta: 'hartă', clasamente: 'clasamente', playoffs: 'playoff', telefon: 'pe telefon' };
 const DUR = s => s < 10 ? 'sub 10 s' : s < 60 ? '10-60 s' : s < 300 ? '1-5 min' : s < 900 ? '5-15 min' : 'peste 15 min';
 
@@ -164,5 +170,5 @@ export function setupActivity() {
 // no install event); on Android, the browser's own event.
 export function trackInstall() {
   window.addEventListener('appinstalled', () => { set('flgames-app', '1'); trackEvent('install'); });
-  if (isStandalone() && !get('flgames-app')) { set('flgames-app', '1'); trackEvent('install'); }
+  if ((isStandalone() || STORE) && !get('flgames-app')) { set('flgames-app', '1'); trackEvent(STORE ? 'install-store' : 'install'); }
 }

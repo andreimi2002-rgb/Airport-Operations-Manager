@@ -7,7 +7,7 @@ import { calendar } from './ics.js';
 /* ================= offline ================= */
 // The version of this page. It must equal VERSION in sw.js (tools/test.mjs checks): the page compares
 // it with the published sw.js to know that a newer version is out.
-export const APP_VERSION = 'v25';
+export const APP_VERSION = 'v26';
 
 // The published version, read from sw.js past every cache.
 async function latestVersion() {
@@ -92,9 +92,16 @@ export async function install() {
   return r?.outcome === 'accepted';
 }
 const SHARE = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px"><path d="M12 3v12M7.5 7.5L12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+// The app in the Microsoft Store (published 13 November 2026): offered in a browser on Windows.
+export const MS_STORE_URL = 'https://apps.microsoft.com/detail/9MVZCGB9LB9V?mode=direct';
+export const isWindows = () => /Windows NT/.test(navigator.userAgent) && !/Windows Phone/.test(navigator.userAgent);
+export const offerStore = () => !STORE && !isStandalone() && isWindows();
+const STORE_BADGE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#f25022" d="M3 3h8.5v8.5H3z"/><path fill="#7fba00" d="M12.5 3H21v8.5h-8.5z"/><path fill="#00a4ef" d="M3 12.5h8.5V21H3z"/><path fill="#ffb900" d="M12.5 12.5H21V21h-8.5z"/></svg>';
+export const storeBtnHtml = (cls = 'primary') => `<a class="${cls} msstore" href="${MS_STORE_URL}" target="_blank" rel="noopener" data-msstore>${STORE_BADGE}Descarcă din Microsoft Store</a>`;
 export function installHtml() {
   if (STORE) return '<p class="ok">Folosești aplicația din Microsoft Store. Se actualizează singură și merge și fără internet, cu datele salvate la ultima deschidere.</p>';
   if (isStandalone()) return '<p class="ok">Folosești aplicația instalată. Merge și fără internet, cu datele salvate la ultima deschidere.</p>';
+  if (isWindows()) return `<p>Pe Windows, American Sports Hub e și în <b>Microsoft Store</b>: gratuită, se deschide ca o aplicație, cu notificări, și se actualizează singură.</p>${storeBtnHtml()}${deferred ? '<button class="link" type="button" data-install>sau instalează din browser</button>' : ''}`;
   if (deferred) return '<p>Pune American Sports Hub pe ecranul principal: se deschide ca o aplicație, fără bara browserului, și merge și fără internet.</p><button class="primary" type="button" data-install>Instalează aplicația</button>';
   if (isIOS()) return `<p>Pe iPhone, din Safari: apasă <b>Partajează</b> ${SHARE}, apoi <b>Adaugă pe ecranul principal</b>. Aplicația se deschide fără bara browserului și merge și fără internet.</p>`;
   return '<p>Din meniul browserului alege <b>Instalează aplicația</b> sau <b>Adaugă pe ecranul principal</b> (Chrome, Edge, Samsung Internet). Pe iPhone: Safari → Partajează → Adaugă pe ecranul principal.</p>';

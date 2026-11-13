@@ -127,28 +127,59 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     de start, echipele și meciurile deschise, clicurile, alegerile din căutare, serviciile de streaming din
     ghid, erorile. Pagina trimite pachete (`{ b: [...] }`) la 4 secunde și la ieșire. Pagina
     „Confidențialitate” (`#confidentialitate`) spune ce se numără. Statisticile au un tabel pe categorie.
-15. **Varianta publică** (în lucru, branch `stage-15-public`). Două pachete de echipe implicite în
+15. **Varianta publică** (în producție, PR #16; continuată în PR #19–#20: „Echipele mele” pe pachet, orice echipă pe Acasă). Două pachete de echipe implicite în
     `js/teams.js` (`PACKS`): Florida (11 echipe) pe dispozitivele proprietarului, marcate cu `?eu=1`, și
     New York (Knicks, Rangers, Giants, NYCFC, Yankees) pentru toți ceilalți. `TEAMS` e pachetul activ,
     `ALL_TEAMS` toate cheile (serverul le recunoaște pe toate). Pagina de start urmează pachetul: program
     (`/api/schedule?pack=ny`, cache separat), clasamentele diviziilor, „zi plină” (`busy`), derby-uri,
     orașele și stadioanele (Florida din places.json, New York din america.json); harta doar pentru Florida.
     Calendarul și notificările primesc chei din orice pachet.
-20. **Primii pași** (branch `stage-20-primii-pasi`), pentru vizitatorii aduși de promovare. La prima vizită
+20. **Primii pași** (în producție, PR #21, v24), pentru vizitatorii aduși de promovare. Tot aici: fila
+    „Clasament” pe pagina de meci, a doua echipă la „Jucători” (marcajul zonei e `data-shown`, nu `data-tab`),
+    rezumatul video cerut din nou la 5 minute până îl publică ESPN. La prima vizită
     (pachetul public, nimic ales, nu proprietarul) „Echipele mele” urcă în capul paginii ca „Bun venit! Ce echipe
     urmărești?” (`WELCOME` în `js/home.js`, `welcomeDue`/`setMine` în `js/mine.js`; „Mai târziu” păstrează pachetul,
     `flgames-welcome`). Pagina unui oraș mare cuprinde toată zona (`AREAS` în `js/places.js`: New York 11 echipe,
     Los Angeles 10…). TikTok recunoscut ca sursă (browserul din aplicație). Rezumatul de dimineață poate spune
     toată noaptea (`night`: câte meciuri, cele mai strânse 3, linkul la scorurile zilei; `nightGames` în `push-cron`).
-21. **Microsoft Store** (branch `stage-21-magazin`, pregătit, netrimis). Aplicația din magazin e site-ul pornit la
+21. **Microsoft Store** (în producție, PR #22, v25; aplicația trimisă la verificare pe 13 noiembrie 2026, Store ID
+    `9MVZCGB9LB9V`, identitate `SportsHub.AmericanSportsHub`, publicare manuală după aprobare). Pachetul se face cu
+    PWABuilder de la adresa `/?app=store&sursa=msstore` (PWABuilder n-are câmp de adresă de start); se încarcă doar
+    `.msixbundle`. Aplicația din magazin e site-ul pornit la
     `/?app=store` (ținut minte, `flgames-store`; `?app=web` îl oprește): `STORE` și `okImg` în `js/teams.js`.
     În modul magazin: emblemele noastre în locul siglelor (culorile din `js/colors.js`, generat de
     `tools/build-colors.mjs`), fără poze ESPN (stadioane, jucători, știri), fără clipuri ESPN (rezumatul pe
     YouTube la orice ligă, `recapUrl`), cronica doar ca link. Pentru toate: pagina „Termeni” (`#termeni`),
     confidențialitatea completată (contact, cine primește date, păstrare, drepturi), nota „neafiliată” în subsol,
     manifestul cu `id`, categorii și capturi (`icons/screens/`). Ghidul de trimitere, textele și capturile sunt în
-    `Downloads\american-sports-hub-magazin\` (în afara repo-ului). Politicile Microsoft Store 7.20: editorul pe
-    numele proprietarului (cont individual), notificările fără promoții, orice sursă nouă de imagini trece prin `okImg`.
+    `Downloads\AMERICAN SPORTS HUB\american-sports-hub-magazin\` (în afara repo-ului). Politicile Microsoft Store 7.20:
+    editorul a rămas „Sports Hub” (decizia proprietarului, riscul 10.14 asumat), notificările fără promoții, orice
+    sursă nouă de imagini trece prin `okImg`.
+22. **Motive să revii** (branch `stage-22-motive`, v26; aplicația din Microsoft Store e publicată din 13 noiembrie 2026):
+    - **Microsoft Store:** butonul „Descarcă din Microsoft Store” (doar în browser, pe Windows: în bara de sus și la „Pe
+      telefon”, `offerStore` în `js/phone.js`); aplicația din magazin se numără separat (sursa `msstore`, evenimentul
+      `install-store`).
+    - **Fără spoilere** (ochiul din bara de sus, `flgames-nospoil`): scorurile și rezultatele (V/Î, forma, seria) se
+      acoperă până le atingi; atingerea arată meciul peste tot (`sp()`, `SPOIL`, `revealGame` în `js/core.js`; clasa
+      `nospoil` pe `<html>`). Pagina de meci ascunde filele sub „rezultatul e ascuns”.
+    - **Meciul zilei pentru România** (`js/motd.js`, pur, testat): din meciurile zilei (SUA) din toate ligile, după
+      forța echipelor, cât de apropiate sunt, echipele tale, playoff, rivalitate, TV național și ora României; cu motivele.
+    - **Europa și evenimente** (`/api/world`, `netlify/lib/world.mjs`): meciurile din afara SUA și Canadei și zilele
+      mari (Thanksgiving, Crăciun, Super Bowl, Winter Classic, All-Star…), găsite singure în programul ESPN pe 4 luni;
+      fila „Europa și evenimente” din Ligile și cardurile din „De urmărit”.
+    - **Liniile de playoff** în clasamentele de conferință (`CUTS` în `js/leagues.js`) și coloana „Dif.”.
+    - **Imagine de distribuit** (`js/sharecard.js`): pagina de meci face o imagine 4:5 cu emblemele noastre.
+    - **Rezumatul săptămânii:** duminică 19–23, ora României (`weeklyDue`, `weekDay`, bifa `weekly`).
+    Rămase pentru o etapă viitoare: Pagina de jucător.
+
+## Promovare (în afara repo-ului)
+
+Totul stă pe laptop, în `C:\Users\stroe\Downloads\AMERICAN SPORTS HUB\`: `instagram-american-sports-hub\`
+(generatoarele „Azi-noapte” / „Diseară” = `generator\azi-noapte.mjs [diseara]`, „The City” = `generator\the-city.mjs`
+cu datele în `orase.mjs`), `tiktok-american-sports-hub\` (`generator\tiktok.mjs` copiază orice postare de Instagram
+pentru TikTok: aceleași imagini 4:5, care în modul foto umplu lățimea; adresa site-ului scrisă în text), `american-sports-hub-magazin\` (Microsoft Store), `American-Sports-Hub-functii.pdf`
+(catalogul de funcții) și `American Sports Hub linkuri si stare.pdf`. Linkurile spre site poartă sursa
+(`?sursa=instagram`, `?sursa=tiktok`), ca să apară separat în statistici. TikTok: `@american_sports_h`.
 
 ## Structura
 
@@ -177,7 +208,9 @@ js/bracket.js               tabloul de playoff: serii din meciurile de playoff; 
 js/mine.js                  „Echipele mele”: lista din browser (implicit Florida), `NBA-2` pentru restul
 js/clubinfo.js              faptele din data/clubs.json pe pagina echipei: Despre, palmares, nume vechi, legende
 js/guide.js                 fila „Ghid” din Ligile: unde vezi fiecare ligă din România (verificat de mână), explicații
-js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete, toate echipele, orașele și stadioanele; banda „Azi în ligi”
+js/leagues.js               pagina „Ligile” (#ligi): scoruri pe zi, clasamente complete (cu liniile de playoff), toate echipele, Europa și evenimente, orașele și stadioanele; banda „Azi în ligi”
+js/motd.js                  „Meciul zilei pentru România”: alegerea și motivele; fără DOM
+js/sharecard.js             imaginea de distribuit a unui meci (canvas, emblemele noastre)
 sw.js                       service worker: fișierele site-ului rețea-întâi, logo/poze din cache, offline
 manifest.webmanifest        manifestul aplicației (nume, iconițe, culori); icons/ are iconițele
 netlify/lib/espn.mjs        citirea și normalizarea datelor ESPN
@@ -191,6 +224,8 @@ netlify/functions/team.mjs       GET /api/team?l=NBA&id=14  lot, liderii sezonul
 netlify/functions/playoffs.mjs   GET /api/playoffs?l=MLS  meciurile de playoff ale ligii, pentru tablou (cache 1 h)
 netlify/functions/scores.mjs     GET /api/scores?d=20261111  toate meciurile unei zile (SUA), din toate ligile
 netlify/functions/teamgames.mjs  GET /api/teamgames?l=NBA&id=2  sezonul oricărei echipe (pagina simplă de echipă)
+netlify/functions/world.mjs      GET /api/world  meciurile din afara SUA și Canadei și zilele mari, pe 4 luni (cache 12 h)
+netlify/lib/world.mjs       alegerea lor din programul ESPN (pură, testată)
 netlify/functions/health.mjs     GET /api/health  ESPN și Open-Meteo răspund, în formatul așteptat? (cache 5 min)
 netlify/functions/hit.mjs        POST /api/hit  o vizită sau o acțiune, numărată pe zi (fără date personale)
 netlify/functions/feedback.mjs   POST /api/feedback  un mesaj din „Spune-ne ce crezi”
@@ -248,7 +283,7 @@ doar rezumatul și `recap: true` (cache o zi; fără rezumat, 15 minute, până 
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,
 `#echipa/heat[/sezon|lot|stiri]`, `#club/NBA/2[/sezon|lot|stiri]` (echipă din afara Floridei), `#calendar/heat,NBA-2`, `#notificari/NBA-2`,
-`#ligi[/scoruri|clasamente|echipe|orase|ghid][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
+`#ligi[/scoruri|clasamente|echipe|evenimente|orase|ghid][/2026-11-11]` (pagina „Ligile”, nu fereastră), `#oras/miami`, `#stadion/hard-rock-stadium`, `#calendar[/heat,panthers]`, `#notificari[/heat]`;
 filtrele în
 `?ligi=NBA,NHL&echipa=heat&florida=1&ore=1&zi=2026-11-15`. Butonul Înapoi închide fereastra.
 
