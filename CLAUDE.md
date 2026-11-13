@@ -162,8 +162,8 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
 
 Totul stă pe laptop, în `C:\Users\stroe\Downloads\AMERICAN SPORTS HUB\`: `instagram-american-sports-hub\`
 (generatoarele „Azi-noapte” / „Diseară” = `generator\azi-noapte.mjs [diseara]`, „The City” = `generator\the-city.mjs`
-cu datele în `orase.mjs`), `tiktok-american-sports-hub\` (`generator\tiktok.mjs` face din orice postare de Instagram
-imagini 9:16 pentru TikTok), `american-sports-hub-magazin\` (Microsoft Store), `American-Sports-Hub-functii.pdf`
+cu datele în `orase.mjs`), `tiktok-american-sports-hub\` (`generator\tiktok.mjs` copiază orice postare de Instagram
+pentru TikTok: aceleași imagini 4:5, care în modul foto umplu lățimea; adresa site-ului scrisă în text), `american-sports-hub-magazin\` (Microsoft Store), `American-Sports-Hub-functii.pdf`
 (catalogul de funcții) și `American Sports Hub linkuri si stare.pdf`. Linkurile spre site poartă sursa
 (`?sursa=instagram`, `?sursa=tiktok`), ca să apară separat în statistici. TikTok: `@american_sports_h`.
 
