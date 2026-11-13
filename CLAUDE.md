@@ -155,7 +155,8 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     `Downloads\AMERICAN SPORTS HUB\american-sports-hub-magazin\` (în afara repo-ului). Politicile Microsoft Store 7.20:
     editorul a rămas „Sports Hub” (decizia proprietarului, riscul 10.14 asumat), notificările fără promoții, orice
     sursă nouă de imagini trece prin `okImg`.
-22. **Motive să revii** (branch `stage-22-motive`, v26; aplicația din Microsoft Store e publicată din 13 noiembrie 2026):
+22. **Motive să revii** (în producție, PR #23, v26, 13 noiembrie 2026; aplicația din Microsoft Store e publicată din aceeași zi;
+    notificările din ea pot cere „rulează în fundal” pornit în Setări Windows, altfel butonul „Pornește-le din browser”):
     - **Microsoft Store:** butonul „Descarcă din Microsoft Store” (doar în browser, pe Windows: în bara de sus și la „Pe
       telefon”, `offerStore` în `js/phone.js`); aplicația din magazin se numără separat (sursa `msstore`, evenimentul
       `install-store`).
