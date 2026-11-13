@@ -119,6 +119,7 @@ function handle(e) {
   if ((el = q('[data-feedback]'))) { e.preventDefault(); go('#parere'); return; }
   if ((el = q('[data-privacy]'))) { e.preventDefault(); go('#confidentialitate'); return; }
   if ((el = q('[data-terms]'))) { e.preventDefault(); go('#termeni'); return; }
+  if ((el = q('[data-donate-open]'))) { e.preventDefault(); go('#sustine'); return; }
   if ((el = q('[data-fb-send]'))) {
     const text = $('fbtext').value.trim(), contact = $('fbcontact').value.trim(), msg = $('fbmsg');
     if (text.length < 3) { msg.textContent = 'Scrie câteva cuvinte.'; return; }

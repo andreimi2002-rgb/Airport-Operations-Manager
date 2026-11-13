@@ -1,5 +1,5 @@
 // The overlay pages and the address router: team, club, city, stadium, calendar, notifications, game.
-import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, parseClub, HOME } from './teams.js';
+import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, parseClub, HOME, STORE } from './teams.js';
 import { MINE, mineIds, isMine, mineClubs, clubId, refreshMine } from './mine.js';
 import { esc, $, emb, pickInk } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
@@ -109,6 +109,27 @@ export function openTerms(keep) {
 }
 // The address for privacy and terms questions (Microsoft Store and the privacy law ask for one).
 export const CONTACT = 'andreimi1308@gmail.com';
+// "Susține proiectul": a voluntary donation through Revolut.me or Ko-fi (the owner's links; empty = hidden).
+// Not in the Microsoft Store app (its payment rules are checked first).
+export const DONATE = { revolut: '', kofi: '' };
+export const canDonate = () => !STORE && !!(DONATE.revolut || DONATE.kofi);
+export function openDonate(keep) {
+  OV.game = null; OV.place = null;
+  show(`<div class="band plain"><div><div class="lgn" style="color:var(--accent)">Gratuit, fără reclame</div><h2 id="prof-name" style="font-size:24px">Susține proiectul</h2></div>
+      <button class="x" type="button" id="prof-x" aria-label="Închide">×</button></div>
+    <div class="pbody">
+      <p class="lead">American Sports Hub e făcut de o singură persoană, din pasiune, și rămâne gratuit. Dacă îți e de folos, o cafea ajută la ce urmează: pagina de jucător, varianta în engleză, o adresă proprie.</p>
+      <div class="donbtns">
+        ${DONATE.revolut ? `<a class="primary" href="${esc(DONATE.revolut)}" target="_blank" rel="noopener" data-donate="revolut">Revolut</a>` : ''}
+        ${DONATE.kofi ? `<a class="ghost" href="${esc(DONATE.kofi)}" target="_blank" rel="noopener" data-donate="kofi">Ko-fi · card sau PayPal</a>` : ''}
+      </div>
+      <ul class="notes">
+        <li>Orice sumă, o singură dată; nu e un abonament și nu primești nimic în schimb, doar mulțumirile noastre.</li>
+        <li>Plata se face pe Revolut sau pe Ko-fi, după regulile lor; noi nu vedem datele cardului tău.</li>
+        <li>Site-ul rămâne la fel pentru toată lumea, cu sau fără donație.</li>
+      </ul>
+    </div>`, keep);
+}
 // "Spune-ne ce crezi": a short message to the owner (beta).
 export function openFeedback(keep) {
   OV.game = null; OV.place = null;
@@ -136,6 +157,7 @@ export function route(keep) {
   if (h[0] === 'parere') { openFeedback(keep); return; }
   if (h[0] === 'confidentialitate') { openPrivacy(keep); return; }
   if (h[0] === 'termeni') { openTerms(keep); return; }
+  if (h[0] === 'sustine' && canDonate()) { openDonate(keep); return; }
   if (h[0] === 'meci' && gameById(h[2])) { const t = h[3] || 'rezumat'; if (OV.game !== h[2]) gameView.side = ''; gameView.tab = t; openGame(h[2], keep); return; }
   if (h[0] === 'echipa' && TEAMS[h[1]]) { teamView.tab = ['sezon', 'lot', 'stiri'].includes(h[2]) ? h[2] : 'rezumat'; openTeam(h[1], keep); return; }
   if (h[0] === 'notificari') {

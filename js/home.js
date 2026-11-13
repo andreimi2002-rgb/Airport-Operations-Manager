@@ -8,7 +8,7 @@ import { installHtml, canInstall, isWindows, isStandalone, offerStore } from './
 import { buildSeries, bracketLayout, roundRo, confRo } from './bracket.js';
 import { PLACES, venueByName, cityOf, getWeather, stripHtml, STRIP, cityCard, roofWord, AMERICA, loadAmerica } from './places.js';
 import { teamBtn, teamEmbBtn, AW, DATA, DOW, GAMES, MONTHS, OUT, TZNAME, addDays, ago, awake, busyMap, col, countdown, dayLabel, divisionRows, dowOf, entryOf, filtered, flKey, flSide, fmtHM, fmtShort, fmtTime, getJSON, horizonEnd, isLive, keyOf, lastGames, outcome, parts, played, ptsOf, recordOf, shortDate, state, tShort, teamStats, todayKey, writeFilters, myShort, outcomeFor, keepExtra, gameById, sp } from './core.js';
-import { cal, clubSide, entryById, go } from './pages.js';
+import { cal, clubSide, entryById, go, canDonate } from './pages.js';
 import { HEALTH, healthNote, sourcesHtml } from './health.js';
 import { WORLD, loadWorld, worldCardsHtml } from './views.js';
 
@@ -414,8 +414,10 @@ export function renderPhone() {
   // The header "Instalează" button appears only when the browser can install the app right away.
   // On Windows the Microsoft Store app is offered instead.
   $('hstore').hidden = !offerStore();
+  $('donlink').hidden = !canDonate();
   $('hinstall').hidden = !canInstall() || offerStore();
   $('phone').innerHTML = `<div class="phcard"><h3>${isWindows() && !isStandalone() ? 'Aplicația pe calculator' : 'Aplicația pe telefon'}</h3>${installHtml()}</div>
     <div class="phcard"><h3>Meciurile în calendarul tău</h3><p>Abonează-te o dată și meciurile echipelor alese apar singure în Google Calendar, pe iPhone sau în Outlook, cu ora ta și cu amintire.</p><button class="primary" type="button" data-team-cal="">Abonare la calendar</button></div>
+    ${canDonate() ? '<div class="phcard"><h3>Susține proiectul</h3><p>Gratuit, fără reclame, făcut de o singură persoană. Dacă îți e de folos, o cafea ajută.</p><button class="ghost" type="button" data-donate-open>Susține ❤</button></div>' : ''}
     <div class="phcard"><h3>Notificări</h3><p>Un anunț înainte de meciurile echipelor tale și rezultatul final, chiar cu aplicația închisă.</p><button class="primary" type="button" data-team-ntf="">Setează notificările</button></div>`;
 }

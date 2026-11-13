@@ -68,7 +68,7 @@ const countOnce = (c, v) => { const k = c + '|' + v; if (!once.has(k)) { once.ad
 
 /* ----- pages ----- */
 // "#meci/NBA/1" -> 'meci'; "#ligi/ghid" -> 'ghid'; no hash -> 'acasa'.
-const PAGES = ['meci', 'echipa', 'club', 'oras', 'stadion', 'calendar', 'notificari', 'parere', 'confidentialitate', 'termeni'];
+const PAGES = ['meci', 'echipa', 'club', 'oras', 'stadion', 'calendar', 'notificari', 'parere', 'confidentialitate', 'termeni', 'sustine'];
 export function kindOf(hash) {
   const [a, b] = String(hash || '').replace(/^#/, '').split('/');
   if (!a) return 'acasa';
@@ -114,6 +114,8 @@ const CLICKS = [
   ['[data-install]', () => 'instalează'],
   ['[data-msstore]', () => 'Microsoft Store'],
   ['[data-nospoil]', () => 'fără spoilere'],
+  ['[data-donate]', el => 'donează ' + el.dataset.donate],
+  ['[data-donate-open]', () => 'susține proiectul'],
   ['[data-update]', () => 'caută actualizare'],
   ['[data-team-cal]', () => 'deschide calendar'],
   ['[data-team-ntf]', () => 'deschide notificări'],
