@@ -12,6 +12,7 @@ const set = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStor
 const day = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(new Date());
 const Q = new URLSearchParams(location.search);
 if (Q.get('eu') === '1') set('flgames-notrack', '1');
+if (Q.get('eu') === '0') set('flgames-notrack', null);   // the only way to take the owner's mark away
 export const notCounted = () => get('flgames-notrack') === '1';
 export function setNotCounted(on) { set('flgames-notrack', on ? '1' : null); }
 const off = () => notCounted() || navigator.doNotTrack === '1' || location.protocol === 'file:';
