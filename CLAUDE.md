@@ -282,7 +282,8 @@ Rulare locală cu funcții: `npx netlify dev`. Doar pagina (cu datele de rezerv�
 `/api/game` (o pagină de meci) are în plus, fiecare secțiune goală dacă ESPN nu o trimite:
 `box` (jucători, pe grupe cu `keys` ESPN), `teamStats` (`{k, label, h, a}`), `plays` (goluri,
 puncte, cartonașe), `wp` (`[procent gazde, perioadă]`), `injuries`, `series`, `last5`, `videos`
-(doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`. Partea (`side`) e `home`/`away`. La un meci terminat cu rezumat, `videos` are
+(doar de pe serverele ESPN), `goalies`, `predictor`, `leaders`, `event` (meciul în formatul programului: un link spre orice meci, chiar din altă zi
+sau din alt pachet, își deschide pagina). Partea (`side`) e `home`/`away`. La un meci terminat cu rezumat, `videos` are
 doar rezumatul și `recap: true` (cache o zi; fără rezumat, 15 minute, până îl publică ESPN).
 
 Adrese: `#meci/NBA/401909963[/jucatori|statistici|faze|absenti]`, `#echipa/heat`,

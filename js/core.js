@@ -62,7 +62,9 @@ export function confShort(n, l) {
 export const FL_BY_NAME = Object.fromEntries(Object.entries(TEAMS).map(([k, t]) => [t.l + '|' + norm(t.espn), k]));
 export const flKey = (l, name) => FL_BY_NAME[l + '|' + norm(name)] || null;
 export function teamSide(t, l) {
-  return { id: t.id ? String(t.id) : '', name: t.name, abbr: t.abbr || '', logo: t.logo, logoDark: t.logoDark, color: t.color, alt: t.alt, key: t.key || flKey(l, t.name) };
+  // A key only for a team of the active pack: the data of another pack (the Florida snapshot used as a fallback
+  // by the New York pack) must not bring keys the page does not know.
+  return { id: t.id ? String(t.id) : '', name: t.name, abbr: t.abbr || '', logo: t.logo, logoDark: t.logoDark, color: t.color, alt: t.alt, key: (t.key && TEAMS[t.key] ? t.key : null) || flKey(l, t.name) };
 }
 // One game from any ESPN list (schedule, day scores, a team's season) -> the page's game object.
 export function toGame(x) {
