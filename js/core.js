@@ -1,6 +1,6 @@
 // Shared data and state: the games and standings, the viewer's filters, dates and times, storage.
 import { isMine, mineIds } from './mine.js';
-import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, HOME, PACK, parseClub } from './teams.js';
+import { LEAGUES, TEAMS, ALL_TEAMS, DIVISIONS, DIVISION_OF, norm, HOME, PACK, parseClub } from './teams.js';
 import { $, esc, emb, theme } from './ui.js';
 
 /* ================= data loading ================= */
@@ -192,7 +192,7 @@ export function streakRo(s) {
   return n === 1 ? '1 egal' : `${n} egaluri la rând`;
 }
 export function teamStats(k) {
-  const T = TEAMS[k], info = TEAMINFO[k] || {}, e = entryOf(T.l, T.espn);
+  const T = TEAMS[k] || ALL_TEAMS[k], info = TEAMINFO[k] || {}, e = entryOf(T.l, T.espn);
   const st = { rec: recordOf(e, T.l) || (info.record ? info.record.replace(/-/g, '–') : '–'), recL: REC_LABEL[T.l] };
   if (e) {
     st.conf = e.seed ?? e.order; st.confN = e.conf;
@@ -241,7 +241,7 @@ export function ago(ts) {
   return m < 1 ? 'acum' : m < 60 ? `acum ${m} min` : `acum ${Math.round(m / 60)} h`;
 }
 
-export const flSide = k => { const i = TEAMINFO[k] || {}; return { name: TEAMS[k].espn, abbr: i.abbr || TEAMS[k].ab, logo: i.logo, logoDark: i.logoDark, color: i.color, alt: i.alt, key: k }; };
+export const flSide = k => { const i = TEAMINFO[k] || {}, T = TEAMS[k] || ALL_TEAMS[k]; return { name: T.espn, abbr: i.abbr || T.ab, logo: i.logo, logoDark: i.logoDark, color: i.color, alt: i.alt, key: k }; };
 
 /* ================= state ================= */
 export const state = { tz: 'ro', leagues: new Set(['NBA', 'NHL', 'NFL', 'MLS', 'MLB']), team: '', home: false, awake: false, day: null, view: 'month', week: null, month: null, metro: 'mia', horizon: 30, agendaDays: 7 };

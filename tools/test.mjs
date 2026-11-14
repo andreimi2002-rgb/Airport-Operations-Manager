@@ -257,6 +257,16 @@ assert.equal(normalizeStandings({ children: [{ name: 'Eastern Conference', stand
   assert.equal((html.match(/class="cut2"/g) || []).length, 1);
   assert.ok(!lg.groupTableHtml({ name: 'Southeast', entries: conf.entries.slice(0, 5) }, 'NBA', ctx).includes('cut'));   // a division: no lines
 }
+// The Florida cities and stadiums are shown in every pack (search, city pages): they must name teams through
+// ALL_TEAMS, not the active pack, or the public (New York) pack breaks (bug of 14 November 2026).
+{
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../js/places.js', import.meta.url), 'utf8');
+  assert.ok(/import \{ ALL_TEAMS as TEAMS/.test(src), 'places.js must read team keys from ALL_TEAMS');
+  const { ALL_TEAMS } = await import('../js/teams.js');
+  const P = JSON.parse(readFileSync(new URL('../data/places.json', import.meta.url), 'utf8'));
+  for (const v of Object.values(P.venues)) for (const k of v.teams) assert.ok(ALL_TEAMS[k], `places.json: unknown team ${k}`);
+}
 // "Europa și evenimente": games abroad, Thanksgiving / Christmas by date, named special games.
 {
   const w = await import('../netlify/lib/world.mjs');

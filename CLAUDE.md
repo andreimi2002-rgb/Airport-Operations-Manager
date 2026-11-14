@@ -175,7 +175,10 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
 
 ## Promovare (în afara repo-ului)
 
-Totul stă pe laptop, în `C:\Users\stroe\Downloads\AMERICAN SPORTS HUB\`: `instagram-american-sports-hub\`
+Totul stă pe laptop, în `C:\Users\stroe\Downloads\AMERICAN SPORTS HUB\`. **Postările gata de publicat stau într-un singur
+loc, `postari\<data>-<tip>\`** (aceleași imagini 4:5 pentru amândouă rețelele, plus `instagram.txt` și `tiktok.txt`; story-urile
+în `postari\story-…\` cu `linkuri.txt`), făcute din butoanele `1 Postarea de dimineata`, `2 Postarea de seara`, `3 Orice alta
+postare` din același folder (din 14 noiembrie 2026; vechile foldere pe rețea sunt în `arhiva\`). Generatoarele: `instagram-american-sports-hub\`
 (generatoarele „Azi-noapte” / „Diseară” = `generator\azi-noapte.mjs [diseara]`, „The City” = `generator\the-city.mjs`
 cu datele în `orase.mjs`), `tiktok-american-sports-hub\` (`generator\tiktok.mjs` copiază orice postare de Instagram
 pentru TikTok: aceleași imagini 4:5, care în modul foto umplu lățimea; adresa site-ului scrisă în text), `american-sports-hub-magazin\` (Microsoft Store), `American-Sports-Hub-functii.pdf`
