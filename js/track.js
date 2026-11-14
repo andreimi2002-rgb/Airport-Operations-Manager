@@ -24,6 +24,8 @@ const clean = s => String(s || '').replace(/[^\p{L}\p{N} .,'&()+:/-]/gu, ' ').re
 // page before. Read once at start: the page later rewrites its own address.
 const LANDING = (() => {
   const s = (Q.get('sursa') || Q.get('utm_source') || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30);
+  // Kept for this tab: an automatic update reloads the page after its address lost ?sursa=.
+  try { if (s) sessionStorage.setItem('flgames-src', s); else { const kept = sessionStorage.getItem('flgames-src'); if (kept) return kept; } } catch (e) { /* blocked */ }
   if (s) return s;
   // The Microsoft Store app starts at /?app=store (the packager dropped ?sursa from its start address).
   if (STORE) return 'msstore';

@@ -394,7 +394,19 @@ export function normalizeSummary(j, l) {
     predictor: predictor && predictor.home != null ? predictor : null,
     attendance: num(g.attendance),
     officials: (g.officials || []).slice(0, 1).map(o => o.displayName).join(''),
-    note: comp.notes?.[0]?.headline || ''
+    note: comp.notes?.[0]?.headline || '',
+    // The game itself in the schedule's format: a link to any game (shared, from another day or another
+    // pack's schedule) opens its page even when the visitor's season does not have it.
+    event: safe(() => {
+      const t = x => ({ ...teamInfo(x.team || {}), key: null, score: num(x.score) });
+      const a = g.venue?.address || {};
+      return comp.date && H.team && A.team ? {
+        id: String(j.header?.id || comp.id || ''), l, date: comp.date, tbd: comp.timeValid === false,
+        state: comp.status?.type?.state || 'pre', detail: comp.status?.type?.shortDetail || '',
+        home: t(H), away: t(A), venue: g.venue?.fullName || '', city: a.city || '', region: a.state || a.country || '',
+        neutral: !!comp.neutralSite, note: comp.notes?.[0]?.headline || '', tv: comp.broadcasts?.[0]?.media?.shortName || ''
+      } : null;
+    }, null)
   };
 }
 

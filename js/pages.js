@@ -187,9 +187,22 @@ export function route(keep) {
     hideOv(); setView('ligi'); return;
   }
   if (h[0] === 'meci' && LEAGUES[h[1]] && h[2] && !gameById(h[2]) && GAMES.length && !keep) {
-    // A shared link to a game outside Florida: today's scores usually have it.
-    const day = usKey(new Date());
-    if (!LG.scores.has(day)) { loadScores(day).then(() => { if (gameById(h[2])) route(); }); return; }
+    // A link to a game not in this visitor's season (shared, another day, another pack): today's scores usually
+    // have it; otherwise the game page's own data says which game it is.
+    const day = usKey(new Date()), id = h[2], l = h[1], want = location.hash;
+    const fromSummary = () => getJSON(`/api/game?l=${l}&id=${encodeURIComponent(id)}`, 12000).then(s => {
+      if (!s?.event) return;
+      keepExtra([s.event]); SUMMARY.set(l + id, s);
+      if (location.hash === want) route();
+    }, () => {});
+    if (!LG.scores.has(day)) loadScores(day).then(() => { if (gameById(id)) { if (location.hash === want) route(); } else fromSummary(); });
+    else fromSummary();
+    return;
+  }
+  // A team of another pack (#echipa/heat for a New York visitor, #echipa/knicks on the owner's devices): its club page.
+  if (h[0] === 'echipa' && ALL_TEAMS[h[1]] && !TEAMS[h[1]] && GAMES.length) {
+    const T = ALL_TEAMS[h[1]], e = entryOf(T.l, T.espn);
+    if (e?.id) { history.replaceState(history.state, '', location.pathname + location.search + `#club/${T.l}/${e.id}${['sezon', 'lot', 'stiri'].includes(h[2]) ? '/' + h[2] : ''}`); route(keep); return; }
   }
   if (location.hash && GAMES.length) history.replaceState(null, '', location.pathname + location.search);
   hideOv();
