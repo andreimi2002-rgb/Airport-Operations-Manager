@@ -172,6 +172,13 @@ baza `main` (altfel Netlify nu face preview) și se unesc o singură dată, la f
     - **Imagine de distribuit** (`js/sharecard.js`): pagina de meci face o imagine 4:5 cu emblemele noastre.
     - **Rezumatul săptămânii:** duminică 19–23, ora României (`weeklyDue`, `weekDay`, bifa `weekly`).
     Rămase pentru o etapă viitoare: Pagina de jucător.
+23. **După lansare** (în producție, 14 noiembrie 2026): PR #24 (v27) „Susține proiectul” (`#sustine`, doar Revolut.me,
+    `DONATE` în `js/pages.js`, nu în aplicația din magazin) și marcajul de proprietar (5 atingeri doar marchează, `?eu=0`
+    îl scoate); PR #25 (v28) **căutarea era stricată pentru toți vizitatorii publici** (orașele din Florida citeau echipele
+    din pachetul activ, nu din `ALL_TEAMS`); PR #26 (v29) verificarea completă (45 de pagini × 3 variante): linkuri spre
+    orice meci (`event` în `/api/game`) și spre echipele altui pachet (`#echipa/heat` → `#club/…`), datele de rezervă,
+    sursa vizitei păstrată pe sesiune, linia de playoff din clasamente. **Regulă:** orice verificare se face și ca
+    vizitator public (fără `?eu=1`, memoria ștearsă), nu doar ca proprietar.
 
 ## Promovare (în afara repo-ului)
 
