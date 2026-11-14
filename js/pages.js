@@ -1,5 +1,5 @@
 // The overlay pages and the address router: team, club, city, stadium, calendar, notifications, game.
-import { LEAGUES, TEAMS, DIVISIONS, DIVISION_OF, norm, parseClub, HOME, STORE } from './teams.js';
+import { LEAGUES, TEAMS, ALL_TEAMS, DIVISIONS, DIVISION_OF, norm, parseClub, HOME, STORE } from './teams.js';
 import { MINE, mineIds, isMine, mineClubs, clubId, refreshMine } from './mine.js';
 import { esc, $, emb, pickInk } from './ui.js';
 import { detailRo, noteRo } from './ro.js';
@@ -11,7 +11,7 @@ import { watchLine } from './guide.js';
 import { teamTabsHtml, seasonChartHtml, leadersHtml, rosterHtml, newsHtml } from './teamx.js';
 import { N, refreshNotify, notifyHtml } from './notify.js';
 import { PLACES, loadPlaces, venueByName, venueOfTeam, cityOf, getWeather, gameWeatherHtml, cityHtml, venueHtml, placeWeatherHtml, floridaClock, AMERICA, loadAmerica, getVenue, getCity, venueOfClub, cityLiteHtml, venueLiteHtml, clockIn, hoursBehindRomania } from './places.js';
-import { teamBtn, teamEmbBtn, DATA, GAMES, OUT, OUTL, REC_LABEL, TEAMINFO, TZNAME, col, confShort, countdown, dayLabel, flKey, flSide, fmtShort, fmtTime, formChips, gameById, getJSON, isLive, keepExtra, keyOf, lastGames, oppInfo, outcome, played, recordOf, state, store, streakRo, tShort, teamStats, sp, spOpen } from './core.js';
+import { teamBtn, teamEmbBtn, DATA, GAMES, OUT, OUTL, REC_LABEL, TEAMINFO, TZNAME, col, confShort, countdown, dayLabel, flKey, flSide, fmtShort, fmtTime, formChips, gameById, getJSON, isLive, keepExtra, keyOf, lastGames, oppInfo, outcome, played, recordOf, state, store, streakRo, tShort, teamStats, sp, spOpen, entryOf } from './core.js';
 import { card, tableHtml, allTeamsList } from './home.js';
 import { LG, lgCtx, loadScores, setView, usKey } from './views.js';
 import { trackView, trackEvent } from './track.js';
@@ -387,6 +387,12 @@ export const placeCtx = {
   clubEmb: t => { const e = entryById(t.l, t.id); return emb({ name: t.name, abbr: e?.abbr, logo: e?.logo, logoDark: e?.logoDark, color: e?.color, alt: e?.alt }, 'lg'); },
   clubRecord: t => { const e = entryById(t.l, t.id); return e ? recordOf(e, t.l) : ''; },
   homeRecord: k => teamStats(k).home || '',
+  // A Florida team as a link: its full profile in the Florida pack, its club page in any other (New York…).
+  teamAttr: k => {
+    if (TEAMS[k]) return `data-team="${k}"`;
+    const T = ALL_TEAMS[k], e = T && entryOf(T.l, T.espn);
+    return e?.id ? `data-club="${T.l}|${esc(e.id)}"` : '';
+  },
   // Games played at these venues: upcoming first-to-last, finished last-to-first.
   gamesAt(ids) {
     const now = Date.now(), at = GAMES.filter(g => { const v = venueByName(g.v); return v && ids.includes(v.id); });

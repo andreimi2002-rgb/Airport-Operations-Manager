@@ -1,7 +1,7 @@
 // Cities, stadiums and weather: the data file (data/places.json), the /api/weather calls,
 // and the HTML for the city and stadium pages, the weather strip and the game-page weather card.
 // app.js owns routing and the overlay; it passes a small `ctx` with the game helpers it has.
-import { TEAMS, okImg } from './teams.js';
+import { ALL_TEAMS as TEAMS, okImg } from './teams.js';   // every team key: the Florida venues name Florida teams in any pack
 import { esc } from './ui.js';
 
 export const PLACES = { data: null, ready: null };
@@ -315,7 +315,7 @@ export function cityHtml(c, ctx) {
     </div>
     <section><h3>Vremea acum</h3><div id="pwx"><div class="skeleton" style="height:120px"></div></div></section>
     ${climateHtml(c)}
-    ${teams.length ? `<section><h3>Echipe</h3><div class="mteams">${teams.map(k => `<button type="button" data-team="${k}">${ctx.emb(k)}${esc(TEAMS[k].espn)}</button>`).join('')}</div></section>` : ''}
+    ${teams.length ? `<section><h3>Echipe</h3><div class="mteams">${teams.map(k => `<button type="button" ${ctx.teamAttr ? ctx.teamAttr(k) : `data-team="${k}"`}>${ctx.emb(k)}${esc(TEAMS[k].espn)}</button>`).join('')}</div></section>` : ''}
     ${venues.length ? `<section><h3>${venues.length === 1 ? 'Stadionul' : 'Stadioanele'}</h3><div class="vcards">${venues.map(v => venueCard(v, ctx)).join('')}</div></section>` : ''}
     ${games.up.length ? `<section><h3>Următoarele meciuri aici</h3><div class="rows">${games.up.slice(0, 6).map(ctx.row).join('')}</div></section>` : ''}
     <section><h3>Despre oraș</h3>${c.about.map(p => `<p>${esc(p)}</p>`).join('')}${(c.tips || []).map(p => `<p class="tip">${esc(p)}</p>`).join('')}</section>
@@ -340,7 +340,7 @@ export function venueHtml(v, ctx) {
       <div class="stat"><div class="v">${esc(v.opened)}</div><div class="l">deschis${+v.opened < now ? ` (acum ${now - +v.opened} ani)` : ''}</div></div>
       <div class="stat"><div class="v roof-${v.roof}">${v.roof === 'closed' ? (v.kind === 'arena' ? 'În sală' : 'Acoperit') : v.roof === 'canopy' ? 'Copertină' : v.roof === 'retractable' ? 'Retractabil' : 'Aer liber'}</div><div class="l">${esc(ROOF[v.roof])}</div></div>
     </div>
-    <section><h3>Echipa gazdă</h3><div class="hosts">${v.teams.map(k => `<button class="host" type="button" data-team="${k}">${ctx.emb(k, 'lg')}<span><b>${esc(TEAMS[k].espn)}</b><small>${esc(TEAMS[k].l)}${ctx.homeRecord(k) ? ` · acasă în acest sezon: ${esc(ctx.homeRecord(k))}` : ''}</small></span></button>`).join('')}</div></section>
+    <section><h3>Echipa gazdă</h3><div class="hosts">${v.teams.map(k => `<button class="host" type="button" ${ctx.teamAttr ? ctx.teamAttr(k) : `data-team="${k}"`}>${ctx.emb(k, 'lg')}<span><b>${esc(TEAMS[k].espn)}</b><small>${esc(TEAMS[k].l)}${ctx.homeRecord(k) ? ` · acasă în acest sezon: ${esc(ctx.homeRecord(k))}` : ''}</small></span></button>`).join('')}</div></section>
     <section><h3>${v.roof === 'closed' ? 'Vremea afară' : 'Vremea'}</h3><div id="pwx"><div class="skeleton" style="height:110px"></div></div></section>
     ${games.up.length ? `<section><h3>Meciuri programate aici</h3><div class="rows">${games.up.slice(0, 6).map(ctx.row).join('')}</div></section>` : ''}
     ${games.past.length ? `<section><h3>Ultimele rezultate aici</h3><div class="rows">${games.past.slice(0, 5).map(ctx.row).join('')}</div></section>` : ''}
